@@ -12,5 +12,6 @@ public class Main {
             OficinaController controller = new OficinaController();
             new V_Login(controller).setVisible(true);
         });
+        System.out.println("toma no cu");
     }
 }

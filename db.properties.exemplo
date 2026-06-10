@@ -1,0 +1,9 @@
+# Configuracao de conexao com o MySQL do XAMPP.
+# Copie este arquivo para "db.properties" e ajuste se necessario.
+#
+# Padrao do XAMPP: usuario root, SEM senha (db.password em branco).
+# Se voce definiu senha no root, preencha db.password.
+
+db.url=jdbc:mysql://localhost:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+db.user=root
+db.password=

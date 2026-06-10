@@ -1,0 +1,38 @@
+# ===== Compilacao / build =====
+out/
+bin/
+dist/
+*.class
+sources.txt
+
+# ===== Dependencias baixadas (o driver e baixado pelo Dockerfile / instrucoes) =====
+libs/*.jar
+
+# ===== Config local com credenciais (NAO versionar) =====
+db.properties
+
+# ===== Dados locais do engine antigo (se existirem) =====
+dados_oficina/
+*.tbl
+
+# ===== Backups de banco =====
+*.sql.bak
+backup*.sql
+
+# ===== IDEs =====
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+nbproject/
+.nb-gradle/
+
+# ===== Sistema operacional =====
+.DS_Store
+Thumbs.db
+
+# ===== Java extras =====
+*.log
+hs_err_pid*

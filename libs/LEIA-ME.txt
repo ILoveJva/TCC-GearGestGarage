@@ -1,0 +1,5 @@
+Coloque aqui o driver JDBC do MySQL (mysql-connector-j-X.Y.Z.jar).
+Download: https://dev.mysql.com/downloads/connector/j/  (Platform Independent)
+Exemplo de execucao:
+  java -cp "out:libs/mysql-connector-j-9.7.0.jar" view.Main   (Linux/Mac)
+  java -cp "out;libs\mysql-connector-j-9.7.0.jar" view.Main   (Windows)

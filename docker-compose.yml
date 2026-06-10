@@ -1,0 +1,50 @@
+# Sobe o banco MySQL + a aplicacao Java (Swing) juntos.
+#
+#   docker compose up --build
+#
+# IMPORTANTE (interface grafica): a app e Swing (janela desktop), entao o
+# container precisa de acesso ao display do seu computador. Veja o README,
+# secao Docker, para o passo do X11 conforme seu sistema (Linux/Windows/Mac).
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: gear_gest_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: GearGestGarage
+    ports:
+      # Esquerda = porta no seu Windows | Direita = porta dentro do container.
+      # Se a 3306 estiver ocupada (ex.: XAMPP rodando), troque a esquerda por 3307:
+      #   - "3307:3306"
+      # A app NAO e afetada: ela conecta internamente em mysql:3306.
+      - "3306:3306"
+    volumes:
+      - gear_gest_data:/var/lib/mysql
+      - ./db/schema_phpmyadmin.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    container_name: gear_gest_app
+    depends_on:
+      mysql:
+        condition: service_healthy   # so inicia quando o banco estiver pronto
+    environment:
+      # Dentro da rede do compose, o banco e acessivel pelo nome do servico "mysql"
+      DB_URL: "jdbc:mysql://mysql:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      DB_USER: "root"
+      DB_PASSWORD: "root"
+      # Display da interface grafica (ajuste conforme seu SO - ver README)
+      DISPLAY: "${DISPLAY:-host.docker.internal:0}"
+    volumes:
+      # Compartilha o socket X11 (necessario no Linux)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+
+volumes:
+  gear_gest_data:

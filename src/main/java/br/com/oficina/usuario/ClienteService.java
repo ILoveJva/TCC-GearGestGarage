@@ -17,7 +17,7 @@ public class ClienteService {
         List<ClienteResponseDTO> out = new ArrayList<>();
         for (ClienteEntity c : repository.listarClientes())
             out.add(new ClienteResponseDTO(c.getIdCliente(), c.getNome(), c.getEmail(),
-                c.getTelefone(), c.getCpf() == null ? "" : c.getCpf()));
+                c.getTelefone(), c.getCpf() == null ? "123456789-22" : c.getCpf()));
         return out;
     }
 

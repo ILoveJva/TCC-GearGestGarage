@@ -5,10 +5,10 @@ USE GearGestGarage;
 INSERT INTO oficina (nome, endereco, telefone, cnpj)
 VALUES ('Gear Gest Garage', 'Av. Brasil, 1000', '(11) 3000-0000', '12.345.678/0001-90');
 
-INSERT INTO usuario (nome, email, senha, telefone, id_oficina) VALUES
+INSERT INTO usuario (nome,cpf, email, senha, telefone, id_oficina) VALUES
  ('Administrador','oficina@geargest.com','123456','(11) 90000-0000',1),
  ('Joao da Silva','joao@email.com','1234','(11) 98888-7777',1),
- ('Maria Souza','maria@email.com','1234','(11) 97777-6666',1);
+ ('Maria Souza', 'maria@email.com','1234','(11) 97777-6666',1);
 
 INSERT INTO funcionario (nome, cargo, id_usuario) VALUES ('Administrador','Gerente',1);
 INSERT INTO cliente (id_usuario) VALUES (2),(3);

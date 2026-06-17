@@ -78,7 +78,6 @@ public class V_VisualizarClientes extends JPanel {
      */
     private void carregarDadosClientes() {
         if (controller == null) return;
-
         ArrayList<Cliente> todosClientes = controller.listarClientes();
         System.out.println(todosClientes);
         // Repassa a lista de clientes para a regra de negócio interna do painel modular

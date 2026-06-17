@@ -50,6 +50,7 @@ CREATE TABLE fabricante_peca (
 CREATE TABLE usuario (
     id_usuario INT NOT NULL AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
+    cpf VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL,
     senha VARCHAR(255) NOT NULL,
     telefone VARCHAR(20) NOT NULL,

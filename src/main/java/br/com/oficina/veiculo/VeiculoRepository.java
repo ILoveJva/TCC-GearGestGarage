@@ -4,7 +4,6 @@ import br.com.oficina.shared.config.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Acesso a veiculo, modelo, montadora e detalhes_veiculo. */
 public class VeiculoRepository {
     private final Tabela tVeiculo;
     private final Tabela tModelo;
@@ -20,15 +19,25 @@ public class VeiculoRepository {
 
     // ---- veiculo ----
     private VeiculoEntity mapVeiculo(Registro r) {
-        return new VeiculoEntity(r.getLong("id_veiculo"), r.get("placa"),
-            r.get("tipo_veiculo"), r.getLong("id_cliente"), r.getLong("id_modelo"));
+        return new VeiculoEntity(r.getLong("id_veiculo"), r.get("placa"), r.get("codigo"),
+            r.getLong("id_cliente"), r.getLong("id_modelo"));
     }
 
     public VeiculoEntity salvar(VeiculoEntity v) {
         long id = tVeiculo.inserir(new Registro()
-            .set("placa", v.getPlaca()).set("tipo_veiculo", v.getTipoVeiculo())
-            .set("id_cliente", v.getIdCliente()).set("id_modelo", v.getIdModelo()));
+            .set("placa", v.getPlaca())
+            .set("codigo", "")
+            .set("id_cliente", v.getIdCliente())
+            .set("id_modelo", v.getIdModelo()));
         v.setIdVeiculo(id);
+
+        ModeloEntity modelo = buscarModelo(v.getIdModelo());
+        if (modelo != null) {
+            String codigo = String.format("%03d.%03d.%04d",
+                modelo.getIdMontadora(), v.getIdModelo(), id);
+            tVeiculo.atualizar(id, "codigo", codigo);
+            v.setCodigo(codigo);
+        }
         return v;
     }
 
@@ -56,6 +65,22 @@ public class VeiculoRepository {
             .set("id_veiculo", d.getIdVeiculo()).set("motor", d.getMotor())
             .set("cambio", d.getCambio()).set("direcao", d.getDirecao())
             .set("sistema_freios", d.getSistemaFreios()).set("cor", d.getCor()).set("vin", d.getVin()));
+        d.setIdDetalhes(id);
+        return d;
+    }
+
+    public DetalhesVeiculoEntity salvarOuAtualizarDetalhes(DetalhesVeiculoEntity d) {
+        DetalhesVeiculoEntity existente = buscarDetalhesPorVeiculo(d.getIdVeiculo());
+        if (existente == null) {
+            return salvarDetalhes(d);
+        }
+        long id = existente.getIdDetalhes();
+        tDetalhes.atualizar(id, "motor", d.getMotor());
+        tDetalhes.atualizar(id, "cambio", d.getCambio());
+        tDetalhes.atualizar(id, "direcao", d.getDirecao());
+        tDetalhes.atualizar(id, "sistema_freios", d.getSistemaFreios());
+        tDetalhes.atualizar(id, "cor", d.getCor());
+        tDetalhes.atualizar(id, "vin", d.getVin());
         d.setIdDetalhes(id);
         return d;
     }
@@ -91,19 +116,21 @@ public class VeiculoRepository {
     // ---- modelo ----
     public ModeloEntity salvarModelo(ModeloEntity m) {
         long id = tModelo.inserir(new Registro()
-            .set("nome", m.getNome()).set("ano", m.getAno()).set("id_montadora", m.getIdMontadora()));
+            .set("nome", m.getNome()).set("ano", m.getAno())
+            .set("tipo", m.getTipo()).set("id_montadora", m.getIdMontadora()));
         m.setIdModelo(id);
         return m;
     }
     public ModeloEntity buscarModelo(long id) {
         Registro r = tModelo.buscarPorId(id);
         return r == null ? null : new ModeloEntity(r.getLong("id_modelo"), r.get("nome"),
-            r.getInt("ano"), r.getLong("id_montadora"));
+            r.getInt("ano"), r.get("tipo"), r.getLong("id_montadora"));
     }
     public List<ModeloEntity> listarModelosPorMontadora(long idMontadora) {
         List<ModeloEntity> out = new ArrayList<>();
         for (Registro r : tModelo.filtrar(m -> m.getLong("id_montadora") == idMontadora))
-            out.add(new ModeloEntity(r.getLong("id_modelo"), r.get("nome"), r.getInt("ano"), r.getLong("id_montadora")));
+            out.add(new ModeloEntity(r.getLong("id_modelo"), r.get("nome"),
+                r.getInt("ano"), r.get("tipo"), r.getLong("id_montadora")));
         return out;
     }
 }

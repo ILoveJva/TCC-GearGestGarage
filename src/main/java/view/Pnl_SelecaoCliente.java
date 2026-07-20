@@ -1,9 +1,12 @@
 package view;
 
-import controller.OficinaController; // Importação do controlador central
+import controller.OficinaController;
 import model.Cliente;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +42,7 @@ public class Pnl_SelecaoCliente extends JPanel {
 
     private void initComponents() {
         // Estrutura de colunas simples e estritas de acordo com a regra de negócio
-        String[] colunas = {"Cód.", "Nome", "CPF"};
+        String[] colunas = {"Cód.", "Nome", "CPF", "Telefone"};
         mdl_Clientes = new DefaultTableModel(colunas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -86,7 +89,8 @@ public class Pnl_SelecaoCliente extends JPanel {
                     mdl_Clientes.addRow(new Object[]{
                             String.format("%05d", c.getIdUsuario()), // Tratado diretamente como long primitivo
                             c.getNome(),
-                            c.getCpf()
+                            c.getCpf(),
+                            c.getTelefone()
                     });
                 });
     }

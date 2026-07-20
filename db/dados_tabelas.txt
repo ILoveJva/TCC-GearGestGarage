@@ -1,0 +1,207 @@
+============================================================
+Gear Gest Garage - Dump dos dados das tabelas
+Gerado em: 2026-07-20 10:37
+Cada bloco mostra o SELECT usado e o resultado.
+============================================================
+
+-- ============================================================
+-- SELECT * FROM catalogo_servico;
+-- ============================================================
++---------------------+---------------------------------------------------------+-----------+---------+---------+-----------------+---------------+-------------+----------------+
+| id_catalogo_servico | nome                                                    | descricao | valor   | tipo    | tipo_manutencao | sistema       | validade_km | validade_meses |
++---------------------+---------------------------------------------------------+-----------+---------+---------+-----------------+---------------+-------------+----------------+
+|                   1 | Troca de óleo e filtro de óleo                        |           |  120.00 | PADRAO  | PREVENTIVA      | MOTOR         |        5000 |              6 |
+|                   2 | Troca de filtro de ar                                   |           |   80.00 | PADRAO  | PREVENTIVA      | MOTOR         |       15000 |             12 |
+|                   3 | Troca de filtro de combustível                         |           |  100.00 | PADRAO  | PREVENTIVA      | MOTOR         |       20000 |             24 |
+|                   4 | Troca de velas de ignição                             |           |  200.00 | PADRAO  | PREVENTIVA      | MOTOR         |       20000 |             24 |
+|                   5 | Troca de correia dentada (kit distribuição)           |           |  600.00 | PADRAO  | PREVENTIVA      | MOTOR         |       60000 |             48 |
+|                   6 | Troca de correia do alternador                          |           |  250.00 | PADRAO  | PREVENTIVA      | MOTOR         |       40000 |             36 |
+|                   7 | Troca de filtro de cabine (ar-cond.)                    |           |   90.00 | PADRAO  | PREVENTIVA      | MOTOR         |       15000 |             12 |
+|                   8 | Regulagem de válvulas                                  |           |  350.00 | PADRAO  | PREVENTIVA      | MOTOR         |       30000 |             24 |
+|                   9 | Limpeza de bicos injetores                              |           |  300.00 | PADRAO  | PREVENTIVA      | MOTOR         |       20000 |             18 |
+|                  10 | Inspeção de correia dentada                           |           |   80.00 | PADRAO  | PREVENTIVA      | MOTOR         |       30000 |             24 |
+|                  11 | Inspeção de corrente de comando                       |           |  100.00 | PADRAO  | PREVENTIVA      | MOTOR         |       30000 |             24 |
+|                  12 | Troca de kit corrente de comando (corrente+tensor+guia) |           | 1200.00 | PADRAO  | PREVENTIVA      | MOTOR         |       80000 |             60 |
+|                  13 | Troca de tensor da correia dentada                      |           |  280.00 | PADRAO  | PREVENTIVA      | MOTOR         |       60000 |             48 |
+|                  14 | Troca de rolamento tensionador da correia               |           |  200.00 | PADRAO  | PREVENTIVA      | MOTOR         |       60000 |             48 |
+|                  15 | Troca de kit correia dentada com bomba d'água          |           |  900.00 | PADRAO  | PREVENTIVA      | MOTOR         |       60000 |             48 |
+|                  16 | Limpeza de bicos injetores multiponto (ultrassom)       |           |  380.00 | PADRAO  | PREVENTIVA      | MOTOR         |       20000 |             18 |
+|                  17 | Limpeza de válvulas de admissão (injeção direta)    |           |  500.00 | PADRAO  | PREVENTIVA      | MOTOR         |       30000 |             24 |
+|                  18 | Troca de filtro de combustível diesel                  |           |  150.00 | PADRAO  | PREVENTIVA      | MOTOR         |       10000 |             12 |
+|                  19 | Limpeza de filtro de partículas diesel (DPF)           |           |  450.00 | PADRAO  | PREVENTIVA      | MOTOR         |       40000 |             24 |
+|                  20 | Limpeza e regulagem de carburador                       |           |  200.00 | PADRAO  | PREVENTIVA      | MOTOR         |       10000 |             12 |
+|                  21 | Troca de óleo de câmbio manual                        |           |  200.00 | PADRAO  | PREVENTIVA      | TRANSMISSAO   |       40000 |             36 |
+|                  22 | Troca de fluido de câmbio automático (ATF)            |           |  350.00 | PADRAO  | PREVENTIVA      | TRANSMISSAO   |       40000 |             36 |
+|                  23 | Troca de coifas de homocinética                        |           |  400.00 | PADRAO  | PREVENTIVA      | TRANSMISSAO   |       60000 |             48 |
+|                  24 | Regulagem de embreagem                                  |           |  120.00 | PADRAO  | PREVENTIVA      | TRANSMISSAO   |       20000 |             18 |
+|                  25 | Troca de fluido de direção hidráulica                |           |  150.00 | PADRAO  | PREVENTIVA      | DIRECAO       |       40000 |             36 |
+|                  26 | Rodízio de pneus                                       |           |   80.00 | PADRAO  | PREVENTIVA      | SUSPENSAO     |       10000 |              6 |
+|                  27 | Alinhamento de rodas                                    |           |  120.00 | PADRAO  | PREVENTIVA      | SUSPENSAO     |       10000 |              6 |
+|                  28 | Balanceamento de rodas                                  |           |  100.00 | PADRAO  | PREVENTIVA      | SUSPENSAO     |       10000 |              6 |
+|                  29 | Inspeção de amortecedores                             |           |   80.00 | PADRAO  | PREVENTIVA      | SUSPENSAO     |       30000 |             24 |
+|                  30 | Inspeção de rolamentos de roda                        |           |   80.00 | PADRAO  | PREVENTIVA      | SUSPENSAO     |       40000 |             36 |
+|                  31 | Troca de fluido de freio (DOT)                          |           |  130.00 | PADRAO  | PREVENTIVA      | FREIOS        |       20000 |             24 |
+|                  32 | Troca de pastilhas de freio                             |           |  300.00 | PADRAO  | PREVENTIVA      | FREIOS        |       30000 |             24 |
+|                  33 | Troca de fluido de arrefecimento                        |           |  150.00 | PADRAO  | PREVENTIVA      | ARREFECIMENTO |       30000 |             24 |
+|                  34 | Limpeza de radiador                                     |           |  200.00 | PADRAO  | PREVENTIVA      | ARREFECIMENTO |       30000 |             24 |
+|                  35 | Inspeção de mangueiras de arrefecimento               |           |   80.00 | PADRAO  | PREVENTIVA      | ARREFECIMENTO |       20000 |             18 |
+|                  36 | Troca de termostato                                     |           |  250.00 | PADRAO  | PREVENTIVA      | ARREFECIMENTO |       60000 |             48 |
+|                  37 | Teste e carga de bateria                                |           |   60.00 | PADRAO  | PREVENTIVA      | ELETRICA      |       20000 |             12 |
+|                  38 | Inspeção do sistema de carga (alternador)             |           |   80.00 | PADRAO  | PREVENTIVA      | ELETRICA      |       20000 |             12 |
+|                  39 | Recarga de ar condicionado                              |           |  200.00 | PADRAO  | PREVENTIVA      | ELETRICA      |        NULL |             18 |
+|                  40 | Inspeção de lâmpadas e sinalização                 |           |   50.00 | PADRAO  | PREVENTIVA      | ELETRICA      |       10000 |              6 |
+|                  41 | Troca de junta do cabeçote                             |           | 1200.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  42 | Retífica de motor                                      |           | 3500.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  43 | Troca de bomba de óleo                                 |           |  500.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  44 | Troca de bomba de combustível                          |           |  600.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  45 | Troca de sensor lambda (oxigênio)                      |           |  400.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  46 | Troca de sensor de temperatura                          |           |  250.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  47 | Troca de sensor de rotação (CKP)                      |           |  350.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  48 | Troca de corpo de borboleta                             |           |  500.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  49 | Troca de módulo de ignição (bobina)                  |           |  350.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  50 | Troca de ECU / módulo de injeção                     |           |  800.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  51 | Troca de catalisador                                    |           |  700.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  52 | Troca de corrente de comando                            |           |  800.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  53 | Troca de tensor de corrente de comando                  |           |  350.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  54 | Troca de guia de corrente de comando                    |           |  280.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  55 | Reparo de ruído em corrente de comando                 |           |  200.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  56 | Troca de bicos injetores multiponto                     |           |  600.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  57 | Troca de regulador de pressão de combustível          |           |  350.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  58 | Diagnóstico de sistema de injeção multiponto         |           |  200.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  59 | Troca de injetores de injeção direta                  |           | 1000.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  60 | Troca de bomba de alta pressão (injeção direta)      |           | 1200.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  61 | Troca de rail de combustível (injeção direta)        |           |  700.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  62 | Diagnóstico de sistema de injeção direta             |           |  200.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  63 | Limpeza de injetores diesel (common rail)               |           |  700.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  64 | Troca de injetores diesel                               |           | 1500.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  65 | Troca de bomba injetora diesel                          |           | 1800.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  66 | Troca de bomba de alta pressão diesel                  |           | 1400.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  67 | Reparo de sistema common rail                           |           |  900.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  68 | Troca de filtro de partículas (DPF)                    |           | 1000.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  69 | Troca de carburador                                     |           |  700.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  70 | Regulagem de mistura (carburador)                       |           |  120.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  71 | Troca de kit de reparo de carburador                    |           |  300.00 | REVISAO | CORRETIVA       | MOTOR         |        NULL |           NULL |
+|                  72 | Troca de homocinética / semi-eixo                      |           |  600.00 | REVISAO | CORRETIVA       | TRANSMISSAO   |        NULL |           NULL |
+|                  73 | Reparo de câmbio manual                                |           | 1500.00 | REVISAO | CORRETIVA       | TRANSMISSAO   |        NULL |           NULL |
+|                  74 | Reparo de câmbio automático                           |           | 2500.00 | REVISAO | CORRETIVA       | TRANSMISSAO   |        NULL |           NULL |
+|                  75 | Troca de disco e platô de embreagem                    |           |  800.00 | REVISAO | CORRETIVA       | TRANSMISSAO   |        NULL |           NULL |
+|                  76 | Troca de rolamento de câmbio                           |           |  400.00 | REVISAO | CORRETIVA       | TRANSMISSAO   |        NULL |           NULL |
+|                  77 | Troca de bomba de direção hidráulica                 |           |  700.00 | REVISAO | CORRETIVA       | DIRECAO       |        NULL |           NULL |
+|                  78 | Troca de cremalheira de direção                       |           |  900.00 | REVISAO | CORRETIVA       | DIRECAO       |        NULL |           NULL |
+|                  79 | Troca de coluna de direção                            |           |  600.00 | REVISAO | CORRETIVA       | DIRECAO       |        NULL |           NULL |
+|                  80 | Troca de pivô / terminal de direção                  |           |  300.00 | REVISAO | CORRETIVA       | DIRECAO       |        NULL |           NULL |
+|                  81 | Troca de caixa de direção                             |           | 1200.00 | REVISAO | CORRETIVA       | DIRECAO       |        NULL |           NULL |
+|                  82 | Troca de cubo e rolamento de roda                       |           |  500.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  83 | Troca de mola de suspensão                             |           |  400.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  84 | Troca de amortecedor                                    |           |  500.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  85 | Troca de barra estabilizadora                           |           |  400.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  86 | Troca de buchas de suspensão                           |           |  350.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  87 | Troca de braço de suspensão / bandeja                 |           |  600.00 | REVISAO | CORRETIVA       | SUSPENSAO     |        NULL |           NULL |
+|                  88 | Troca de disco de freio                                 |           |  500.00 | REVISAO | CORRETIVA       | FREIOS        |        NULL |           NULL |
+|                  89 | Troca de tambor de freio                                |           |  350.00 | REVISAO | CORRETIVA       | FREIOS        |        NULL |           NULL |
+|                  90 | Troca de cilindro de roda                               |           |  250.00 | REVISAO | CORRETIVA       | FREIOS        |        NULL |           NULL |
+|                  91 | Troca de cilindro mestre de freio                       |           |  400.00 | REVISAO | CORRETIVA       | FREIOS        |        NULL |           NULL |
+|                  92 | Reparo de freio de estacionamento                       |           |  200.00 | REVISAO | CORRETIVA       | FREIOS        |        NULL |           NULL |
+|                  93 | Troca de radiador                                       |           |  800.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  94 | Troca de bomba d'água                                  |           |  500.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  95 | Reparo de vazamento de arrefecimento                    |           |  300.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  96 | Troca de válvula termostática                         |           |  250.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  97 | Troca de eletroventilador                               |           |  400.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  98 | Troca de mangueiras de arrefecimento                    |           |  200.00 | REVISAO | CORRETIVA       | ARREFECIMENTO |        NULL |           NULL |
+|                  99 | Troca de alternador                                     |           |  800.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 100 | Troca de motor de arranque                              |           |  600.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 101 | Reparo de compressor de ar condicionado                 |           |  700.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 102 | Troca de compressor de ar condicionado                  |           | 1200.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 103 | Reparo de curto-circuito elétrico                      |           |  300.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 104 | Troca de sensor ABS / ESP                               |           |  500.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 105 | Reparo de vidro elétrico                               |           |  250.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 106 | Reparo de travas elétricas                             |           |  200.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 107 | Diagnóstico e reparo de falhas eletrônicas            |           |  350.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 108 | Troca de painel de instrumentos                         |           |  900.00 | REVISAO | CORRETIVA       | ELETRICA      |        NULL |           NULL |
+|                 109 | Reparo de escapamento / silencioso                      |           |  400.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
+|                 110 | Polimento e cristalização                             |           |  300.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
+|                 111 | Higienização de estofados e cabine                    |           |  250.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
+|                 112 | Reparo de para-choque                                   |           |  350.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
+|                 113 | Reparo de lataria                                       |           |  500.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
+|                 114 | Reparo de vidros (trinca / quebrado)                    |           |  300.00 | REVISAO | CORRETIVA       | OUTROS        |        NULL |           NULL |
++---------------------+---------------------------------------------------------+-----------+---------+---------+-----------------+---------------+-------------+----------------+
+
+-- ============================================================
+-- SELECT * FROM catalogo_servico_peca;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM cliente;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM detalhes_veiculo;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM funcionario;
+-- ============================================================
++----------------+----------------+---------+----------+------------+
+| id_funcionario | nome           | cargo   | endereco | id_usuario |
++----------------+----------------+---------+----------+------------+
+|              1 | Arthur Cecconi | Gerente |          |          1 |
++----------------+----------------+---------+----------+------------+
+
+-- ============================================================
+-- SELECT * FROM item_servico;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM modelo;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM montadora;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM oficina;
+-- ============================================================
++------------+-----------------+-----------------------------------+----------+------+
+| id_oficina | nome            | endereco                          | telefone | cnpj |
++------------+-----------------+-----------------------------------+----------+------+
+|          1 | Garagem Cecconi | Rua Itapetinga, 794 - Santa Luzia |          |      |
++------------+-----------------+-----------------------------------+----------+------+
+
+-- ============================================================
+-- SELECT * FROM orcamento;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM orcamento_peca;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM orcamento_servico;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM peca;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM servico;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM tipo_servico;
+-- ============================================================
+
+-- ============================================================
+-- SELECT * FROM usuario;
+-- ============================================================
++------------+----------------+-------------+----------------------+--------+-----------------+------------+
+| id_usuario | nome           | cpf         | email                | senha  | telefone        | id_oficina |
++------------+----------------+-------------+----------------------+--------+-----------------+------------+
+|          1 | Arthur Cecconi | 00000000000 | oficina@geargest.com | 123456 | (11) 90000-0000 |          1 |
++------------+----------------+-------------+----------------------+--------+-----------------+------------+
+
+-- ============================================================
+-- SELECT * FROM veiculo;
+-- ============================================================
+

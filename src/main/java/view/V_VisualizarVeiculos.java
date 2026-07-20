@@ -18,6 +18,7 @@ public class V_VisualizarVeiculos extends JPanel {
 
     private JPanel pnl_CardCentral;
     private JLabel lbl_MapaNavegacao;
+    private JButton btn_CadastrarVeiculo;
     private Consumer<Long> acaoAbrirDetalhes;
 
     private JTable tbl_Veiculos;
@@ -47,7 +48,7 @@ public class V_VisualizarVeiculos extends JPanel {
         lbl_MapaNavegacao.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl_MapaNavegacao.setForeground(Color.decode("#4D4D4D"));
 
-        String[] colunas = {"Cod. Veiculo", "Veiculo", "Ano", "Proprietario"};
+        String[] colunas = {"Cod. Veiculo", "Veiculo", "Tipo", "Placa"};
         mdl_Veiculos = new DefaultTableModel(colunas, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -62,10 +63,31 @@ public class V_VisualizarVeiculos extends JPanel {
 
         scp_ScrollVeiculos = new JScrollPane(tbl_Veiculos);
         scp_ScrollVeiculos.setBorder(BorderFactory.createLineBorder(Color.decode("#CCCCCC")));
+
+        btn_CadastrarVeiculo = new JButton("+ Cadastrar Veículo");
+        btn_CadastrarVeiculo.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn_CadastrarVeiculo.setForeground(Color.WHITE);
+        btn_CadastrarVeiculo.setBackground(Color.decode("#FF9900"));
+        btn_CadastrarVeiculo.setFocusPainted(false);
+        btn_CadastrarVeiculo.setBorderPainted(false);
+        btn_CadastrarVeiculo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        ImageIcon icoVeiculo = carregarIcone("/assets/icons/add_veiculo.png", 20, 20);
+        if (icoVeiculo != null) {
+            btn_CadastrarVeiculo.setIcon(icoVeiculo);
+            btn_CadastrarVeiculo.setHorizontalTextPosition(SwingConstants.RIGHT);
+        }
+        btn_CadastrarVeiculo.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(V_VisualizarVeiculos.this);
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_CadastrarVeiculo(controller));
+        });
     }
 
     private void layoutComponents() {
-        pnl_CardCentral.add(lbl_MapaNavegacao, BorderLayout.NORTH);
+        JPanel pnl_HeaderCard = new JPanel(new BorderLayout());
+        pnl_HeaderCard.setOpaque(false);
+        pnl_HeaderCard.add(lbl_MapaNavegacao, BorderLayout.WEST);
+        pnl_HeaderCard.add(btn_CadastrarVeiculo, BorderLayout.EAST);
+        pnl_CardCentral.add(pnl_HeaderCard, BorderLayout.NORTH);
         pnl_CardCentral.add(scp_ScrollVeiculos, BorderLayout.CENTER);
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -102,12 +124,11 @@ public class V_VisualizarVeiculos extends JPanel {
             String montadora = (veiculo.getModelo() != null && veiculo.getModelo().getMontadora() != null)
                     ? veiculo.getModelo().getMontadora().getNome() : "";
             String modelo = veiculo.getModelo() != null ? veiculo.getModelo().getNome() : "";
-            int ano = veiculo.getModelo() != null ? veiculo.getModelo().getAno() : 0;
             mdl_Veiculos.addRow(new Object[]{
                     String.format("%04d", veiculo.getIdVeiculo()),
                     (montadora + " " + modelo).trim(),
-                    ano,
-                    " "
+                    veiculo.getTipo(),
+                    veiculo.getPlaca()
             });
         }
     }
@@ -117,4 +138,17 @@ public class V_VisualizarVeiculos extends JPanel {
     }
 
     public JTable getTbl_Veiculos() { return tbl_Veiculos; }
+
+    private ImageIcon carregarIcone(String caminho, int w, int h) {
+        java.net.URL url = getClass().getResource(caminho);
+        if (url == null) {
+            String s = caminho.startsWith("/") ? caminho.substring(1) : caminho;
+            url = Thread.currentThread().getContextClassLoader().getResource(s);
+        }
+        if (url != null) {
+            Image img = new ImageIcon(url).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        }
+        return null;
+    }
 }

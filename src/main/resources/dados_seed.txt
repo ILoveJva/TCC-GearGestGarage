@@ -1,0 +1,51 @@
+# GearGestGarage - Dados de Exemplo
+# Carregado automaticamente na primeira inicializacao se o banco estiver vazio.
+# Edite este arquivo para customizar os dados iniciais sem recompilar o sistema.
+#
+# Formato:
+#   MONTADORA | nome | pais_origem
+#   MODELO    | nome | ano | nome_da_montadora | tipo
+#   CLIENTE   | nome | cpf | email | senha | telefone
+#   VEICULO   | placa | nome_do_modelo | email_do_cliente
+#
+# Tipos disponiveis: Carro, SUV, Picape, Moto, Caminhao, Van, Misto
+# Linhas iniciadas com # sao ignoradas.
+
+MONTADORA|Volkswagen|Alemanha
+MONTADORA|Fiat|Italia
+MONTADORA|Toyota|Japao
+MONTADORA|Chevrolet|Brasil
+MONTADORA|Ford|Estados Unidos
+MONTADORA|Honda|Japao
+
+MODELO|Gol|2020|Volkswagen|Carro
+MODELO|Polo|2022|Volkswagen|Carro
+MODELO|Fox|2021|Volkswagen|Carro
+MODELO|Virtus|2023|Volkswagen|Carro
+MODELO|Uno|2018|Fiat|Carro
+MODELO|Palio|2019|Fiat|Carro
+MODELO|Argo|2022|Fiat|Carro
+MODELO|Pulse|2023|Fiat|SUV
+MODELO|Corolla|2021|Toyota|Carro
+MODELO|Hilux|2022|Toyota|Picape
+MODELO|Yaris|2020|Toyota|Carro
+MODELO|Onix|2023|Chevrolet|Carro
+MODELO|Tracker|2022|Chevrolet|SUV
+MODELO|S10|2021|Chevrolet|Picape
+MODELO|Ka|2021|Ford|Carro
+MODELO|Ranger|2022|Ford|Picape
+MODELO|Civic|2022|Honda|Carro
+MODELO|HR-V|2023|Honda|SUV
+
+CLIENTE|Joao da Silva|11111111111|joao@email.com|1234|(11) 98888-7777
+CLIENTE|Maria Souza|22222222222|maria@email.com|1234|(11) 97777-6666
+CLIENTE|Carlos Pereira|33333333333|carlos@email.com|1234|(11) 96666-5555
+CLIENTE|Ana Lima|44444444444|ana@email.com|1234|(11) 95555-4444
+CLIENTE|Pedro Costa|55555555555|pedro@email.com|1234|(11) 94444-3333
+
+VEICULO|ABC1D23|Gol|joao@email.com
+VEICULO|XYZ9K88|Corolla|maria@email.com
+VEICULO|QAZ2W34|Uno|carlos@email.com
+VEICULO|TRK5H67|Tracker|ana@email.com
+VEICULO|RGR8E90|Ranger|pedro@email.com
+VEICULO|CVC2D22|Civic|joao@email.com

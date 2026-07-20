@@ -1,5 +1,7 @@
 package view;
 
+import model.OrdemDeServico;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -91,11 +93,17 @@ public class V_FiltroServico extends JDialog {
 
         lbl_TipoManutencao = new JLabel("Tipo de Manutenção:");
         lbl_TipoManutencao.setFont(new Font("Arial", Font.BOLD, 13));
-        cbb_TipoManutencao = new JComboBox<>(new String[]{"Todas", "Preventiva", "Corretiva", "Preditiva"});
+        cbb_TipoManutencao = new JComboBox<>(new String[]{"Todas",
+            OrdemDeServico.TipoManutencao.PREVENTIVA.getLabel(),
+            OrdemDeServico.TipoManutencao.CORRETIVA.getLabel()});
 
-        lbl_TipoServico = new JLabel("Categoria de Serviço:");
+        lbl_TipoServico = new JLabel("Tipo de Serviço:");
         lbl_TipoServico.setFont(new Font("Arial", Font.BOLD, 13));
-        cbb_TipoServico = new JComboBox<>(new String[]{"Todas", "Mecânica Geral", "Elétrica", "Injeção Eletrônica", "Suspensão"});
+        String[] tiposServico = new String[OrdemDeServico.TipoServicoOS.values().length + 1];
+        tiposServico[0] = "Todos";
+        for (int i = 0; i < OrdemDeServico.TipoServicoOS.values().length; i++)
+            tiposServico[i + 1] = OrdemDeServico.TipoServicoOS.values()[i].getLabel();
+        cbb_TipoServico = new JComboBox<>(tiposServico);
 
         // Alinhamento do Rodapé de Ações
         pnl_RodapeBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));

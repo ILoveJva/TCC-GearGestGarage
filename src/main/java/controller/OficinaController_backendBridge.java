@@ -18,6 +18,9 @@ class OficinaController_backendBridge {
     final PecaController pecaController;
     final OrcamentoController orcamentoController;
     final ServicoController servicoController;
+    final br.com.oficina.atendimento.TipoServicoController tipoServicoController;
+    final br.com.oficina.atendimento.CatalogoServicoController catalogoServicoController;
+    final br.com.oficina.atendimento.OrcamentoPecaRepository orcamentoPecaRepository;
 
     OficinaController_backendBridge(Conexao con) {
         UsuarioRepository usuarioRepo = new UsuarioRepository(con);
@@ -30,5 +33,12 @@ class OficinaController_backendBridge {
         this.pecaController = new PecaController(new PecaService(new PecaRepository(con)));
         this.orcamentoController = new OrcamentoController(new OrcamentoService(new OrcamentoRepository(con)));
         this.servicoController = new ServicoController(new ServicoService(new ServicoRepository(con)));
+        this.tipoServicoController = new br.com.oficina.atendimento.TipoServicoController(
+            new br.com.oficina.atendimento.TipoServicoService(
+                new br.com.oficina.atendimento.TipoServicoRepository(con)));
+        this.catalogoServicoController = new br.com.oficina.atendimento.CatalogoServicoController(
+            new br.com.oficina.atendimento.CatalogoServicoService(
+                new br.com.oficina.atendimento.CatalogoServicoRepository(con)));
+        this.orcamentoPecaRepository = new br.com.oficina.atendimento.OrcamentoPecaRepository(con);
     }
 }

@@ -1,17 +1,17 @@
 package view;
 
+import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import controller.OficinaController;
+import br.com.oficina.veiculo.DetalhesVeiculoEntity;
 import model.Cliente;
 import model.Veiculo;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 /**
  * Interface de Visualização de Veículos refatorada.
@@ -23,11 +23,15 @@ public class V_DetalhesVeiculo extends JPanel {
     private OficinaController controller;
     private Veiculo veiculoAtual;
     private Cliente proprietarioAtual;
+    private String nomeProprietario;
     private Runnable acaoVoltarParaLista;
 
-    // Componentes da Tabela
-    private JTable tbl_Componentes;
-    private DefaultTableModel mdl_Componentes;
+    // Tabela de serviços realizados
+    private JTable tbl_Servicos;
+    private DefaultTableModel mdl_Servicos;
+
+    // Formulário de detalhes técnicos (editável)
+    private JTextField txt_Motor, txt_Cambio, txt_Direcao, txt_Freios, txt_Cor, txt_Vin;
 
     public V_DetalhesVeiculo(OficinaController controller, long idVeiculo, Runnable acaoVoltarParaLista) {
         this.controller = controller;
@@ -40,19 +44,32 @@ public class V_DetalhesVeiculo extends JPanel {
         buscarDadosVeiculo(idVeiculo);
 
         inicializarUI();
-        popularTabelaComponentes();
+        popularTabelaServicos();
     }
 
     private void buscarDadosVeiculo(long idVeiculo) {
-        if (controller == null || controller.listarClientes() == null) return;
+        if (controller == null) return;
+        // Busca o veículo em todos os clientes
         for (Cliente c : controller.listarClientes()) {
             if (c.getVeiculos() != null) {
                 for (Veiculo v : c.getVeiculos()) {
                     if (v.getIdVeiculo() == idVeiculo) {
                         this.veiculoAtual = v;
                         this.proprietarioAtual = c;
+                        this.nomeProprietario = c.getNome();
                         return;
                     }
+                }
+            }
+        }
+        // Se não encontrou entre clientes, busca entre funcionários
+        for (br.com.oficina.usuario.FuncionarioEntity f : controller.listarFuncionarios()) {
+            if (f.getIdUsuario() == null) continue;
+            for (Veiculo v : controller.listarVeiculosPorProprietario(f.getIdUsuario())) {
+                if (v.getIdVeiculo() == idVeiculo) {
+                    this.veiculoAtual = v;
+                    this.nomeProprietario = f.getNome() + " (Funcionário)";
+                    return;
                 }
             }
         }
@@ -81,91 +98,144 @@ public class V_DetalhesVeiculo extends JPanel {
         JPanel pnlInfo = new JPanel(new GridLayout(1, 2, 40, 0));
         pnlInfo.setBackground(Color.WHITE);
 
-        // Coluna Esquerda
+        boolean temVeiculo = veiculoAtual != null;
+        Veiculo v = veiculoAtual;
+        model.Modelo modelo = temVeiculo ? v.getModelo() : null;
+        model.Montadora montadora = modelo != null ? modelo.getMontadora() : null;
+
+        // Coluna Esquerda — dados identificadores (somente leitura)
         JPanel pnlEsquerda = new JPanel();
         pnlEsquerda.setLayout(new BoxLayout(pnlEsquerda, BoxLayout.Y_AXIS));
         pnlEsquerda.setBackground(Color.WHITE);
 
-        pnlEsquerda.add(criarBlocoInfo("Id:", veiculoAtual != null ? String.format("%04d", veiculoAtual.getIdVeiculo()) : "XXXXXXXXXXXXXXXXX"));
-        pnlEsquerda.add(criarBlocoInfo("Tipo de Veiculo:", veiculoAtual != null ? veiculoAtual.getTipo() : "XXXXXXXXXXXXXXXXX"));
-        pnlEsquerda.add(criarBlocoInfo("Montadora:", veiculoAtual.getModelo().getMontadora().getNome()));
-        pnlEsquerda.add(criarBlocoInfo("Modelo:", veiculoAtual.getModelo().getMontadora().getNome()));
+        pnlEsquerda.add(criarBlocoInfo("Id:", temVeiculo ? String.format("%04d", v.getIdVeiculo()) : "—"));
+        pnlEsquerda.add(criarBlocoInfo("Tipo de Veículo:", temVeiculo ? v.getTipo() : "—"));
+        pnlEsquerda.add(criarBlocoInfo("Montadora:", montadora != null ? montadora.getNome() : "—"));
+        pnlEsquerda.add(criarBlocoInfo("Modelo:", modelo != null ? modelo.getNome() : "—"));
 
         // Ano e Placa lado a lado
         JPanel pnlAnoPlaca = new JPanel(new GridLayout(1, 2, 10, 0));
         pnlAnoPlaca.setBackground(Color.WHITE);
         pnlAnoPlaca.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnlAnoPlaca.add(criarBlocoInfo("Ano:", veiculoAtual != null ? String.valueOf(veiculoAtual.getModelo().getAno()) : "XXXX"));
-        pnlAnoPlaca.add(criarBlocoInfo("Placa:", veiculoAtual != null ? veiculoAtual.getPlaca() : "XXX0X00"));
+        pnlAnoPlaca.add(criarBlocoInfo("Ano:", modelo != null ? String.valueOf(modelo.getAno()) : "—"));
+        pnlAnoPlaca.add(criarBlocoInfo("Placa:", temVeiculo ? v.getPlaca() : "—"));
         pnlEsquerda.add(pnlAnoPlaca);
 
-        pnlEsquerda.add(criarBlocoInfo("Versão:", "XXXXXXXXXXXXXXXXX"));
-        pnlEsquerda.add(criarBlocoInfo("VIN:", "XXXXXXXXXXXXXXXXX"));
+        pnlEsquerda.add(criarBlocoInfo("Dono:", nomeProprietario != null ? nomeProprietario : "—"));
 
-        // Coluna Direita
+        // Coluna Direita — formulário de detalhes técnicos (editável)
+        txt_Motor = criarCampoEditavel();
+        txt_Cambio = criarCampoEditavel();
+        txt_Direcao = criarCampoEditavel();
+        txt_Freios = criarCampoEditavel();
+        txt_Cor = criarCampoEditavel();
+        txt_Vin = criarCampoEditavel();
+
+        // Carrega valores já persistidos, se houver
+        if (temVeiculo && controller != null) {
+            DetalhesVeiculoEntity d = controller.getDetalhesVeiculo(v.getIdVeiculo());
+            if (d != null) {
+                txt_Motor.setText(nvl(d.getMotor()));
+                txt_Cambio.setText(nvl(d.getCambio()));
+                txt_Direcao.setText(nvl(d.getDirecao()));
+                txt_Freios.setText(nvl(d.getSistemaFreios()));
+                txt_Cor.setText(nvl(d.getCor()));
+                txt_Vin.setText(nvl(d.getVin()));
+            }
+        }
+
         JPanel pnlDireita = new JPanel();
         pnlDireita.setLayout(new BoxLayout(pnlDireita, BoxLayout.Y_AXIS));
         pnlDireita.setBackground(Color.WHITE);
 
-        pnlDireita.add(criarBlocoInfo("Dono:", proprietarioAtual != null ? proprietarioAtual.getNome() : "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Versão:", "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Motor:", "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Cambio:", "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Direção:", "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Alimentação:", "XXXXXXXXXXXXXXXXX"));
-        pnlDireita.add(criarBlocoInfo("Configuração:", "XXXXXXXXXXXXXXXXX"));
+        JLabel lblFormTitulo = new JLabel("Detalhes Técnicos");
+        lblFormTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblFormTitulo.setForeground(Color.decode("#FF9900"));
+        lblFormTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnlDireita.add(lblFormTitulo);
+        pnlDireita.add(Box.createVerticalStrut(8));
+
+        pnlDireita.add(criarBlocoCampo("Motor:", txt_Motor));
+        pnlDireita.add(criarBlocoCampo("Câmbio:", txt_Cambio));
+        pnlDireita.add(criarBlocoCampo("Direção:", txt_Direcao));
+        pnlDireita.add(criarBlocoCampo("Sistema de Freios:", txt_Freios));
+        pnlDireita.add(criarBlocoCampo("Cor:", txt_Cor));
+        pnlDireita.add(criarBlocoCampo("VIN:", txt_Vin));
+
+        JButton btnSalvarDetalhes = new JButton("Salvar Detalhes");
+        btnSalvarDetalhes.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSalvarDetalhes.setForeground(Color.WHITE);
+        btnSalvarDetalhes.setBackground(Color.decode("#FF9900"));
+        btnSalvarDetalhes.setFocusPainted(false);
+        btnSalvarDetalhes.setBorderPainted(false);
+        btnSalvarDetalhes.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnSalvarDetalhes.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnSalvarDetalhes.setEnabled(temVeiculo);
+        btnSalvarDetalhes.addActionListener(e -> salvarDetalhes());
+        pnlDireita.add(Box.createVerticalStrut(6));
+        pnlDireita.add(btnSalvarDetalhes);
 
         pnlInfo.add(pnlEsquerda);
         pnlInfo.add(pnlDireita);
 
-        // --- 3. TABELA DE PEÇAS NO QUADRO INFERIOR ---
+        // --- 3. SERVIÇOS REALIZADOS ---
         JPanel pnlCentro = new JPanel(new BorderLayout(0, 20));
         pnlCentro.setBackground(Color.WHITE);
         pnlCentro.add(pnlInfo, BorderLayout.NORTH);
 
-        JPanel pnlAreaTabela = new JPanel(new BorderLayout());
-        pnlAreaTabela.setBackground(Color.decode("#E0E0E0"));
-        pnlAreaTabela.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel pnlAreaServicos = new JPanel(new BorderLayout());
+        pnlAreaServicos.setBackground(Color.decode("#E0E0E0"));
+        pnlAreaServicos.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel pnlHeaderTabela = new JPanel(new BorderLayout());
-        pnlHeaderTabela.setOpaque(false);
+        JPanel pnlHeaderServicos = new JPanel(new BorderLayout());
+        pnlHeaderServicos.setOpaque(false);
 
-        JLabel lblTituloTabela = new JLabel("Tabela de Peças");
-        lblTituloTabela.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblTituloTabela.setHorizontalAlignment(SwingConstants.CENTER);
+        JLabel lblTituloServicos = new JLabel("Serviços Realizados neste Veículo");
+        lblTituloServicos.setFont(new Font("Segoe UI", Font.BOLD, 14));
 
-        JLabel lblAmpliar = new JLabel("Ver mais");
-        lblAmpliar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblAmpliar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        lblAmpliar.setToolTipText("Clique para visualizar em tela cheia e buscar");
-        lblAmpliar.addMouseListener(new MouseAdapter() {
+        JLabel lblDica = new JLabel("Duplo-clique para abrir a O.S.");
+        lblDica.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblDica.setForeground(Color.decode("#777777"));
+
+        pnlHeaderServicos.add(lblTituloServicos, BorderLayout.WEST);
+        pnlHeaderServicos.add(lblDica, BorderLayout.EAST);
+        pnlAreaServicos.add(pnlHeaderServicos, BorderLayout.NORTH);
+
+        String[] colServicos = {"ID", "Oficina", "Data", "Status"};
+        mdl_Servicos = new DefaultTableModel(colServicos, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+            @Override public Class<?> getColumnClass(int c) {
+                return c == 0 ? Long.class : String.class;
+            }
+        };
+
+        tbl_Servicos = new JTable(mdl_Servicos);
+        tbl_Servicos.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tbl_Servicos.setRowHeight(25);
+        tbl_Servicos.getTableHeader().setReorderingAllowed(false);
+        tbl_Servicos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tbl_Servicos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl_Servicos.getColumnModel().getColumn(0).setMaxWidth(60);
+        tbl_Servicos.getColumnModel().getColumn(0).setMinWidth(50);
+
+        tbl_Servicos.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                abrirJanelaAmpliada();
+                if (e.getClickCount() == 2) {
+                    int row = tbl_Servicos.getSelectedRow();
+                    if (row >= 0) {
+                        Long idServico = (Long) mdl_Servicos.getValueAt(row, 0);
+                        navegar(new V_OrdemServico(controller, idServico));
+                    }
+                }
             }
         });
 
-        pnlHeaderTabela.add(lblTituloTabela, BorderLayout.CENTER);
-        pnlHeaderTabela.add(lblAmpliar, BorderLayout.EAST);
-        pnlAreaTabela.add(pnlHeaderTabela, BorderLayout.NORTH);
+        JScrollPane scrollServicos = new JScrollPane(tbl_Servicos);
+        scrollServicos.setPreferredSize(new Dimension(0, 180));
+        pnlAreaServicos.add(scrollServicos, BorderLayout.CENTER);
 
-        // Configuração do Scroll e JTable
-        String[] colunas = {"ID", "Sistema", "Nome", "Última Troca", "Durabilidade KM", "Durabilidade Tempo"};
-        mdl_Componentes = new DefaultTableModel(colunas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
-
-        tbl_Componentes = new JTable(mdl_Componentes);
-        tbl_Componentes.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tbl_Componentes.setRowHeight(25);
-        tbl_Componentes.getTableHeader().setReorderingAllowed(false);
-
-        JScrollPane scrollTabela = new JScrollPane(tbl_Componentes);
-        scrollTabela.setPreferredSize(new Dimension(0, 180)); // Define uma altura base para mostrar scroll na tela
-        pnlAreaTabela.add(scrollTabela, BorderLayout.CENTER);
-
-        pnlCentro.add(pnlAreaTabela, BorderLayout.CENTER);
+        pnlCentro.add(pnlAreaServicos, BorderLayout.CENTER);
         add(pnlCentro, BorderLayout.CENTER);
     }
 
@@ -189,77 +259,76 @@ public class V_DetalhesVeiculo extends JPanel {
         return pnl;
     }
 
-    private void popularTabelaComponentes() {
-        mdl_Componentes.setRowCount(0);
-        if (veiculoAtual == null || veiculoAtual.getListaPecas() == null) return;
+    /** Bloco com rótulo em cima e campo de texto editável embaixo. */
+    private JPanel criarBlocoCampo(String titulo, JTextField campo) {
+        JPanel pnl = new JPanel(new BorderLayout(0, 2));
+        pnl.setBackground(Color.WHITE);
+        pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
 
-        Object[][] componentesMock = veiculoAtual.getListaPecas().stream()
-                .map(peca -> new Object[]{
-                        peca.getIdPeca(),
-                        peca.getSistema(),
-                        peca.getNome(),
-                        "10/06/2025",
-                        peca.getVidaUtilKm() + " KM",
-                        peca.getVidaUtilTempo() + " meses"
-                })
-                .toArray(Object[][]::new);
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
-        for (Object[] linha : componentesMock) {
-            mdl_Componentes.addRow(linha);
+        pnl.add(lblTitulo, BorderLayout.NORTH);
+        pnl.add(campo, BorderLayout.CENTER);
+        pnl.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
+        return pnl;
+    }
+
+    private JTextField criarCampoEditavel() {
+        JTextField f = new JTextField();
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setBackground(Color.WHITE);
+        f.setForeground(Color.BLACK);
+        f.setCaretColor(Color.BLACK);
+        f.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
+            BorderFactory.createEmptyBorder(2, 8, 2, 8)
+        ));
+        return f;
+    }
+
+    /** Persiste os detalhes técnicos do veículo atual. */
+    private void salvarDetalhes() {
+        if (veiculoAtual == null || controller == null) return;
+        try {
+            controller.salvarDetalhesVeiculo(
+                veiculoAtual.getIdVeiculo(),
+                txt_Motor.getText().trim(),
+                txt_Cambio.getText().trim(),
+                txt_Direcao.getText().trim(),
+                txt_Freios.getText().trim(),
+                txt_Cor.getText().trim(),
+                txt_Vin.getText().trim());
+            JOptionPane.showMessageDialog(this,
+                "Detalhes do veículo salvos com sucesso!",
+                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Erro ao salvar detalhes: " + ex.getMessage(),
+                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * Abre a Janela (JDialog) menor quando clicado no botão de Expandir/Ampliar.
-     */
-    private void abrirJanelaAmpliada() {
-        Window ancestor = SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog((Frame) ancestor, "Tabela de Peças - Pesquisa Avançada", true);
-        dialog.setSize(800, 500);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new BorderLayout(10, 10));
+    private String nvl(String s) { return s == null ? "" : s; }
 
-        // Barra Superior do Dialog (Pesquisa e Filtros)
-        JPanel pnlBarraDialog = new JPanel(new BorderLayout());
-        pnlBarraDialog.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    private void popularTabelaServicos() {
+        mdl_Servicos.setRowCount(0);
+        if (veiculoAtual == null || controller == null) return;
+        String nomeOficina = controller.getOficina() != null ? controller.getOficina().getNome() : "—";
+        List<ServicoResponseDTO> servicos = controller.listarServicosPorVeiculo(veiculoAtual.getIdVeiculo());
+        for (ServicoResponseDTO s : servicos) {
+            mdl_Servicos.addRow(new Object[]{
+                s.idServico(),
+                nomeOficina,
+                s.dataServico() != null ? s.dataServico() : "—",
+                s.status() != null ? s.status() : "—"
+            });
+        }
+    }
 
-        JPanel pnlPesquisa = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        pnlPesquisa.add(new JLabel("Pesquisar:"));
-        JTextField txtPesquisa = new JTextField(25);
-        pnlPesquisa.add(txtPesquisa);
-
-
-        pnlBarraDialog.add(pnlPesquisa, BorderLayout.WEST);
-        dialog.add(pnlBarraDialog, BorderLayout.NORTH);
-
-        // Tabela Sincronizada com o Dialog
-        JTable tblDialog = new JTable(mdl_Componentes);
-        tblDialog.setRowHeight(25);
-        TableRowSorter<DefaultTableModel> sorterDialog = new TableRowSorter<>(mdl_Componentes);
-        tblDialog.setRowSorter(sorterDialog);
-
-        txtPesquisa.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                String termo = txtPesquisa.getText().trim();
-                if (termo.isEmpty()) {
-                    sorterDialog.setRowFilter(null);
-                } else {
-                    sorterDialog.setRowFilter(RowFilter.regexFilter("(?i)" + termo));
-                }
-            }
-        });
-
-        dialog.add(new JScrollPane(tblDialog), BorderLayout.CENTER);
-
-        // Base
-        JPanel pnlFechamento = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnFechar = new JButton("Fechar");
-        btnFechar.addActionListener(e -> dialog.dispose());
-        pnlFechamento.add(btnFechar);
-        pnlFechamento.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
-        dialog.add(pnlFechamento, BorderLayout.SOUTH);
-
-        dialog.setVisible(true);
+    private void navegar(JPanel destino) {
+        Window w = SwingUtilities.getWindowAncestor(this);
+        if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
     }
 }

@@ -5,7 +5,6 @@ import java.util.List;
 
 public class Veiculo {
     private long idVeiculo;
-    private String tipo;
     private String cor;
     private String placa;
     private String vin;
@@ -13,15 +12,15 @@ public class Veiculo {
     private final List<Peca> listaPecas = new ArrayList<>();
 
     public Veiculo() {}
-    public Veiculo(long idVeiculo, String tipo, String cor, String placa, String vin, Modelo modelo) {
-        this.idVeiculo = idVeiculo; this.tipo = tipo; this.cor = cor;
+    public Veiculo(long idVeiculo, String cor, String placa, String vin, Modelo modelo) {
+        this.idVeiculo = idVeiculo; this.cor = cor;
         this.placa = placa; this.vin = vin; this.modelo = modelo;
     }
 
     public long getIdVeiculo() { return idVeiculo; }
     public void setIdVeiculo(long id) { this.idVeiculo = id; }
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    /** Tipo derivado do modelo — não armazenado diretamente no veículo. */
+    public String getTipo() { return modelo != null ? modelo.getTipo() : ""; }
     public String getCor() { return cor; }
     public void setCor(String cor) { this.cor = cor; }
     public String getPlaca() { return placa; }

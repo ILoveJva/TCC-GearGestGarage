@@ -38,14 +38,25 @@ public class Tabela {
 
     /** INSERT; retorna o id gerado e tambem o grava no proprio Registro. */
     public long inserir(Registro r) {
-        List<String> cols = colunasInsercao();
+        List<String> cols = new ArrayList<>();
+        List<Object> valores = new ArrayList<>();
+        for (String c : colunasInsercao()) {
+            Object val = valorOuNull(r.get(c));
+            if (val != null) {
+                cols.add(c);
+                valores.add(val);
+            }
+        }
+
+        if (cols.isEmpty()) return 0L;
+
         String campos = String.join(", ", cols);
         String marcadores = String.join(", ", cols.stream().map(c -> "?").toArray(String[]::new));
         String sql = "INSERT INTO " + nome + " (" + campos + ") VALUES (" + marcadores + ")";
 
         try (PreparedStatement ps = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             int i = 1;
-            for (String c : cols) ps.setObject(i++, valorOuNull(r.get(c)));
+            for (Object val : valores) ps.setObject(i++, val);
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {

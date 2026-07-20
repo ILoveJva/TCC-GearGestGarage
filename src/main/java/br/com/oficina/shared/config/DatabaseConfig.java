@@ -5,14 +5,14 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Configuracao central do banco de dados (MySQL).
+ * Configuracao central do banco de dados (MySQL via Docker).
  * Abre a conexao JDBC unica e registra os mapeamentos de tabela usados pelos
- * repositories. A criacao das tabelas em si fica no script db/schema.sql.
+ * repositories. A criacao das tabelas fica em db/schema_init.sql (init Docker).
  *
  * Configuracao (em ordem de prioridade):
  *   1) arquivo db.properties (db.url, db.user, db.password)
  *   2) variaveis de ambiente DB_URL, DB_USER, DB_PASSWORD
- *   3) valores padrao (localhost:3306/GearGestGarage, root, root)
+ *   3) valores padrao (localhost:3307/GearGestGarage, root, root)
  */
 public final class DatabaseConfig {
 
@@ -21,9 +21,9 @@ public final class DatabaseConfig {
     public static final String DIRETORIO_PADRAO = "mysql";
 
     private static final String URL_PADRAO =
-        "jdbc:mysql://localhost:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+        "jdbc:mysql://localhost:3307/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String USER_PADRAO = "root";
-    private static final String PASS_PADRAO = "";   // XAMPP: root sem senha por padrao
+    private static final String PASS_PADRAO = "root";
 
     private DatabaseConfig() {}
 
@@ -66,43 +66,60 @@ public final class DatabaseConfig {
             "id_oficina", "nome", "endereco", "telefone", "cnpj"));
 
         con.registrarTabela(new Tabela("usuario", "id_usuario",
-            "id_usuario", "nome", "email", "senha", "telefone", "id_oficina"));
+            "id_usuario", "nome", "cpf", "email", "senha", "telefone", "id_oficina"));
 
         con.registrarTabela(new Tabela("cliente", "id_cliente",
             "id_cliente", "id_usuario"));
 
         con.registrarTabela(new Tabela("funcionario", "id_funcionario",
-            "id_funcionario", "nome", "cargo", "id_usuario"));
+            "id_funcionario", "nome", "cargo", "endereco", "id_usuario"));
 
         con.registrarTabela(new Tabela("montadora", "id_montadora",
             "id_montadora", "nome", "pais_origem"));
 
         con.registrarTabela(new Tabela("modelo", "id_modelo",
-            "id_modelo", "nome", "ano", "id_montadora"));
+            "id_modelo", "nome", "ano", "tipo", "id_montadora"));
 
         con.registrarTabela(new Tabela("fabricante_peca", "id_fabricante_peca",
             "id_fabricante_peca", "nome", "pais"));
 
         con.registrarTabela(new Tabela("veiculo", "id_veiculo",
-            "id_veiculo", "placa", "tipo_veiculo", "id_cliente", "id_modelo"));
+            "id_veiculo", "placa", "codigo", "id_cliente", "id_modelo"));
 
         con.registrarTabela(new Tabela("detalhes_veiculo", "id_detalhes",
             "id_detalhes", "id_veiculo", "motor", "cambio", "direcao",
             "sistema_freios", "cor", "vin"));
 
         con.registrarTabela(new Tabela("peca", "id_peca",
-            "id_peca", "nome_peca", "vida_util_tempo", "vida_util_km",
-            "id_fabricante_peca", "id_veiculo"));
+            "id_peca", "nome_popular", "sistema", "vida_util_tempo", "vida_util_km"));
 
         con.registrarTabela(new Tabela("orcamento", "id_orcamento",
-            "id_orcamento", "valor", "id_peca", "id_veiculo", "id_cliente", "id_funcionario"));
+            "id_orcamento", "valor", "codigo", "tipo", "responsavel", "reclamacao",
+            "data_criacao", "status", "id_peca", "id_veiculo", "id_cliente",
+            "id_funcionario", "id_servico_revisao"));
 
         con.registrarTabela(new Tabela("servico", "id_servico",
-            "id_servico", "data_servico", "km_servico", "titulo", "tipo_servico",
-            "status", "id_veiculo", "id_oficina", "id_orcamento"));
+            "id_servico", "codigo", "data_servico", "km_servico", "titulo", "tipo_servico",
+            "tipo_manutencao", "status", "id_veiculo", "id_oficina", "id_orcamento"));
 
         con.registrarTabela(new Tabela("item_servico", "id_item_servico",
-            "id_item_servico", "descricao", "status", "data_realizacao",
-            "id_peca", "id_servico", "id_funcionario"));
+            "id_item_servico", "etapa", "codigo", "descricao", "status", "tempo_gasto",
+            "data_realizacao", "id_peca", "id_servico", "id_funcionario"));
+
+        con.registrarTabela(new Tabela("tipo_servico", "id_tipo_servico",
+            "id_tipo_servico", "nome"));
+
+        con.registrarTabela(new Tabela("catalogo_servico", "id_catalogo_servico",
+            "id_catalogo_servico", "nome", "descricao", "valor", "tipo",
+            "sistema", "validade_km", "validade_meses"));
+
+        con.registrarTabela(new Tabela("catalogo_servico_peca", "id_catalogo_servico_peca",
+            "id_catalogo_servico_peca", "id_catalogo_servico", "id_peca"));
+
+        con.registrarTabela(new Tabela("orcamento_servico", "id_orcamento_servico",
+            "id_orcamento_servico", "id_orcamento", "id_catalogo_servico", "valor_cobrado"));
+
+        con.registrarTabela(new Tabela("orcamento_peca", "id_orcamento_peca",
+            "id_orcamento_peca", "id_orcamento", "id_peca", "nome_tecnico", "fabricante", "valor"));
     }
 }

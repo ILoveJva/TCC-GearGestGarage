@@ -14,15 +14,10 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: GearGestGarage
     ports:
-      # Esquerda = porta no seu Windows | Direita = porta dentro do container.
-      # Se a 3306 estiver ocupada (ex.: XAMPP rodando), troque a esquerda por 3307:
-      #   - "3307:3306"
-      # A app NAO e afetada: ela conecta internamente em mysql:3306.
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - gear_gest_data:/var/lib/mysql
-      - ./db/schema_phpmyadmin.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
       interval: 5s

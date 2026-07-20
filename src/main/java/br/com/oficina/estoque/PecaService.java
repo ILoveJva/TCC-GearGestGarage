@@ -1,7 +1,6 @@
 package br.com.oficina.estoque;
 
 import br.com.oficina.estoque.dto.PecaResponseDTO;
-import br.com.oficina.shared.exception.RecursoNaoEncontradoException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,15 +8,23 @@ public class PecaService {
     private final PecaRepository repository;
     public PecaService(PecaRepository repository) { this.repository = repository; }
 
-    public FabricantePecaEntity cadastrarFabricante(String nome, String pais) {
-        return repository.salvarFabricante(new FabricantePecaEntity(null, nome, pais));
+    public PecaEntity cadastrar(String nomePopular, String vidaUtilTempo, String vidaUtilKm, String sistema) {
+        return repository.salvar(new PecaEntity(null, nomePopular, vidaUtilTempo, vidaUtilKm, sistema));
     }
-    public PecaEntity cadastrar(String nomePeca, String vidaUtilTempo, String vidaUtilKm,
-                                long idFabricante, long idVeiculo) {
-        if (repository.buscarFabricante(idFabricante) == null)
-            throw new RecursoNaoEncontradoException("Fabricante " + idFabricante + " nao encontrado");
-        return repository.salvar(new PecaEntity(null, nomePeca, vidaUtilTempo, vidaUtilKm, idFabricante, idVeiculo));
+    public List<PecaEntity> listarTodasEntidades() {
+        return repository.listarTodas();
     }
+
+    public void atualizar(long id, String nome, String vidaTempo, String vidaKm, String sistema) {
+        PecaEntity p = repository.buscarPorId(id);
+        if (p == null) throw new br.com.oficina.shared.exception.RecursoNaoEncontradoException("Peca " + id + " nao encontrada");
+        p.setNomePopular(nome);
+        p.setVidaUtilTempo(vidaTempo);
+        p.setVidaUtilKm(vidaKm);
+        p.setSistema(sistema);
+        repository.atualizar(p);
+    }
+
     public List<PecaResponseDTO> listar() {
         List<PecaResponseDTO> out = new ArrayList<>();
         for (PecaEntity p : repository.listarTodas()) out.add(paraDTO(p));
@@ -25,12 +32,13 @@ public class PecaService {
     }
     public PecaResponseDTO buscarDTO(long id) {
         PecaEntity p = repository.buscarPorId(id);
-        if (p == null) throw new RecursoNaoEncontradoException("Peca " + id + " nao encontrada");
+        if (p == null) throw new br.com.oficina.shared.exception.RecursoNaoEncontradoException("Peca " + id + " nao encontrada");
         return paraDTO(p);
     }
+    public PecaEntity buscarEntidade(long id) {
+        return repository.buscarPorId(id);
+    }
     private PecaResponseDTO paraDTO(PecaEntity p) {
-        FabricantePecaEntity f = p.getIdFabricantePeca() != null ? repository.buscarFabricante(p.getIdFabricantePeca()) : null;
-        return new PecaResponseDTO(p.getIdPeca(), p.getNomePeca(),
-            f != null ? f.getNome() : "?", p.getVidaUtilKm(), p.getVidaUtilTempo());
+        return new PecaResponseDTO(p.getIdPeca(), p.getNomeExibicao(), p.getVidaUtilKm(), p.getVidaUtilTempo());
     }
 }

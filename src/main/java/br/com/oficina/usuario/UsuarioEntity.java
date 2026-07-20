@@ -8,6 +8,7 @@ public class UsuarioEntity {
     private String senha;
     private String telefone;
     private Long idOficina;
+    private String cpf = "";
 
     public UsuarioEntity() {}
     public UsuarioEntity(Long idUsuario, String nome, String email, String senha,
@@ -30,4 +31,6 @@ public class UsuarioEntity {
     public void setTelefone(String t) { this.telefone = t; }
     public Long getIdOficina() { return idOficina; }
     public void setIdOficina(Long id) { this.idOficina = id; }
+    public String getCpf() { return cpf == null ? "" : cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
 }

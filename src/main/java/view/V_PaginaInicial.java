@@ -1,8 +1,12 @@
 package view;
 
 import controller.OficinaController;
+import model.OrdemDeServico;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.net.URL;
 
 /**
@@ -15,7 +19,6 @@ public class V_PaginaInicial extends JPanel {
     // DECLARAÇÃO DOS COMPONENTES (Padrão Prefixo)
     // ==========================================
     private JPanel pnl_Header;
-    private JPanel pnl_BotoesAcao;
     private JPanel pnl_BotoesVisualizar;
 
     // Elementos do Cabeçalho
@@ -23,11 +26,7 @@ public class V_PaginaInicial extends JPanel {
     private JLabel lbl_CnpjGaragem;
     private JLabel lbl_Especialidade;
     private JButton btn_PesquisarHeader;
-
-    // Botões de Ações Rápidas
-    private JButton btn_AdicionarServico;
-    private JButton btn_AdicionarCliente;
-    private JButton btn_AdicionarVeiculo;
+    private JButton btn_Configuracoes;
 
     // Botões de Visualização
     private JButton btn_VisServicos;
@@ -82,7 +81,6 @@ public class V_PaginaInicial extends JPanel {
         pnl_TextoHeader.add(lbl_CnpjGaragem);
         pnl_TextoHeader.add(lbl_Especialidade);
 
-        // Botão de Busca do Header com a nova padronização de imagem (tamanho 20x20 para o topo)
         btn_PesquisarHeader = new JButton("");
         ImageIcon icoBusca = carregarERedimensionarIcone("/assets/icons/pesquisar.png", 50, 50);
         if (icoBusca != null) btn_PesquisarHeader.setIcon(icoBusca);
@@ -91,44 +89,35 @@ public class V_PaginaInicial extends JPanel {
         btn_PesquisarHeader.setPreferredSize(new Dimension(80, 80));
         btn_PesquisarHeader.setBackground(Color.WHITE);
 
-        JPanel pnl_ContainerBusca = new JPanel(new GridBagLayout());
+        btn_Configuracoes = new JButton("");
+        ImageIcon icoConfig = carregarERedimensionarIcone("/assets/icons/config.png", 50, 50);
+        if (icoConfig != null) {
+            btn_Configuracoes.setIcon(icoConfig);
+        } else {
+            btn_Configuracoes.setText("⚙");
+            btn_Configuracoes.setFont(new Font("Segoe UI", Font.PLAIN, 26));
+        }
+        btn_Configuracoes.setFocusPainted(false);
+        btn_Configuracoes.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Configuracoes.setPreferredSize(new Dimension(80, 80));
+        btn_Configuracoes.setBackground(Color.WHITE);
+        btn_Configuracoes.setToolTipText("Configurações da Oficina");
+
+        JPanel pnl_ContainerBusca = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         pnl_ContainerBusca.setOpaque(false);
+        pnl_ContainerBusca.add(btn_Configuracoes);
         pnl_ContainerBusca.add(btn_PesquisarHeader);
 
         pnl_Header.add(pnl_TextoHeader, BorderLayout.CENTER);
         pnl_Header.add(pnl_ContainerBusca, BorderLayout.EAST);
 
-        // Dimensões aumentadas para acomodar perfeitamente o layout vertical (Ícone em cima, texto em baixo)
-        Dimension dimCardBtn = new Dimension(160, 130);
+        Dimension dimCardBtn = new Dimension(140, 110);
 
-        // Tamanho padrão dos ícones internos dos botões conforme o protótipo
-        int icoW = 80;
-        int icoH = 80;
+        int icoW = 65;
+        int icoH = 65;
 
         // --------------------------------------------------------------------
-        // 2. MÓDULO DE SEÇÃO: AÇÕES RÁPIDAS (Inserção / Os 3 botões)
-        // --------------------------------------------------------------------
-        pnl_BotoesAcao = new JPanel(new FlowLayout(FlowLayout.LEFT, 75, 45));
-        pnl_BotoesAcao.setBackground(Color.WHITE);
-        pnl_BotoesAcao.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1), "Cadastros",
-                0, 0, new Font("Arial", Font.BOLD, 14), Color.DARK_GRAY));
-
-        btn_AdicionarServico = new JButton("Novo Serviço");
-        configurarEstiloBotaoCard(btn_AdicionarServico, "/assets/icons/add_servico.png", icoW, icoH, dimCardBtn);
-
-        btn_AdicionarCliente = new JButton("Novo Cliente");
-        configurarEstiloBotaoCard(btn_AdicionarCliente, "/assets/icons/add_cliente.png", icoW, icoH, dimCardBtn);
-
-        btn_AdicionarVeiculo = new JButton("Novo Veículo");
-        configurarEstiloBotaoCard(btn_AdicionarVeiculo, "/assets/icons/add_veiculo.png", icoW, icoH, dimCardBtn);
-
-        pnl_BotoesAcao.add(btn_AdicionarServico);
-        pnl_BotoesAcao.add(btn_AdicionarCliente);
-        pnl_BotoesAcao.add(btn_AdicionarVeiculo);
-
-        // --------------------------------------------------------------------
-        // 3. MÓDULO DE SEÇÃO: VISUALIZAR INFORMAÇÕES (Consultas / Os 4 botões)
+        // 2. MÓDULO DE SEÇÃO: VISUALIZAR INFORMAÇÕES (Consultas / Os 4 botões)
         // --------------------------------------------------------------------
         pnl_BotoesVisualizar = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 50));
         pnl_BotoesVisualizar.setBackground(Color.WHITE);
@@ -168,30 +157,36 @@ public class V_PaginaInicial extends JPanel {
     }
 
     private void layoutComponents() {
-        JPanel pnl_CorpoCards = new JPanel(new GridLayout(2, 1, 20, 20));
-        pnl_CorpoCards.setOpaque(false);
-        pnl_CorpoCards.add(pnl_BotoesAcao);
-        pnl_CorpoCards.add(pnl_BotoesVisualizar);
+        JPanel pnl_Centro = new JPanel();
+        pnl_Centro.setLayout(new BoxLayout(pnl_Centro, BoxLayout.Y_AXIS));
+        pnl_Centro.setOpaque(false);
+        pnl_BotoesVisualizar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl_Centro.add(pnl_BotoesVisualizar);
+        pnl_Centro.add(Box.createVerticalStrut(16));
+        pnl_Centro.add(criarSecaoEstatisticas());
+
+        JScrollPane scroll = new JScrollPane(pnl_Centro);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(14);
 
         add(pnl_Header, BorderLayout.NORTH);
-        add(pnl_CorpoCards, BorderLayout.CENTER);
+        add(scroll, BorderLayout.CENTER);
     }
 
     /**
      * Vincula os cliques de navegação repassando o "controller" para as novas instâncias.
      */
     private void vincularAcoesBotoes() {
-        // Botão de busca superior
         btn_PesquisarHeader.addActionListener(e -> navegarPara(new V_PesquisarGeral(this.controller)));
-
-        // Fluxos de Inserção (Ações Rápidas)
-        btn_AdicionarCliente.addActionListener(e -> navegarPara(new V_CadastrarCliente(this.controller)));
-        btn_AdicionarVeiculo.addActionListener(e -> navegarPara(new V_CadastrarVeiculo(this.controller)));
+        btn_Configuracoes.addActionListener(e -> navegarPara(new V_Configuracoes(this.controller)));
 
         // Fluxos de Visualização / Consulta
+        btn_VisServicos.addActionListener(e -> navegarPara(new V_VisualizarServicos(this.controller)));
+        btn_VisOrcamentos.addActionListener(e -> navegarPara(new V_AprovarOrcamento(this.controller)));
         btn_VisClientes.addActionListener(e -> navegarPara(new V_VisualizarClientes(this.controller)));
         btn_VisVeiculos.addActionListener(e -> navegarPara(new V_VisualizarVeiculos(this.controller)));
-        btn_VisServicos.addActionListener(e -> navegarPara(new V_VisualizarServicos(this.controller)));
     }
 
     /**
@@ -204,6 +199,130 @@ public class V_PaginaInicial extends JPanel {
             mainFrame.atualizarConteudo(novoPainelCentral);
         } else {
             System.err.println("Erro: V_Main não encontrado como ancestral.");
+        }
+    }
+
+    // ==========================================
+    // SEÇÃO DE ESTATÍSTICAS
+    // ==========================================
+
+    private JPanel criarSecaoEstatisticas() {
+        JPanel card = criarCard("Estatísticas do Sistema");
+
+        int totalMontadoras = controller.contarMontadoras();
+        int totalModelos    = controller.contarModelos();
+        int totalPecas      = controller.listarTodasPecas().size();
+        int totalCatalogo   = controller.contarCatalogoServicos();
+        int totalOS         = controller.contarOS();
+        int osAbertas       = controller.contarOSPorStatus(OrdemDeServico.Status.ABERTA);
+        int osAndamento     = controller.contarOSPorStatus(OrdemDeServico.Status.EM_ANDAMENTO);
+        int osConcluidas    = controller.contarOSPorStatus(OrdemDeServico.Status.CONCLUIDA);
+
+        JPanel linha1 = new JPanel(new GridLayout(1, 4, 12, 0));
+        linha1.setOpaque(false);
+        linha1.add(criarCardEstat("Montadoras",           totalMontadoras, "#9B59B6", () -> navegarPara(new V_VisualizarMontadoras(controller))));
+        linha1.add(criarCardEstat("Modelos",              totalModelos,    "#E67E22", () -> navegarPara(new V_VisualizarModelos(controller))));
+        linha1.add(criarCardEstat("Peças Cadastradas",    totalPecas,      "#16A085", () -> navegarPara(new V_VisualizarPecas(controller))));
+        linha1.add(criarCardEstat("Serviços Cadastrados", totalCatalogo,   "#8E44AD", () -> navegarPara(new V_VisualizarCatalogoServicos(controller))));
+
+        JPanel linha2 = new JPanel(new GridLayout(1, 4, 12, 0));
+        linha2.setOpaque(false);
+        linha2.add(criarCardEstat("OS Total",     totalOS,      "#34495E", () -> navegarPara(new V_VisualizarOSFiltrado(controller, null))));
+        linha2.add(criarCardEstat("OS Abertas",   osAbertas,    "#E74C3C", () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.ABERTA))));
+        linha2.add(criarCardEstat("Em Andamento", osAndamento,  "#F39C12", () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.EM_ANDAMENTO))));
+        linha2.add(criarCardEstat("Concluídas",   osConcluidas, "#27AE60", () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.CONCLUIDA))));
+
+        JPanel corpo = (JPanel) card.getComponent(1);
+        corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
+        corpo.add(linha1);
+        corpo.add(Box.createVerticalStrut(10));
+        corpo.add(linha2);
+        return card;
+    }
+
+    private JPanel criarCard(String titulo) {
+        JPanel card = new JPanel(new BorderLayout(0, 12));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(10, Color.decode("#E0E0E0")),
+            BorderFactory.createEmptyBorder(16, 20, 16, 20)
+        ));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lbl = new JLabel(titulo);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lbl.setForeground(Color.decode("#FF9900"));
+        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
+        lbl.setPreferredSize(new Dimension(0, 30));
+
+        JPanel corpo = new JPanel();
+        corpo.setOpaque(false);
+        corpo.setLayout(new BorderLayout());
+
+        card.add(lbl, BorderLayout.NORTH);
+        card.add(corpo, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel criarCardEstat(String rotulo, int valor, String corHex, Runnable aoClicar) {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setBackground(Color.WHITE);
+        p.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(8, Color.decode("#E0E0E0")),
+            BorderFactory.createEmptyBorder(12, 14, 12, 14)
+        ));
+        p.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JPanel barra = new JPanel();
+        barra.setBackground(Color.decode(corHex));
+        barra.setPreferredSize(new Dimension(0, 4));
+
+        JLabel num = new JLabel(String.valueOf(valor), SwingConstants.CENTER);
+        num.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        num.setForeground(Color.decode(corHex));
+
+        JLabel lbl = new JLabel(rotulo, SwingConstants.CENTER);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lbl.setForeground(Color.decode("#666666"));
+
+        JLabel lbl_Dica = new JLabel("Ver detalhes →", SwingConstants.CENTER);
+        lbl_Dica.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lbl_Dica.setForeground(Color.decode(corHex));
+
+        JPanel sul = new JPanel(new BorderLayout(0, 2));
+        sul.setOpaque(false);
+        sul.add(lbl, BorderLayout.NORTH);
+        sul.add(lbl_Dica, BorderLayout.SOUTH);
+
+        MouseAdapter clique = new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { aoClicar.run(); }
+            @Override public void mouseEntered(MouseEvent e) { p.setBackground(Color.decode("#F9F9F9")); }
+            @Override public void mouseExited(MouseEvent e)  { p.setBackground(Color.WHITE); }
+        };
+        p.addMouseListener(clique);
+        num.addMouseListener(clique);
+        lbl.addMouseListener(clique);
+        lbl_Dica.addMouseListener(clique);
+
+        p.add(barra, BorderLayout.NORTH);
+        p.add(num,   BorderLayout.CENTER);
+        p.add(sul,   BorderLayout.SOUTH);
+        return p;
+    }
+
+    private static class RoundedBorder implements javax.swing.border.Border {
+        private final int raio;
+        private final Color cor;
+        RoundedBorder(int raio, Color cor) { this.raio = raio; this.cor = cor; }
+        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
+        public boolean isBorderOpaque() { return false; }
+        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setColor(cor);
+            g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
+            g2d.dispose();
         }
     }
 

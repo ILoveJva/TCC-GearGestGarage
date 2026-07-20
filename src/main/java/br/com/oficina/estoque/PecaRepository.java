@@ -14,16 +14,16 @@ public class PecaRepository {
     }
 
     private PecaEntity map(Registro r) {
-        return new PecaEntity(r.getLong("id_peca"), r.get("nome_peca"),
-            r.get("vida_util_tempo"), r.get("vida_util_km"),
-            r.getLong("id_fabricante_peca"), r.getLong("id_veiculo"));
+        return new PecaEntity(r.getLong("id_peca"), r.get("nome_popular"),
+            r.get("vida_util_tempo"), r.get("vida_util_km"), r.get("sistema"));
     }
 
     public PecaEntity salvar(PecaEntity p) {
         long id = tPeca.inserir(new Registro()
-            .set("nome_peca", p.getNomePeca()).set("vida_util_tempo", p.getVidaUtilTempo())
-            .set("vida_util_km", p.getVidaUtilKm()).set("id_fabricante_peca", p.getIdFabricantePeca())
-            .set("id_veiculo", p.getIdVeiculo()));
+            .set("nome_popular", p.getNomePopular())
+            .set("vida_util_tempo", p.getVidaUtilTempo())
+            .set("vida_util_km", p.getVidaUtilKm())
+            .set("sistema", p.getSistema()));
         p.setIdPeca(id);
         return p;
     }
@@ -36,19 +36,23 @@ public class PecaRepository {
         for (Registro r : tPeca.registros()) out.add(map(r));
         return out;
     }
-    public List<PecaEntity> listarPorVeiculo(long idVeiculo) {
-        List<PecaEntity> out = new ArrayList<>();
-        for (Registro r : tPeca.filtrar(p -> p.getLong("id_veiculo") == idVeiculo)) out.add(map(r));
-        return out;
-    }
 
     public FabricantePecaEntity salvarFabricante(FabricantePecaEntity f) {
         long id = tFabricante.inserir(new Registro().set("nome", f.getNome()).set("pais", f.getPais()));
         f.setIdFabricantePeca(id);
         return f;
     }
-    public FabricantePecaEntity buscarFabricante(long id) {
-        Registro r = tFabricante.buscarPorId(id);
-        return r == null ? null : new FabricantePecaEntity(r.getLong("id_fabricante_peca"), r.get("nome"), r.get("pais"));
+    public void atualizar(PecaEntity p) {
+        tPeca.atualizar(p.getIdPeca(), "nome_popular",    p.getNomePopular());
+        tPeca.atualizar(p.getIdPeca(), "vida_util_tempo", p.getVidaUtilTempo());
+        tPeca.atualizar(p.getIdPeca(), "vida_util_km",    p.getVidaUtilKm());
+        tPeca.atualizar(p.getIdPeca(), "sistema",         p.getSistema());
+    }
+
+    public List<FabricantePecaEntity> listarFabricantes() {
+        List<FabricantePecaEntity> out = new ArrayList<>();
+        for (Registro r : tFabricante.registros())
+            out.add(new FabricantePecaEntity(r.getLong("id_fabricante_peca"), r.get("nome"), r.get("pais")));
+        return out;
     }
 }

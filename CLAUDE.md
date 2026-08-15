@@ -30,12 +30,13 @@ java -cp "dist/GearGestGarage.jar;dist/libs/mysql-connector-j-9.7.0.jar" view.Ma
 docker exec gear_gest_mysql mysql -u root -proot GearGestGarage -e "ALTER TABLE ..."
 ```
 
-**Recreate the database from scratch** (destroys all data). `db/schema.sql` is unified — it holds the structure **and** the initial data (oficina, admin user, service catalog):
+**Recreate the database from scratch** (destroys all data). `db/schema.sql` holds pure structure (DDL only); `db/seed.sql` holds the initial data (oficina, admin user, service catalog) and must run after it:
 ```bash
 Get-Content db/schema.sql | docker exec -i gear_gest_mysql mysql -u root -proot
+Get-Content db/seed.sql   | docker exec -i gear_gest_mysql mysql -u root -proot GearGestGarage
 ```
 
-Default credentials: `oficina@geargest.com` / `123456`. DB connection config: `db.properties` (copy from `db.properties.exemplo`; default localhost:3307, root/root).
+Default credentials: `oficina@geargest.com` / `123456`. DB connection config: `db.properties` (optional — defaults to localhost:3307, root/root, matching `docker-compose.yml`'s exposed port).
 
 There are no automated tests.
 

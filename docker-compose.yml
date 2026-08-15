@@ -1,11 +1,12 @@
-# Sobe o banco MySQL + a aplicacao Java (Swing) juntos.
+# Uso recomendado (mais simples): sobe SO o banco, a app roda na sua maquina.
+#   docker compose up -d mysql
 #
-#   docker compose up --build
-#
-# IMPORTANTE (interface grafica): a app e Swing (janela desktop), entao o
-# container precisa de acesso ao display do seu computador. Veja o README,
-# secao Docker, para o passo do X11 conforme seu sistema (Linux/Windows/Mac).
+# Uso avancado: sobe banco + app dentro do Docker (exige um servidor X11 no
+# host - ver DOCKER.md). Precisa do profile "full":
+#   docker compose --profile full up --build
+
 services:
+  # Banco de dados MySQL
   mysql:
     image: mysql:8.4
     container_name: gear_gest_mysql
@@ -18,28 +19,43 @@ services:
     volumes:
       - gear_gest_data:/var/lib/mysql
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
       interval: 5s
       timeout: 3s
       retries: 20
+    networks:
+      - gear_gest_network
 
+  # Aplicação Java (Swing) - opcional, exige X11 no host (ver DOCKER.md).
+  # So sobe com: docker compose --profile full up --build
   app:
+    profiles: ["full"]
     build: .
     container_name: gear_gest_app
+    restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy   # so inicia quando o banco estiver pronto
     environment:
-      # Dentro da rede do compose, o banco e acessivel pelo nome do servico "mysql"
+      # Dentro da rede do compose, o banco é acessível pelo nome do serviço "mysql"
       DB_URL: "jdbc:mysql://mysql:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
       DB_USER: "root"
       DB_PASSWORD: "root"
-      # Display da interface grafica (ajuste conforme seu SO - ver README)
+      # Display da interface gráfica (ajuste conforme seu SO - ver README)
       DISPLAY: "${DISPLAY:-host.docker.internal:0}"
     volumes:
-      # Compartilha o socket X11 (necessario no Linux)
+      # Compartilha o socket X11 (necessário no Linux)
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - gear_gest_network
 
+# Volume persistente para dados do MySQL
 volumes:
   gear_gest_data:
+
+# Rede customizada para comunicação entre containers
+networks:
+  gear_gest_network:
+    driver: bridge

@@ -18,7 +18,7 @@ src/main/java/
   model/           Modelos de apresentacao
   br/com/oficina/  Backend modular (oficina, usuario, veiculo, estoque, atendimento)
                    shared/config -> conexao JDBC, mapeamento de tabelas
-db/                schema.sql, schema_phpmyadmin.sql, seed.sql
+db/                schema.sql (estrutura) + seed.sql (dados iniciais)
 Dockerfile         Imagem da aplicacao (compila o jar e baixa o driver)
 docker-compose.yml Sobe MySQL (e, opcionalmente, a app)
 build.bat / build.sh  Compila e gera dist/GearGestGarage.jar
@@ -26,46 +26,44 @@ build.bat / build.sh  Compila e gera dist/GearGestGarage.jar
 
 ## Como executar
 
-Pre-requisitos: Java 21+ e Docker Desktop instalados.
+**Pré-requisitos:** Java 21+ e Docker Desktop instalados.
 
-### Passo 1 - Subir o banco (Docker)
+O banco roda em Docker; a aplicação (Swing) roda direto na sua máquina — assim
+você não precisa configurar servidor X11 nem lidar com interface gráfica dentro
+de container.
+
+### Passo 1 - Subir o banco
 ```bash
 docker compose up -d mysql
 ```
-Isso cria o banco GearGestGarage ja com as tabelas (schema) e dados de exemplo (seed).
+Cria o banco `GearGestGarage` já com as tabelas (schema) e dados de exemplo (seed),
+exposto em `localhost:3307`.
 
-### Passo 2 - Configurar a conexao
-Copie `db.properties.exemplo` para `db.properties`. Para o banco do Docker, use:
-```
-db.url=jdbc:mysql://localhost:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-db.user=root
-db.password=root
-```
-
-### Passo 3 - Compilar e rodar a aplicacao
-Gere o jar (uma vez):
+### Passo 2 - Compilar
 ```bash
 build.bat        # Windows
 ./build.sh       # Linux/Mac
 ```
-Baixe o driver MySQL Connector/J (https://dev.mysql.com/downloads/connector/j/)
-e coloque o .jar em `dist/libs/`. Depois, de dentro de `dist/`:
+Compila o código e baixa o driver MySQL Connector/J automaticamente (uma vez;
+fica em `libs/` para os próximos builds).
+
+### Passo 3 - Rodar
 ```bash
-# Windows (separador ';')
-java -cp "GearGestGarage.jar;libs\mysql-connector-j-9.7.0.jar" view.Main
-# Linux/Mac (separador ':')
-java -cp "GearGestGarage.jar:libs/mysql-connector-j-9.7.0.jar" view.Main
+java -jar dist/GearGestGarage.jar
 ```
-> Ajuste o nome do .jar para a versao que voce baixou.
+A app já vem configurada por padrão para `localhost:3307` (o mesmo que o
+Docker expõe), então nenhum arquivo de configuração é necessário. Se seu MySQL
+usa outra porta/credenciais, crie um `db.properties` na raiz do projeto com
+`db.url`, `db.user`, `db.password` (veja `DatabaseConfig.java` para o formato).
 
 **Login de teste:** oficina@geargest.com / 123456
 
 ## Documentacao adicional
-- `DOCKER.md` - detalhes do Docker, modo "tudo no container" e dicas de X11.
+- `DOCKER.md` - modo avançado: rodar a app *dentro* do Docker (exige X11 no host).
 - `db/` - scripts SQL (estrutura e dados).
 
 ## Observacoes
-- O arquivo `db.properties` (com a senha) NAO vai para o repositorio por seguranca;
-  use o `db.properties.exemplo` como base.
-- Os dados ficam num volume do Docker (gear_gest_data) e persistem entre execucoes.
-  `docker compose down -v` apaga esse volume.
+- `db.properties` (se você criar um, com senha) NAO vai para o repositório por
+  segurança - já está no `.gitignore`.
+- Os dados ficam num volume do Docker (`gear_gest_data`) e persistem entre
+  execuções. `docker compose down -v` apaga esse volume.

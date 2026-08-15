@@ -18,6 +18,17 @@ RUN mkdir -p out && \
 # ---------- Estagio 2: runtime (so o necessario para rodar) ----------
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+
+# Instala dependências X11 necessárias para Swing rodar
+RUN apt-get update && apt-get install -y \
+    libxext6 \
+    libxrender1 \
+    libxrandr2 \
+    libxi6 \
+    libxtst6 \
+    libxt6 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/GearGestGarage.jar ./GearGestGarage.jar
 COPY --from=build /app/libs ./libs
 # A interface Swing precisa de um display X11 (fornecido via DISPLAY no compose)

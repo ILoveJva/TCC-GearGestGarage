@@ -19,10 +19,14 @@ echo "[4/4] Gerando JAR..."
 jar cfm dist/GearGestGarage.jar build/MANIFEST.MF -C out .
 
 # Monta a pasta dist/ pronta para uso
-cp db.properties.exemplo dist/db.properties
 cp -r db dist/db
-[ -f libs/mysql-connector-j-9.7.0.jar ] && cp libs/mysql-connector-j-9.7.0.jar dist/libs/ || cp libs/LEIA-ME.txt dist/libs/
+if [ ! -f libs/mysql-connector-j-9.7.0.jar ]; then
+  echo "Baixando driver MySQL Connector/J..."
+  curl -sL -o libs/mysql-connector-j-9.7.0.jar https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.7.0/mysql-connector-j-9.7.0.jar
+fi
+cp libs/mysql-connector-j-9.7.0.jar dist/libs/
 
 echo ""
 echo "OK -> dist/GearGestGarage.jar"
-echo "Coloque o driver em dist/libs/ e rode:  java -jar dist/GearGestGarage.jar"
+echo "Rode:  java -jar dist/GearGestGarage.jar"
+echo "(usa MySQL em localhost:3307 por padrao - suba com: docker compose up -d mysql)"

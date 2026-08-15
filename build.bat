@@ -19,9 +19,13 @@ echo [3/4] Copiando recursos...
 if exist src\main\resources xcopy /s /e /y src\main\resources\* out\ >nul
 echo [4/4] Gerando JAR...
 jar cfm dist\GearGestGarage.jar build\MANIFEST.MF -C out .
-copy db.properties.exemplo dist\db.properties >nul
 xcopy /s /e /y db dist\db\ >nul
-if exist libs\mysql-connector-j-9.7.0.jar (copy libs\mysql-connector-j-9.7.0.jar dist\libs\ >nul) else (copy libs\LEIA-ME.txt dist\libs\ >nul)
+if not exist libs\mysql-connector-j-9.7.0.jar (
+    echo Baixando driver MySQL Connector/J...
+    curl -sL -o libs\mysql-connector-j-9.7.0.jar https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.7.0/mysql-connector-j-9.7.0.jar
+)
+copy libs\mysql-connector-j-9.7.0.jar dist\libs\ >nul
 echo.
 echo OK -^> dist\GearGestGarage.jar
-echo Coloque o driver em dist\libs\ e rode:  java -jar dist\GearGestGarage.jar
+echo Rode:  java -jar dist\GearGestGarage.jar
+echo (usa MySQL em localhost:3307 por padrao - suba com: docker compose up -d mysql)

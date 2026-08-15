@@ -13,7 +13,7 @@ ele precisa "emprestar" o display do seu computador. O passo muda por sistema:
 ### Linux (mais simples)
 ```bash
 xhost +local:docker          # libera o container a usar seu display
-docker compose up --build
+docker compose --profile full up --build
 ```
 
 ### Windows
@@ -21,7 +21,7 @@ docker compose up --build
 2. Abra o XLaunch e marque "Disable access control".
 3. Rode:
 ```powershell
-docker compose up --build
+docker compose --profile full up --build
 ```
 (O compose ja usa DISPLAY=host.docker.internal:0, que e o esperado no Windows.)
 
@@ -31,22 +31,24 @@ docker compose up --build
 3. No terminal:
 ```bash
 xhost + 127.0.0.1
-docker compose up --build
+docker compose --profile full up --build
 ```
 
 ## Comandos uteis
 ```bash
-docker compose up --build      # sobe tudo (primeira vez compila o jar)
-docker compose up -d mysql     # sobe SO o banco, em segundo plano
-docker compose logs -f app     # ve os logs da aplicacao
-docker compose down            # para tudo
-docker compose down -v         # para tudo E APAGA os dados do banco
+docker compose --profile full up --build   # sobe banco + app (primeira vez compila o jar)
+docker compose up -d mysql                 # sobe SO o banco, em segundo plano
+docker compose logs -f app                 # ve os logs da aplicacao
+docker compose down                        # para tudo
+docker compose down -v                     # para tudo E APAGA os dados do banco
 ```
 
 ## Como funciona (resumo)
 - O servico "mysql" cria o banco GearGestGarage (variavel MYSQL_DATABASE) e roda
-  db/schema_phpmyadmin.sql + db/seed.sql na primeira subida (pasta
-  /docker-entrypoint-initdb.d). Nas proximas vezes, pula (dados ja existem).
+  db/schema.sql + db/seed.sql na primeira subida (pasta
+  /docker-entrypoint-initdb.d, nessa ordem). Nas proximas vezes, pula (dados ja existem).
+- O servico "app" so sobe com `--profile full` (ver README) - por padrao, `docker
+  compose up`/`up -d mysql` nao tenta iniciar a app.
 - O servico "app" so inicia quando o banco esta saudavel (depends_on healthcheck).
 - Dentro do Docker, a app acessa o banco pelo nome do servico ("mysql"), nao por
   localhost. Isso vem pronto na variavel DB_URL do compose.
@@ -60,4 +62,5 @@ docker compose up -d mysql
 # depois, na sua maquina:
 java -jar dist/GearGestGarage.jar
 ```
-Nesse caso a app usa o db.properties (localhost:3306), que ja vem configurado.
+Nesse caso a app usa os valores padrao (localhost:3307, root/root), que ja
+batem com a porta exposta pelo compose - nenhuma configuracao extra e necessaria.

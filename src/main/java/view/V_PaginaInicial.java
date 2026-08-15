@@ -170,7 +170,7 @@ public class V_PaginaInicial extends JPanel {
         // (título com ícone + borda arredondada) já usado na seção de Estatísticas,
         // deixando claro que as duas são seções de mesmo nível hierárquico.
         // --------------------------------------------------------------------
-        pnl_BotoesVisualizar = criarCard("Consultas", obterIcone("/assets/icons/consultas.png", 18, IconeVetorial.Tipo.LUPA, Color.decode("#FF9900")));
+        pnl_BotoesVisualizar = criarCard("Consultas / Cadastros", obterIcone("/assets/icons/consultas.png", 18, IconeVetorial.Tipo.LUPA, Color.decode("#FF9900")));
         JPanel corpoConsultas = (JPanel) pnl_BotoesVisualizar.getComponent(1);
         corpoConsultas.setLayout(new FlowLayout(FlowLayout.LEFT, 24, 18));
 
@@ -260,7 +260,7 @@ public class V_PaginaInicial extends JPanel {
     // ==========================================
 
     private JPanel criarSecaoEstatisticas() {
-        JPanel card = criarCard("Estatísticas do Sistema", obterIcone("/assets/icons/estatisticas.png", 18, IconeVetorial.Tipo.GRAFICO, Color.decode("#FF9900")));
+        JPanel card = criarCard("Estatísticas da Oficina", obterIcone("/assets/icons/estatisticas.png", 18, IconeVetorial.Tipo.GRAFICO, Color.decode("#FF9900")));
 
         int totalMontadoras = controller.contarMontadoras();
         int totalModelos    = controller.contarModelos();

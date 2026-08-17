@@ -9,7 +9,12 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 
 public class V_CadastrarCliente extends JPanel {
 
@@ -18,15 +23,39 @@ public class V_CadastrarCliente extends JPanel {
     private JLabel lbl_TituloPaginacao;
 
     private JLabel lbl_Nome, lbl_CPF, lbl_Celular, lbl_Email, lbl_CEP, lbl_Numero, lbl_Endereco, lbl_Complemento;
-    private JTextField txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero, txt_Endereco, txt_Complemento;
-    private JButton btn_Cadastrar;
+    private GlassTextField txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero, txt_Endereco, txt_Complemento;
+    private BotaoAcao btn_Cadastrar;
+
+    // Paleta harmonizada com o efeito de vidro das caixas de texto
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F7FA");
+    private static final Color COR_CARD_TOPO    = Color.decode("#FFFFFF");
+    private static final Color COR_CARD_BASE    = Color.decode("#EEF2F7");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+
+    // Cor de ação (tema original preservado) e suas variações de hover/pressionado
+    private static final Color COR_ACAO         = Color.decode("#FF9900");
+    private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
+    private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
+
+    // Ajustes rápidos de tipografia/tamanho — mexa só aqui para alterar tudo de uma vez
+    private static final int RAIO_COMPONENTE     = 12;   // arredondamento compartilhado (campos + botão)
+    private static final int TAMANHO_FONTE_LABEL = 18;
+    private static final int TAMANHO_FONTE_CAMPO = 16;
+    private static final int LARGURA_CAMPO       = 140;
+    private static final int ALTURA_CAMPO        = 26;
+    private static final int TAMANHO_FONTE_BOTAO = 22;
+    private static final int LARGURA_BOTAO       = 345;
+    private static final int ALTURA_BOTAO        = 66;
+    private static final int TAMANHO_ICONE_BOTAO = 40;
 
     private OficinaController controller;
 
     public V_CadastrarCliente(OficinaController controller) {
         this.controller = controller;
         setLayout(new GridBagLayout());
-        setBackground(Color.WHITE);
+        setBackground(COR_FUNDO_PAGINA);
         initComponents();
         layoutComponents();
         aplicarFiltros();
@@ -34,16 +63,16 @@ public class V_CadastrarCliente extends JPanel {
     }
 
     private void initComponents() {
-        pnl_CardCentral = new JPanel(new BorderLayout(0, 20));
-        pnl_CardCentral.setBackground(Color.WHITE);
+        pnl_CardCentral = new PainelGradiente(new BorderLayout(0, 20), COR_CARD_TOPO, COR_CARD_BASE);
         pnl_CardCentral.setPreferredSize(new Dimension(680, 520));
+        pnl_CardCentral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         lbl_TituloPaginacao = new JLabel("Página Inicial > Cadastrar Cliente");
         lbl_TituloPaginacao.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl_TituloPaginacao.setForeground(Color.decode("#4D4D4D"));
+        lbl_TituloPaginacao.setForeground(COR_TITULO);
 
         pnl_Formulario = new JPanel(new GridLayout(4, 2, 25, 15));
-        pnl_Formulario.setBackground(Color.WHITE);
+        pnl_Formulario.setOpaque(false);
 
         lbl_Nome     = criarLabel("Nome completo *");
         txt_Nome     = criarTextField();
@@ -78,14 +107,8 @@ public class V_CadastrarCliente extends JPanel {
         pnl_Formulario.add(criarContainerVertical(lbl_Endereco,   txt_Endereco));
         pnl_Formulario.add(criarContainerVertical(lbl_Complemento, txt_Complemento));
 
-        btn_Cadastrar = new JButton("CADASTRAR CLIENTE");
-        btn_Cadastrar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn_Cadastrar.setForeground(Color.WHITE);
-        btn_Cadastrar.setBackground(Color.decode("#FF9900"));
-        btn_Cadastrar.setPreferredSize(new Dimension(220, 45));
-        btn_Cadastrar.setFocusPainted(false);
-        btn_Cadastrar.setBorderPainted(false);
-        btn_Cadastrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Cadastrar = new BotaoAcao("CADASTRAR CLIENTE", new IconeAdicionarUsuario(TAMANHO_ICONE_BOTAO, Color.WHITE));
+        btn_Cadastrar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
     }
 
     private void layoutComponents() {
@@ -160,17 +183,14 @@ public class V_CadastrarCliente extends JPanel {
 
         if (!ok) {
             JOptionPane.showMessageDialog(this,
-                "Corrija os campos destacados em vermelho:\n\n" + msg,
-                "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                    "Corrija os campos destacados em vermelho:\n\n" + msg,
+                    "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
         }
         return ok;
     }
 
-    private void marcarErro(JTextField field) {
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.RED),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private void marcarErro(GlassTextField field) {
+        field.setEstadoErro(true);
         field.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -180,15 +200,12 @@ public class V_CadastrarCliente extends JPanel {
         });
     }
 
-    private void limparErro(JTextField field) {
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private void limparErro(GlassTextField field) {
+        field.setEstadoErro(false);
     }
 
     private void limparTodosErros() {
-        for (JTextField f : new JTextField[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero })
+        for (GlassTextField f : new GlassTextField[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero })
             limparErro(f);
     }
 
@@ -205,18 +222,18 @@ public class V_CadastrarCliente extends JPanel {
                 try {
                     controller.salvarCliente(nome, cpf, celular, email);
                     JOptionPane.showMessageDialog(this,
-                        "Cliente \"" + nome + "\" cadastrado com sucesso!",
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                            "Cliente \"" + nome + "\" cadastrado com sucesso!",
+                            "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                     limparCamposFormulario();
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this,
-                        "Erro ao salvar cliente: " + ex.getMessage(),
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                            "Erro ao salvar cliente: " + ex.getMessage(),
+                            "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
                 }
             } else {
                 JOptionPane.showMessageDialog(this,
-                    "Erro: O controlador do sistema não foi localizado.",
-                    "Erro de Link de Dados", JOptionPane.ERROR_MESSAGE);
+                        "Erro: O controlador do sistema não foi localizado.",
+                        "Erro de Link de Dados", JOptionPane.ERROR_MESSAGE);
             }
         });
     }
@@ -240,22 +257,14 @@ public class V_CadastrarCliente extends JPanel {
 
     private JLabel criarLabel(String texto) {
         JLabel l = new JLabel(texto);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(Color.decode("#333333"));
+        l.setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_LABEL));
+        l.setForeground(COR_LABEL);
         return l;
     }
 
-    private JTextField criarTextField() {
-        JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        f.setPreferredSize(new Dimension(100, 36));
-        f.setBackground(Color.WHITE);
-        f.setForeground(Color.BLACK);
-        f.setCaretColor(Color.BLACK);
-        f.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private GlassTextField criarTextField() {
+        GlassTextField f = new GlassTextField();
+        f.setPreferredSize(new Dimension(LARGURA_CAMPO, ALTURA_CAMPO));
         return f;
     }
 
@@ -391,18 +400,212 @@ public class V_CadastrarCliente extends JPanel {
         }
     }
 
-    private static class RoundedBorder implements javax.swing.border.Border {
-        private final int raio;
+    /**
+     * Campo de texto com efeito de vidro translúcido (glassmorphism):
+     * preenchimento em gradiente semi-transparente, reflexo sutil no topo,
+     * sombra suave e borda que reage a foco/erro. Não altera nenhuma
+     * regra de negócio — apenas a pintura do componente.
+     */
+    private static class GlassTextField extends JTextField {
+        private boolean focado = false;
+        private boolean erro = false;
+
+        GlassTextField() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        void setEstadoErro(boolean valor) {
+            this.erro = valor;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            // Sombra suave por baixo do vidro, para dar sensação de profundidade
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Preenchimento translúcido (o "vidro" propriamente dito)
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, erro ? 225 : 210),
+                    0, h, new Color(255, 255, 255, erro ? 175 : 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Reflexo sutil na parte superior, reforçando a leitura de vidro
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda;
+            float espessura;
+            if (erro) {
+                corBorda = new Color(214, 58, 68, 220);
+                espessura = 1.6f;
+            } else if (focado) {
+                corBorda = new Color(255, 153, 0, 210);
+                espessura = 1.6f;
+            } else {
+                corBorda = new Color(160, 175, 195, 130);
+                espessura = 1f;
+            }
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * Painel com fundo em gradiente suave (branco levemente esfriado em direção
+     * a um cinza-azulado), usado para harmonizar o cartão central com o
+     * translucidez das caixas de texto em vidro.
+     */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, getHeight(), corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 20, 20));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação com a mesma linguagem visual dos campos em vidro:
+     * cantos arredondados (RAIO_COMPONENTE), sombra suave, reflexo no topo
+     * e leve reação a hover/clique. A cor de ação (tema original) é mantida.
+     */
+    private static class BotaoAcao extends JButton {
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Icon icone) {
+            super(texto, icone);
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setIconTextGap(10);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 22, 8, 22));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            // Sombra suave, mesma linguagem visual usada nos campos em vidro
+            g2.setColor(new Color(180, 100, 0, 60));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? COR_ACAO_ESCURA : (sobreMouse ? COR_ACAO_CLARA : COR_ACAO);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Reflexo sutil no topo, reforçando a mesma sensação de vidro dos campos
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Ícone vetorial (pessoa + sinal de "+") desenhado diretamente com Java2D,
+     * sem depender de arquivo externo — escala perfeitamente para qualquer
+     * tamanho de fonte/botão.
+     */
+    private static class IconeAdicionarUsuario implements Icon {
+        private final int tamanho;
         private final Color cor;
-        RoundedBorder(int raio, Color cor) { this.raio = raio; this.cor = cor; }
-        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
-        public boolean isBorderOpaque() { return false; }
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(cor);
-            g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
-            g2d.dispose();
+
+        IconeAdicionarUsuario(int tamanho, Color cor) {
+            this.tamanho = tamanho;
+            this.cor = cor;
+        }
+
+        @Override public int getIconWidth()  { return tamanho; }
+        @Override public int getIconHeight() { return tamanho; }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.translate(x, y);
+            double escala = tamanho / 24.0;
+            g2.scale(escala, escala);
+            g2.setColor(cor);
+            g2.setStroke(new BasicStroke(2.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Cabeça
+            g2.draw(new Ellipse2D.Double(6.6, 0.9, 11.2, 11.2));
+
+            // Corpo, aberto do lado direito (onde entra o "+")
+            Path2D corpo = new Path2D.Double();
+            corpo.moveTo(15.4, 12.3);
+            corpo.curveTo(17.6, 13.0, 19.2, 13.9, 19.2, 13.9);
+            corpo.moveTo(12.2, 12.1);
+            corpo.curveTo(5.6, 12.3, 1.0, 17.6, 1.0, 21.6);
+            corpo.curveTo(1.0, 22.6, 1.8, 23.2, 2.8, 23.2);
+            corpo.lineTo(15.5, 23.2);
+            g2.draw(corpo);
+
+            // Sinal de "+"
+            g2.draw(new Line2D.Double(19.6, 15.6, 19.6, 22.6));
+            g2.draw(new Line2D.Double(16.1, 19.1, 23.1, 19.1));
+
+            g2.dispose();
         }
     }
 }

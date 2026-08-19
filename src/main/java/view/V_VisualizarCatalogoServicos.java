@@ -181,16 +181,15 @@ public class V_VisualizarCatalogoServicos extends JPanel {
     }
 
     private JPanel criarTabelaServicos(List<CatalogoServicoEntity> itens, String corHex) {
-        String[] cols = {"Serviço", "Tipo", "Valor (R$)", "Validade KM", "Validade Meses"};
+        String[] cols = {"Serviço", "Valor Médio(R$)", "Validade KM", "Validade Meses"};
         DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         for (CatalogoServicoEntity i : itens) {
-            String tipoLabel = "REVISAO".equals(i.getTipo()) ? "Revisão" : "Padrão";
             String km  = i.getValidadeKm() != null ? i.getValidadeKm() + " km" : "—";
             String mes = i.getValidadeMeses() != null ? i.getValidadeMeses() + " meses" : "—";
             mdl.addRow(new Object[]{
-                i.getNome(), tipoLabel,
+                i.getNome(),
                 String.format("R$ %.2f", i.getValor()), km, mes
             });
         }
@@ -199,10 +198,13 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tabela.setRowHeight(24);
         tabela.setShowGrid(false);
-        tabela.setIntercellSpacing(new Dimension(0, 0));
+        tabela.setShowHorizontalLines(true);
+        tabela.setShowVerticalLines(true);
+        tabela.setGridColor(Color.decode("#E8E8E8"));
+        tabela.setIntercellSpacing(new Dimension(0, 5));
         tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tabela.getTableHeader().setReorderingAllowed(false);
-        tabela.setSelectionBackground(Color.decode(corHex).brighter());
+        tabela.setSelectionBackground(Color.decode("#FFE4BF"));
         tabela.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         tabela.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -214,9 +216,20 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             }
         });
 
-        DefaultTableCellRenderer direita = new DefaultTableCellRenderer();
-        direita.setHorizontalAlignment(SwingConstants.RIGHT);
-        tabela.getColumnModel().getColumn(2).setCellRenderer(direita);
+        DefaultTableCellRenderer centralizado = new DefaultTableCellRenderer();
+        centralizado.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int c = 1; c < tabela.getColumnCount(); c++)
+            tabela.getColumnModel().getColumn(c).setCellRenderer(centralizado);
+
+        // Proporção de largura das colunas: Serviço 3x, demais 1x
+        tabela.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        int[] proporcoes = {3, 1, 1, 1};
+        for (int c = 0; c < tabela.getColumnCount(); c++)
+            tabela.getColumnModel().getColumn(c).setPreferredWidth(proporcoes[c] * 100);
+
+        DefaultTableCellRenderer cabecalhoCentralizado =
+            (DefaultTableCellRenderer) tabela.getTableHeader().getDefaultRenderer();
+        cabecalhoCentralizado.setHorizontalAlignment(SwingConstants.CENTER);
 
         JScrollPane sp = new JScrollPane(tabela);
         sp.setAlignmentX(Component.LEFT_ALIGNMENT);

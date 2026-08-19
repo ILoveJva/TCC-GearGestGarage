@@ -27,14 +27,15 @@ java -cp "dist/GearGestGarage.jar;dist/libs/mysql-connector-j-9.7.0.jar" view.Ma
 
 **Apply a DB migration** (without recreating the database):
 ```bash
-docker exec gear_gest_mysql mysql -u root -proot GearGestGarage -e "ALTER TABLE ..."
+docker exec gear_gest_mysql mysql --default-character-set=utf8mb4 -u root -proot GearGestGarage -e "ALTER TABLE ..."
 ```
 
 **Recreate the database from scratch** (destroys all data). `db/schema.sql` holds pure structure (DDL only); `db/seed.sql` holds the initial data (oficina, admin user, service catalog) and must run after it:
 ```bash
-Get-Content db/schema.sql | docker exec -i gear_gest_mysql mysql -u root -proot
-Get-Content db/seed.sql   | docker exec -i gear_gest_mysql mysql -u root -proot GearGestGarage
+cat db/schema.sql | docker exec -i gear_gest_mysql mysql --default-character-set=utf8mb4 -u root -proot
+cat db/seed.sql   | docker exec -i gear_gest_mysql mysql --default-character-set=utf8mb4 -u root -proot GearGestGarage
 ```
+> **Always pass `--default-character-set=utf8mb4`** to the `mysql` CLI. Without it the client defaults to `latin1`, and since the schema is `utf8mb4`, MySQL silently double-encodes every accented character on insert (e.g. `óleo` gets stored as `Ã³leo`) — this is independent of which shell you pipe from. Also prefer `cat` over PowerShell's `Get-Content` for piping SQL files; `Get-Content` needs an explicit `-Encoding utf8` or it can mangle non-ASCII bytes on read.
 
 Default credentials: `oficina@geargest.com` / `123456`. DB connection config: `db.properties` (optional — defaults to localhost:3307, root/root, matching `docker-compose.yml`'s exposed port).
 
@@ -89,4 +90,4 @@ All form panels follow the same pattern: `DocumentFilter` for input filtering, `
 2. Add the column name to the matching `new Tabela(...)` call in `DatabaseConfig.registrarMapeamentos()`
 3. Update the relevant `Repository` methods (`vincular`, `listarXxx`)
 4. Propagate through Service → Controller → facade (`OficinaController`) → views
-5. Apply migration: `docker exec gear_gest_mysql mysql -u root -proot GearGestGarage -e "ALTER TABLE t ADD COLUMN ..."`
+5. Apply migration: `docker exec gear_gest_mysql mysql --default-character-set=utf8mb4 -u root -proot GearGestGarage -e "ALTER TABLE t ADD COLUMN ..."`

@@ -23,7 +23,7 @@ VALUES
 
 INSERT INTO funcionario (nome, cargo, endereco, id_usuario)
 VALUES ('Arthur Cecconi', 'Gerente', '', 1);
-INSERT INTO cliente (id_usuario) VALUE (2)
+INSERT INTO cliente (id_usuario) VALUE (2);
 
 -- ============================================================
 -- Catálogo de Serviços

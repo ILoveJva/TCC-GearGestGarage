@@ -410,8 +410,12 @@ public class OficinaController {
     }
 
     // ============== PEÇAS ==============
-    public void salvarPeca(String nomePopular, String vidaUtilTempo, String vidaUtilKm, String sistema) {
-        bridge.pecaController.cadastrar(nomePopular, vidaUtilTempo, vidaUtilKm, sistema);
+    /** Cadastra a peça e, se idCatalogoServico > 0, já a vincula a esse item do catálogo. Retorna o id da peça criada. */
+    public long salvarPeca(String nomePopular, String vidaUtilTempo, String vidaUtilKm, String sistema, long idCatalogoServico) {
+        PecaEntity peca = bridge.pecaController.cadastrar(nomePopular, vidaUtilTempo, vidaUtilKm, sistema);
+        if (idCatalogoServico > 0)
+            adicionarPecaAItemCatalogo(idCatalogoServico, peca.getIdPeca());
+        return peca.getIdPeca();
     }
     public void atualizarPeca(long id, String nome, String vidaTempo, String vidaKm, String sistema) {
         bridge.pecaController.atualizar(id, nome, vidaTempo, vidaKm, sistema);

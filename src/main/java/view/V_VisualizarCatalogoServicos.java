@@ -6,9 +6,15 @@ import controller.OficinaController;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.*;
 import java.util.List;
@@ -49,19 +55,15 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         titulo.setForeground(Color.decode("#4D4D4D"));
         titulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-        // Barra de busca
-        txt_Busca = new JTextField();
-        txt_Busca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txt_Busca.setPreferredSize(new Dimension(220, 32));
-        txt_Busca.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 8, 2, 8)));
-        txt_Busca.putClientProperty("JTextField.placeholderText", "Buscar serviço...");
+        // Barra de busca — mesmo estilo "vidro" (glassmorphism) das páginas de cadastro
+        txt_Busca = new GlassTextField();
+        txt_Busca.setPreferredSize(new Dimension(220, 34));
+        txt_Busca.setToolTipText("Buscar serviço...");
 
         // Combo sistema
-        cmb_Sistema = new JComboBox<>(SISTEMAS_LABEL);
-        cmb_Sistema.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cmb_Sistema.setPreferredSize(new Dimension(185, 32));
+        cmb_Sistema = new GlassComboBox<>();
+        cmb_Sistema.setPreferredSize(new Dimension(185, 34));
+        for (String label : SISTEMAS_LABEL) cmb_Sistema.addItem(label);
 
         JPanel pnl_Filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pnl_Filtros.setOpaque(false);
@@ -278,6 +280,257 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             g2.setColor(cor);
             g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2.dispose();
+        }
+    }
+
+    // =========================================================================
+    // CAMPOS "DE VIDRO" (glassmorphism) — mesmo padrão visual das páginas de
+    // cadastro (ex.: V_CadastrarPeca), aplicado aqui aos filtros de busca/sistema.
+    // =========================================================================
+    private static final int RAIO_COMPONENTE_VIDRO = 12;
+
+    /** Campo de texto com efeito de vidro translúcido, borda que reage a foco. */
+    private static class GlassTextField extends JTextField {
+        private boolean focado = false;
+
+        GlassTextField() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            setForeground(Color.decode("#2B2E33"));
+            setCaretColor(Color.decode("#2B2E33"));
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145));
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE_VIDRO - 5, RAIO_COMPONENTE_VIDRO - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : new Color(160, 175, 195, 130);
+            float espessura = focado ? 1.6f : 1f;
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+            g2.dispose();
+        }
+    }
+
+    /** JComboBox com o mesmo efeito de vidro do GlassTextField, sem fundo sólido padrão do Swing por cima. */
+    private static class GlassComboBox<T> extends JComboBox<T> {
+        private boolean focado = false;
+
+        GlassComboBox() { super(); estilizar(); }
+
+        private void estilizar() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            setForeground(Color.decode("#2B2E33"));
+            // O BasicComboPopup copia este background para a lista suspensa — não pode ser transparente.
+            setBackground(Color.decode("#FFFFFF"));
+            setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 4));
+            setFocusable(true);
+            setUI(new GlassComboBoxUI());
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145));
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE_VIDRO - 5, RAIO_COMPONENTE_VIDRO - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : new Color(160, 175, 195, 130);
+            float espessura = focado ? 1.6f : 1f;
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+            g2.dispose();
+        }
+    }
+
+    /** UI mínima para o GlassComboBox: evita fundo sólido do Swing e troca a seta por um triângulo vetorial. */
+    private static class GlassComboBoxUI extends BasicComboBoxUI {
+        @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // Propositalmente vazio — o fundo já é pintado em GlassComboBox.paintComponent().
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            ListCellRenderer renderer = comboBox.getRenderer();
+            Component c = renderer.getListCellRendererComponent(
+                    listBox, comboBox.getSelectedItem(), -1, false, false);
+            c.setFont(comboBox.getFont());
+            c.setForeground(comboBox.isEnabled() ? Color.decode("#2B2E33") : Color.GRAY);
+
+            boolean opacoOriginal = false;
+            if (c instanceof JComponent) {
+                opacoOriginal = ((JComponent) c).isOpaque();
+                ((JComponent) c).setOpaque(false);
+            }
+
+            boolean shouldValidate = c instanceof JPanel;
+            currentValuePane.paintComponent(g, c, comboBox, bounds.x, bounds.y, bounds.width, bounds.height, shouldValidate);
+
+            if (c instanceof JComponent) {
+                ((JComponent) c).setOpaque(opacoOriginal);
+            }
+        }
+
+        @Override
+        protected ComboPopup createPopup() {
+            return new GlassComboPopup(comboBox);
+        }
+
+        @Override
+        protected JButton createArrowButton() {
+            JButton seta = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    int w = getWidth(), h = getHeight();
+                    int cx = w / 2, cy = h / 2;
+                    Path2D triangulo = new Path2D.Double();
+                    triangulo.moveTo(cx - 4, cy - 2);
+                    triangulo.lineTo(cx + 4, cy - 2);
+                    triangulo.lineTo(cx, cy + 3);
+                    triangulo.closePath();
+                    g2.setColor(Color.decode("#57626F"));
+                    g2.fill(triangulo);
+                    g2.dispose();
+                }
+            };
+            seta.setPreferredSize(new Dimension(22, 22));
+            seta.setContentAreaFilled(false);
+            seta.setBorderPainted(false);
+            seta.setFocusPainted(false);
+            seta.setOpaque(false);
+            seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return seta;
+        }
+    }
+
+    /** Popup do combo com cantos arredondados e conteúdo sólido/legível. */
+    private static class GlassComboPopup extends BasicComboPopup {
+
+        GlassComboPopup(JComboBox<Object> combo) {
+            super(combo);
+        }
+
+        @Override
+        protected void configurePopup() {
+            super.configurePopup();
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        }
+
+        @Override
+        protected void configureList() {
+            super.configureList();
+            list.setOpaque(true);
+            list.setBackground(Color.decode("#FFFFFF"));
+            list.setForeground(Color.decode("#2B2E33"));
+            list.setSelectionBackground(Color.decode("#FFE4BF"));
+            list.setSelectionForeground(Color.decode("#2B2E33"));
+            list.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        }
+
+        @Override
+        protected JScrollPane createScroller() {
+            JScrollPane scroller = super.createScroller();
+            scroller.setOpaque(false);
+            scroller.getViewport().setOpaque(false);
+            scroller.setBorder(BorderFactory.createEmptyBorder());
+            return scroller;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(Color.decode("#FFFFFF"));
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(Color.decode("#C3CDDA"));
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void show() {
+            super.show();
+            try {
+                Window janela = SwingUtilities.getWindowAncestor(this);
+                if (janela != null) {
+                    janela.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+                }
+            } catch (Exception | Error ignorado) {
+                // Sem suporte a formato de janela nesta plataforma.
+            }
         }
     }
 }

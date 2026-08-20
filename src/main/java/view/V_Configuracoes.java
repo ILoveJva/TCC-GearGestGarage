@@ -4,13 +4,24 @@ import controller.OficinaController;
 import br.com.oficina.usuario.FuncionarioEntity;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.net.URL;
 
+/**
+ * Segue o mesmo padrão visual da Página Inicial (cards com opacidade/cantos
+ * reais, ícone por seção e scrollbar animada), já que as duas telas são do
+ * mesmo nível hierárquico (Início ⇄ Configurações).
+ */
 public class V_Configuracoes extends JPanel {
+
+    private static final Color COR_CARTAO             = new Color(255, 253, 248, 235);
+    private static final Color COR_CARTAO_OPACA        = new Color(255, 253, 248);
+    private static final Color COR_CARTAO_OPACA_HOVER  = new Color(255, 248, 235);
 
     private final OficinaController controller;
     private JTable tbl_Funcionarios;
@@ -47,7 +58,7 @@ public class V_Configuracoes extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        estilizarScrollBar(scroll.getVerticalScrollBar());
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -55,7 +66,8 @@ public class V_Configuracoes extends JPanel {
     // SEÇÃO 1 — Dados da Oficina
     // =========================================================================
     private JPanel criarSecaoDados() {
-        JPanel card = criarCard("Dados da Oficina");
+        JPanel card = criarCard("Dados da Oficina",
+                obterIcone("/assets/icons/oficina.png", 18, IconeVetorial.Tipo.GARAGEM, Color.decode("#FF9900")));
 
         model.Oficina of = controller.getOficina();
 
@@ -77,7 +89,8 @@ public class V_Configuracoes extends JPanel {
     // SEÇÃO 2 — Catálogo de Veículos
     // =========================================================================
     private JPanel criarSecaoCatalogo() {
-        JPanel card = criarCard("Catálogo de Veículos");
+        JPanel card = criarCard("Catálogo de Veículos",
+                obterIcone("/assets/icons/estoque.png", 18, IconeVetorial.Tipo.CATALOGO, Color.decode("#FF9900")));
 
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
@@ -88,22 +101,20 @@ public class V_Configuracoes extends JPanel {
         lbl_Desc.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
         lbl_Desc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel pnl_Linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel pnl_Linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
         pnl_Linha.setOpaque(false);
         pnl_Linha.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btn_Montadora = criarBotaoAcao("Nova Montadora", "#FF9900");
-        JButton btn_Modelo    = criarBotaoAcao("Novo Modelo",    "#6C757D");
-        JButton btn_Peca      = criarBotaoAcao("Nova Peça",      "#28A745");
+        JButton btn_Montadora = criarBotaoQuadrado("Nova Montadora", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, "#FF9900");
+        JButton btn_Modelo    = criarBotaoQuadrado("Novo Modelo",    "/assets/icons/modelos.png",    IconeVetorial.Tipo.MODELO,    "#6C757D");
+        JButton btn_Peca      = criarBotaoQuadrado("Nova Peça",      "/assets/icons/pecas.png",      IconeVetorial.Tipo.PECA,       "#28A745");
 
         btn_Montadora.addActionListener(e -> navegarPara(new V_CadastrarMontadora(controller)));
         btn_Modelo.addActionListener(e    -> navegarPara(new V_CadastrarModelo(controller)));
         btn_Peca.addActionListener(e      -> navegarPara(new V_CadastrarPeca(controller)));
 
         pnl_Linha.add(btn_Montadora);
-        pnl_Linha.add(Box.createHorizontalStrut(12));
         pnl_Linha.add(btn_Modelo);
-        pnl_Linha.add(Box.createHorizontalStrut(12));
         pnl_Linha.add(btn_Peca);
 
         corpo.add(lbl_Desc);
@@ -112,10 +123,11 @@ public class V_Configuracoes extends JPanel {
     }
 
     // =========================================================================
-    // SEÇÃO 4 — Equipe
+    // SEÇÃO 3 — Equipe
     // =========================================================================
     private JPanel criarSecaoEquipe() {
-        JPanel card = criarCard("Equipe");
+        JPanel card = criarCard("Equipe",
+                obterIcone("/assets/icons/vclientes.png", 18, IconeVetorial.Tipo.PESSOA, Color.decode("#FF9900")));
 
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
@@ -126,22 +138,20 @@ public class V_Configuracoes extends JPanel {
         lbl_Desc.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
         lbl_Desc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel pnl_Linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel pnl_Linha = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
         pnl_Linha.setOpaque(false);
         pnl_Linha.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btn_Funcionario   = criarBotaoAcao("Novo Funcionário",    "#6C757D");
-        JButton btn_TipoServico   = criarBotaoAcao("Tipos de Serviço",    "#FF9900");
-        JButton btn_ItemServico   = criarBotaoAcao("Itens de Serviço",    "#17A2B8");
+        JButton btn_Funcionario   = criarBotaoQuadrado("Novo Funcionário", "/assets/icons/servicos.png",     IconeVetorial.Tipo.PESSOA,    "#6C757D");
+        JButton btn_TipoServico   = criarBotaoQuadrado("Tipos de Serviço", "/assets/icons/add_servico.png",  IconeVetorial.Tipo.SERVICO,   "#FF9900");
+        JButton btn_ItemServico   = criarBotaoQuadrado("Itens de Serviço", "/assets/icons/vservicos.png",    IconeVetorial.Tipo.DOCUMENTO, "#17A2B8");
 
         btn_Funcionario.addActionListener(e -> navegarPara(new V_CadastrarFuncionario(controller)));
         btn_TipoServico.addActionListener(e -> navegarPara(new V_CadastrarTipoServico(controller)));
         btn_ItemServico.addActionListener(e -> navegarPara(new V_CadastrarItemServico(controller)));
 
         pnl_Linha.add(btn_Funcionario);
-        pnl_Linha.add(Box.createHorizontalStrut(12));
         pnl_Linha.add(btn_TipoServico);
-        pnl_Linha.add(Box.createHorizontalStrut(12));
         pnl_Linha.add(btn_ItemServico);
 
         corpo.add(lbl_Desc);
@@ -165,8 +175,13 @@ public class V_Configuracoes extends JPanel {
         tbl_Funcionarios.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tbl_Funcionarios.setRowHeight(26);
         tbl_Funcionarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl_Funcionarios.setSelectionBackground(Color.decode("#FFE8CC"));
+        tbl_Funcionarios.setSelectionForeground(Color.decode("#333333"));
+        tbl_Funcionarios.setGridColor(Color.decode("#EEEEEE"));
         tbl_Funcionarios.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         tbl_Funcionarios.getTableHeader().setReorderingAllowed(false);
+        tbl_Funcionarios.getTableHeader().setBackground(Color.decode("#FAFAFA"));
+        tbl_Funcionarios.getTableHeader().setForeground(Color.decode("#4D4D4D"));
 
         JScrollPane scroll = new JScrollPane(tbl_Funcionarios);
         scroll.setPreferredSize(new Dimension(0, 160));
@@ -174,10 +189,8 @@ public class V_Configuracoes extends JPanel {
 
         JPanel pnl_Acoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
         pnl_Acoes.setOpaque(false);
-        JButton btn_Editar = criarBotaoAcao("Editar", "#6C757D");
-        JButton btn_Excluir = criarBotaoAcao("Excluir", "#DC3545");
-        btn_Editar.setPreferredSize(new Dimension(120, 36));
-        btn_Excluir.setPreferredSize(new Dimension(120, 36));
+        JButton btn_Editar = criarBotaoQuadrado("Editar", null, IconeVetorial.Tipo.EDITAR, "#6C757D", 84, 76);
+        JButton btn_Excluir = criarBotaoQuadrado("Excluir", null, IconeVetorial.Tipo.EXCLUIR, "#DC3545", 84, 76);
 
         btn_Editar.addActionListener(e -> {
             FuncionarioEntity alvo = obterFuncionarioSelecionado();
@@ -272,28 +285,36 @@ public class V_Configuracoes extends JPanel {
     // HELPERS VISUAIS
     // =========================================================================
 
-    /** Cria um painel card (fundo branco, título laranja, corpo livre). */
-    private JPanel criarCard(String titulo) {
-        JPanel card = new JPanel(new BorderLayout(0, 12));
-        card.setBackground(Color.WHITE);
+    /** Cria um painel card no mesmo padrão da Página Inicial: fundo com opacidade, cantos reais, título com ícone. */
+    private JPanel criarCard(String titulo, Icon icone) {
+        int raioCard = 14;
+        PainelCartao card = new PainelCartao(new BorderLayout(0, 12), raioCard, COR_CARTAO);
         card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10, Color.decode("#E0E0E0")),
+            new RoundedBorder(raioCard, Color.decode("#E0E0E0")),
             BorderFactory.createEmptyBorder(16, 20, 16, 20)
         ));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        JPanel pnl_TituloCard = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        pnl_TituloCard.setOpaque(false);
+        pnl_TituloCard.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
+        pnl_TituloCard.setPreferredSize(new Dimension(0, 30));
+
+        if (icone != null) {
+            pnl_TituloCard.add(new JLabel(icone));
+        }
+
         JLabel lbl = new JLabel(titulo);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lbl.setForeground(Color.decode("#FF9900"));
-        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
-        lbl.setPreferredSize(new Dimension(0, 30));
+        pnl_TituloCard.add(lbl);
 
         JPanel corpo = new JPanel();
         corpo.setOpaque(false);
         corpo.setLayout(new BorderLayout());
 
-        card.add(lbl, BorderLayout.NORTH);
+        card.add(pnl_TituloCard, BorderLayout.NORTH);
         card.add(corpo, BorderLayout.CENTER);
         return card;
     }
@@ -316,67 +337,63 @@ public class V_Configuracoes extends JPanel {
         return p;
     }
 
-    /** Card clicável de estatística com número grande e rótulo. */
-    private JPanel criarCardEstat(String rotulo, int valor, String corHex, Runnable aoClicar) {
-        JPanel p = new JPanel(new BorderLayout(0, 4));
-        p.setBackground(Color.WHITE);
-        p.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(8, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(12, 14, 12, 14)
-        ));
-        p.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        JPanel barra = new JPanel();
-        barra.setBackground(Color.decode(corHex));
-        barra.setPreferredSize(new Dimension(0, 4));
-
-        JLabel num = new JLabel(String.valueOf(valor), SwingConstants.CENTER);
-        num.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        num.setForeground(Color.decode(corHex));
-
-        JLabel lbl = new JLabel(rotulo, SwingConstants.CENTER);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lbl.setForeground(Color.decode("#666666"));
-
-        JLabel lbl_Dica = new JLabel("Ver detalhes →", SwingConstants.CENTER);
-        lbl_Dica.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        lbl_Dica.setForeground(Color.decode(corHex));
-
-        JPanel sul = new JPanel(new BorderLayout(0, 2));
-        sul.setOpaque(false);
-        sul.add(lbl, BorderLayout.NORTH);
-        sul.add(lbl_Dica, BorderLayout.SOUTH);
-
-        MouseAdapter clique = new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) { aoClicar.run(); }
-            @Override public void mouseEntered(MouseEvent e) { p.setBackground(Color.decode("#F9F9F9")); }
-            @Override public void mouseExited(MouseEvent e)  { p.setBackground(Color.WHITE); }
-        };
-        p.addMouseListener(clique);
-        num.addMouseListener(clique);
-        lbl.addMouseListener(clique);
-        lbl_Dica.addMouseListener(clique);
-
-        p.add(barra, BorderLayout.NORTH);
-        p.add(num,   BorderLayout.CENTER);
-        p.add(sul,   BorderLayout.SOUTH);
-        return p;
+    private JButton criarBotaoQuadrado(String texto, String caminhoPng, IconeVetorial.Tipo tipoIcone, String corHex) {
+        return criarBotaoQuadrado(texto, caminhoPng, tipoIcone, corHex, 108, 96);
     }
 
-    private JButton criarBotaoAcao(String texto, String corHex) {
+    /**
+     * Botão quadrado com ícone acima do texto (mesmo padrão dos cards de "Consultas" da Página
+     * Inicial). Usa a imagem PNG de resources/assets/icons quando disponível; se não existir,
+     * cai para o ícone vetorial desenhado na hora.
+     */
+    private JButton criarBotaoQuadrado(String texto, String caminhoPng, IconeVetorial.Tipo tipoIcone, String corHex, int largura, int altura) {
         JButton btn = new JButton(texto);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setIcon(obterIcone(caminhoPng, Math.min(largura, altura) - 46, tipoIcone, Color.WHITE));
+        btn.setVerticalTextPosition(SwingConstants.BOTTOM);
+        btn.setHorizontalTextPosition(SwingConstants.CENTER);
+        btn.setIconTextGap(8);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setForeground(Color.WHITE);
-        btn.setBackground(Color.decode(corHex));
-        btn.setPreferredSize(new Dimension(180, 40));
+        Color corBase = Color.decode(corHex);
+        btn.setBackground(corBase);
+        btn.setPreferredSize(new Dimension(largura, altura));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(corBase.brighter()); }
+            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(corBase); }
+        });
         return btn;
     }
 
     // =========================================================================
-    // INNER CLASS — Borda arredondada
+    // FUNDO DOS CARDS (COR + OPACIDADE, CANTOS REAIS)
+    // =========================================================================
+    private static class PainelCartao extends JPanel {
+        private final int raio;
+        private final Color corFundo;
+
+        PainelCartao(LayoutManager layout, int raio, Color corFundo) {
+            super(layout);
+            this.raio = raio;
+            this.corFundo = corFundo;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(corFundo);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), raio, raio);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // =========================================================================
+    // BORDA ARREDONDADA
     // =========================================================================
     private static class RoundedBorder implements javax.swing.border.Border {
         private final int raio;
@@ -390,6 +407,232 @@ public class V_Configuracoes extends JPanel {
             g2d.setColor(cor);
             g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2d.dispose();
+        }
+    }
+
+    // =========================================================================
+    // SCROLLBAR CUSTOMIZADA E ANIMADA (idêntica à da Página Inicial)
+    // =========================================================================
+    private void estilizarScrollBar(JScrollBar barra) {
+        barra.setUI(new ScrollBarAnimada());
+        barra.setUnitIncrement(14);
+        barra.setOpaque(false);
+        barra.setPreferredSize(new Dimension(12, 100));
+    }
+
+    private static class ScrollBarAnimada extends BasicScrollBarUI {
+        private static final Color COR_THUMB = Color.decode("#FF9900");
+        private static final int LARGURA_MIN = 5;
+        private static final int LARGURA_MAX = 9;
+
+        private float larguraAtual = LARGURA_MIN;
+        private float alphaAtual = 100f;
+        private boolean crescendo = false;
+        private Timer timerAnimacao;
+
+        @Override
+        protected void configureScrollBarColors() {
+            this.thumbColor = COR_THUMB;
+            this.trackColor = new Color(0, 0, 0, 0);
+        }
+
+        @Override
+        protected JButton createDecreaseButton(int orientation) { return botaoInvisivel(); }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) { return botaoInvisivel(); }
+
+        private JButton botaoInvisivel() {
+            JButton botao = new JButton();
+            botao.setPreferredSize(new Dimension(0, 0));
+            botao.setMinimumSize(new Dimension(0, 0));
+            botao.setMaximumSize(new Dimension(0, 0));
+            return botao;
+        }
+
+        @Override
+        protected void installListeners() {
+            super.installListeners();
+            scrollbar.addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { animarPara(true); }
+                @Override public void mouseExited(MouseEvent e)  { animarPara(false); }
+            });
+        }
+
+        private void animarPara(boolean crescer) {
+            this.crescendo = crescer;
+            if (timerAnimacao != null && timerAnimacao.isRunning()) {
+                timerAnimacao.stop();
+            }
+            timerAnimacao = new Timer(12, e -> {
+                float alvoLargura = crescendo ? LARGURA_MAX : LARGURA_MIN;
+                float alvoAlpha   = crescendo ? 230f : 100f;
+                larguraAtual += (alvoLargura - larguraAtual) * 0.28f;
+                alphaAtual    += (alvoAlpha - alphaAtual) * 0.28f;
+                if (scrollbar != null) scrollbar.repaint();
+                if (Math.abs(larguraAtual - alvoLargura) < 0.3f && Math.abs(alphaAtual - alvoAlpha) < 1f) {
+                    larguraAtual = alvoLargura;
+                    alphaAtual = alvoAlpha;
+                    ((Timer) e.getSource()).stop();
+                }
+            });
+            timerAnimacao.start();
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            // Trilho invisível: só o "polegar" aparece, estilo flutuante e discreto.
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int espessura = Math.round(larguraAtual);
+            int x = thumbBounds.x + (thumbBounds.width - espessura) / 2;
+
+            g2.setColor(new Color(COR_THUMB.getRed(), COR_THUMB.getGreen(), COR_THUMB.getBlue(), Math.round(alphaAtual)));
+            g2.fillRoundRect(x, thumbBounds.y + 2, espessura, thumbBounds.height - 4, espessura, espessura);
+            g2.dispose();
+        }
+
+        @Override
+        protected Dimension getMinimumThumbSize() {
+            return new Dimension(LARGURA_MAX, 30);
+        }
+    }
+
+    // =========================================================================
+    // ÍCONES (PNG do projeto, com fallback vetorial desenhado na hora)
+    // =========================================================================
+    private ImageIcon carregarERedimensionarIcone(String caminho, int larguraAlvo, int alturaAlvo) {
+        URL url = getClass().getResource(caminho);
+        if (url == null) {
+            String caminhoLimpo = caminho.startsWith("/") ? caminho.substring(1) : caminho;
+            url = Thread.currentThread().getContextClassLoader().getResource(caminhoLimpo);
+        }
+
+        if (url != null) {
+            ImageIcon imagemOriginal = new ImageIcon(url);
+            Image imgEscalada = imagemOriginal.getImage().getScaledInstance(larguraAlvo, alturaAlvo, Image.SCALE_SMOOTH);
+            return new ImageIcon(imgEscalada);
+        }
+        return null;
+    }
+
+    private Icon obterIcone(String caminhoPng, int tamanho, IconeVetorial.Tipo tipoFallback, Color corFallback) {
+        if (caminhoPng != null) {
+            ImageIcon png = carregarERedimensionarIcone(caminhoPng, tamanho, tamanho);
+            if (png != null) return png;
+        }
+        return new IconeVetorial(tipoFallback, corFallback, tamanho);
+    }
+
+    /** Ícone desenhado por código (Graphics2D), sem depender de nenhum arquivo PNG. */
+    private static class IconeVetorial implements Icon {
+        enum Tipo { GARAGEM, CATALOGO, PESSOA, MONTADORA, MODELO, PECA, SERVICO, DOCUMENTO, EDITAR, EXCLUIR }
+
+        private final Tipo tipo;
+        private final Color cor;
+        private final int tam;
+
+        IconeVetorial(Tipo tipo, Color cor, int tam) {
+            this.tipo = tipo;
+            this.cor = cor;
+            this.tam = tam;
+        }
+
+        @Override public int getIconWidth()  { return tam; }
+        @Override public int getIconHeight() { return tam; }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.translate(x, y);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(cor);
+            g2.setStroke(new BasicStroke(Math.max(1.4f, tam / 11f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            int s = tam;
+            int pad = Math.max(2, s / 7);
+            int area = s - pad * 2;
+
+            switch (tipo) {
+                case GARAGEM:
+                    g2.drawPolyline(new int[]{pad, s / 2, s - pad}, new int[]{pad + area / 3, pad, pad + area / 3}, 3);
+                    g2.drawRect(pad, pad + area / 3, area, area - area / 3);
+                    break;
+                case CATALOGO: {
+                    int q = Math.max(3, area / 2 - 2);
+                    g2.fillRoundRect(pad, pad, q, q, 3, 3);
+                    g2.fillRoundRect(pad + q + 4, pad, q, q, 3, 3);
+                    g2.fillRoundRect(pad, pad + q + 4, q, q, 3, 3);
+                    g2.fillRoundRect(pad + q + 4, pad + q + 4, q, q, 3, 3);
+                    break;
+                }
+                case PESSOA:
+                    g2.drawOval(s / 2 - area / 5, pad, area * 2 / 5, area * 2 / 5);
+                    g2.drawArc(pad, pad + area / 2, area, area / 2, 0, 180);
+                    break;
+                case MONTADORA:
+                    g2.drawRect(pad, pad + area / 4, area, area - area / 4);
+                    g2.drawRect(pad + area / 6, pad, area / 4, area / 4);
+                    g2.fillRect(pad + area / 4, pad + area / 2, Math.max(2, area / 8), Math.max(2, area / 8));
+                    g2.fillRect(pad + area * 5 / 8, pad + area / 2, Math.max(2, area / 8), Math.max(2, area / 8));
+                    break;
+                case MODELO:
+                    g2.drawRoundRect(pad, pad + area / 3, area, area / 3, area / 6, area / 6);
+                    g2.fillOval(pad + area / 8, pad + area * 2 / 3, Math.max(3, area / 5), Math.max(3, area / 5));
+                    g2.fillOval(pad + area * 5 / 8, pad + area * 2 / 3, Math.max(3, area / 5), Math.max(3, area / 5));
+                    break;
+                case PECA: {
+                    int[] xs = new int[6];
+                    int[] ys = new int[6];
+                    double raioHex = area / 2.0;
+                    double cx = s / 2.0, cy = s / 2.0;
+                    for (int i = 0; i < 6; i++) {
+                        double ang = Math.toRadians(60 * i - 90);
+                        xs[i] = (int) (cx + raioHex * Math.cos(ang));
+                        ys[i] = (int) (cy + raioHex * Math.sin(ang));
+                    }
+                    g2.drawPolygon(xs, ys, 6);
+                    g2.drawOval(s / 2 - area / 6, s / 2 - area / 6, Math.max(3, area / 3), Math.max(3, area / 3));
+                    break;
+                }
+                case SERVICO:
+                    g2.drawLine(pad + 2, s - pad - 2, s - pad - 2, pad + 2);
+                    g2.drawOval(pad, s - pad - area / 4, Math.max(3, area / 4), Math.max(3, area / 4));
+                    g2.drawOval(s - pad - area / 4, pad, Math.max(3, area / 4), Math.max(3, area / 4));
+                    break;
+                case DOCUMENTO:
+                    g2.drawRoundRect(pad, pad, area, area, 4, 4);
+                    for (int i = 1; i <= 3; i++) {
+                        int ly = pad + (area * i) / 4;
+                        g2.drawLine(pad + area / 5, ly, s - pad - area / 5, ly);
+                    }
+                    break;
+                case EDITAR: {
+                    g2.drawLine(pad, s - pad, s - pad, pad);
+                    int[] xsPonta = { pad, pad + area / 5, pad };
+                    int[] ysPonta = { s - pad, s - pad, s - pad - area / 5 };
+                    g2.fillPolygon(xsPonta, ysPonta, 3);
+                    g2.fillRect(s - pad - area / 6, pad, Math.max(3, area / 6), Math.max(3, area / 6));
+                    break;
+                }
+                case EXCLUIR: {
+                    int larguraCorpo = area * 2 / 3;
+                    int xCorpo = pad + (area - larguraCorpo) / 2;
+                    int yCorpo = pad + area / 4;
+                    g2.drawRect(xCorpo, yCorpo, larguraCorpo, area - area / 4);
+                    g2.drawLine(pad, yCorpo, s - pad, yCorpo);
+                    g2.drawLine(s / 2 - area / 8, pad, s / 2 + area / 8, pad);
+                    g2.drawLine(s / 2, yCorpo + 3, s / 2, s - pad - 3);
+                    break;
+                }
+            }
+            g2.dispose();
         }
     }
 }

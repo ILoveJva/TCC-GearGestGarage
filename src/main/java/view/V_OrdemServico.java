@@ -6,8 +6,17 @@ import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,27 +26,42 @@ public class V_OrdemServico extends JPanel {
     private final long idOS;
 
     private JLabel lbl_TituloServico;
-    private JLabel lbl_StatusTexto;
+    private SeloStatus lbl_StatusTexto;
     private JLabel lbl_TipoServico;
     private JPanel pnl_Corpo;
 
     // Campos interativos (modo edição)
-    private JTextArea txa_Descricao;
+    private GlassTextArea txa_Descricao;
     private DefaultTableModel mdl_Checklist;
     private JTable tbl_Checklist;
 
     private ServicoResponseDTO servico;
 
-    private static final Color COR_LARANJA = Color.decode("#FF9900");
+    // Cores semânticas por status/etapa (tema original preservado)
+    private static final Color COR_LARANJA = Color.decode("#FF9900"); // status ABERTA / ação principal
     private static final Color COR_CINZA   = Color.decode("#4D4D4D");
-    private static final Color COR_AZUL    = Color.decode("#2980B9");
-    private static final Color COR_VERDE   = Color.decode("#27AE60");
+    private static final Color COR_AZUL    = Color.decode("#2980B9"); // etapa registro / editar orçamento
+    private static final Color COR_VERDE   = Color.decode("#27AE60"); // etapa finalização / concluída
+    private static final Color COR_INFO    = Color.decode("#17A2B8"); // orçamento interno (revisão)
+
+    // Paleta harmonizada com o mesmo efeito de vidro usado nas demais telas
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F7FA");
+    private static final Color COR_CARD_BASE    = Color.decode("#EEF2F7");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+    private static final Color COR_BORDA_SUAVE  = new Color(160, 175, 195, 130);
+
+    private static final int RAIO_COMPONENTE     = 12;
+    private static final int TAMANHO_FONTE_LABEL = 13;
+    private static final int TAMANHO_FONTE_CAMPO = 14;
+    private static final int ALTURA_CAMPO        = 34;
 
     public V_OrdemServico(OficinaController controller, long idOS) {
         this.controller = controller;
         this.idOS = idOS;
         setLayout(new BorderLayout(0, 10));
-        setBackground(Color.WHITE);
+        setBackground(COR_FUNDO_PAGINA);
         setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
         initComponents();
         layoutComponents();
@@ -47,56 +71,58 @@ public class V_OrdemServico extends JPanel {
     private void initComponents() {
         lbl_TituloServico = new JLabel("ORDEM DE SERVIÇO");
         lbl_TituloServico.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lbl_TituloServico.setForeground(Color.BLACK);
+        lbl_TituloServico.setForeground(COR_TITULO);
 
-        lbl_StatusTexto = new JLabel("STATUS: CARREGANDO...");
-        lbl_StatusTexto.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl_StatusTexto.setForeground(COR_LARANJA);
+        lbl_StatusTexto = new SeloStatus("STATUS: CARREGANDO...");
+        lbl_StatusTexto.setCorDestaque(COR_LARANJA);
 
         lbl_TipoServico = new JLabel();
         lbl_TipoServico.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lbl_TipoServico.setForeground(COR_CINZA);
+        lbl_TipoServico.setForeground(COR_LABEL);
 
         pnl_Corpo = new JPanel();
         pnl_Corpo.setLayout(new BoxLayout(pnl_Corpo, BoxLayout.Y_AXIS));
-        pnl_Corpo.setBackground(Color.WHITE);
+        pnl_Corpo.setOpaque(false);
     }
 
     private void layoutComponents() {
-        JButton btn_Voltar = new JButton("← Voltar para Lista");
-        btn_Voltar.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Voltar.setForeground(COR_CINZA);
-        btn_Voltar.setContentAreaFilled(false);
-        btn_Voltar.setBorderPainted(false);
-        btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn_Voltar = botaoLink("← Voltar para Lista", COR_LABEL);
         btn_Voltar.addActionListener(e -> navegar(new V_VisualizarServicos(controller)));
 
         JLabel lbl_Mapa = new JLabel("Página Inicial > Consultar Serviços > Detalhes");
         lbl_Mapa.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl_Mapa.setForeground(COR_CINZA);
+        lbl_Mapa.setForeground(COR_LABEL);
 
         JPanel pnl_Topo = new JPanel(new BorderLayout());
-        pnl_Topo.setBackground(Color.WHITE);
+        pnl_Topo.setOpaque(false);
         pnl_Topo.add(lbl_Mapa, BorderLayout.WEST);
         pnl_Topo.add(btn_Voltar, BorderLayout.EAST);
         add(pnl_Topo, BorderLayout.NORTH);
 
         JPanel pnl_Header = new JPanel();
         pnl_Header.setLayout(new BoxLayout(pnl_Header, BoxLayout.Y_AXIS));
-        pnl_Header.setBackground(Color.WHITE);
+        pnl_Header.setOpaque(false);
+        lbl_TituloServico.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lbl_TipoServico.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lbl_StatusTexto.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_Header.add(lbl_TituloServico);
         pnl_Header.add(Box.createVerticalStrut(4));
         pnl_Header.add(lbl_TipoServico);
-        pnl_Header.add(Box.createVerticalStrut(2));
+        pnl_Header.add(Box.createVerticalStrut(6));
         pnl_Header.add(lbl_StatusTexto);
         pnl_Header.add(Box.createVerticalStrut(16));
 
         JScrollPane scp = new JScrollPane(pnl_Corpo);
         scp.setBorder(BorderFactory.createEmptyBorder());
+        scp.setOpaque(false);
+        scp.getViewport().setOpaque(false);
         scp.getVerticalScrollBar().setUnitIncrement(16);
+        scp.getVerticalScrollBar().setUI(new GlassScrollBarUI());
+        scp.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
+        scp.getVerticalScrollBar().setOpaque(false);
 
         JPanel pnl_Central = new JPanel(new BorderLayout());
-        pnl_Central.setBackground(Color.WHITE);
+        pnl_Central.setOpaque(false);
         pnl_Central.add(pnl_Header, BorderLayout.NORTH);
         pnl_Central.add(scp, BorderLayout.CENTER);
         add(pnl_Central, BorderLayout.CENTER);
@@ -109,7 +135,7 @@ public class V_OrdemServico extends JPanel {
         if (servico == null) { lbl_TituloServico.setText("O.S. não encontrada"); return; }
 
         String cod = servico.codigo() != null && !servico.codigo().isEmpty()
-            ? servico.codigo() : String.format("%05d", servico.idServico());
+                ? servico.codigo() : String.format("%05d", servico.idServico());
         lbl_TituloServico.setText("ORDEM DE SERVIÇO  " + cod);
         lbl_TipoServico.setText("Tipo: " + servico.tipoServico());
         lbl_StatusTexto.setText("STATUS: " + (servico.status() != null ? servico.status() : "—"));
@@ -120,18 +146,17 @@ public class V_OrdemServico extends JPanel {
         boolean emAndamento = "EM_ANDAMENTO".equalsIgnoreCase(servico.status());
         boolean concluida = "CONCLUIDA".equalsIgnoreCase(servico.status());
 
+        if (aberta) lbl_StatusTexto.setCorDestaque(COR_LARANJA);
+        else if (emAndamento) lbl_StatusTexto.setCorDestaque(COR_AZUL);
+        else if (concluida) lbl_StatusTexto.setCorDestaque(COR_VERDE);
+        else lbl_StatusTexto.setCorDestaque(COR_LABEL);
+
         // Botão editar orçamento — visível quando há orçamento vinculado
         if (servico.idOrcamento() != null && servico.idOrcamento() > 0) {
             JPanel pnl_EditarOrc = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             pnl_EditarOrc.setOpaque(false);
             pnl_EditarOrc.setAlignmentX(Component.LEFT_ALIGNMENT);
-            JButton btn_EditarOrc = new JButton("✎  Editar Orçamento");
-            btn_EditarOrc.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btn_EditarOrc.setBackground(COR_AZUL);
-            btn_EditarOrc.setForeground(Color.WHITE);
-            btn_EditarOrc.setFocusPainted(false);
-            btn_EditarOrc.setBorderPainted(false);
-            btn_EditarOrc.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            JButton btn_EditarOrc = botaoAcao("✎  Editar Orçamento", COR_AZUL);
             final long idOrcVinc = servico.idOrcamento();
             btn_EditarOrc.addActionListener(e -> navegar(new V_EditarOrcamento(controller, idOrcVinc, idOS)));
             pnl_EditarOrc.add(btn_EditarOrc);
@@ -150,11 +175,7 @@ public class V_OrdemServico extends JPanel {
             }
         }
 
-        JLabel lblEtapa = new JLabel("ETAPA — REGISTRO DO TRABALHO");
-        lblEtapa.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblEtapa.setForeground(COR_AZUL);
-        lblEtapa.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        lblEtapa.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lblEtapa = criarLabelEtapa("ETAPA — REGISTRO DO TRABALHO", COR_AZUL);
         pnl_Corpo.add(lblEtapa);
 
         if (aberta) {
@@ -183,35 +204,22 @@ public class V_OrdemServico extends JPanel {
     // Painel editável — OS ABERTA
     // -----------------------------------------------------------------------
     private JPanel construirPainelEdicao() {
-        JPanel pnl = new JPanel(new BorderLayout(0, 12));
-        pnl.setOpaque(false);
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 12));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E5E5E5"), 1),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
+        pnl.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
 
         // -- Descrição geral --
-        JLabel lblDesc = new JLabel("Descrição geral do trabalho:");
-        lblDesc.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel lblDesc = criarLabelCampo("Descrição geral do trabalho:");
 
-        txa_Descricao = new JTextArea(4, 40);
-        txa_Descricao.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txa_Descricao.setLineWrap(true);
-        txa_Descricao.setWrapStyleWord(true);
-        txa_Descricao.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(6, 8, 6, 8)
-        ));
+        txa_Descricao = new GlassTextArea(4, 40);
 
         JPanel pnl_Desc = new JPanel(new BorderLayout(0, 4));
         pnl_Desc.setOpaque(false);
         pnl_Desc.add(lblDesc, BorderLayout.NORTH);
-        pnl_Desc.add(new JScrollPane(txa_Descricao), BorderLayout.CENTER);
+        pnl_Desc.add(envolverEmScroll(txa_Descricao), BorderLayout.CENTER);
 
         // -- Checklist de itens realizados --
-        JLabel lblCheck = new JLabel("Itens realizados:");
-        lblCheck.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel lblCheck = criarLabelCampo("Itens realizados:");
         lblCheck.setBorder(BorderFactory.createEmptyBorder(8, 0, 4, 0));
 
         String[] cols = {"Feito", "Item realizado", "Tempo gasto"};
@@ -226,7 +234,7 @@ public class V_OrdemServico extends JPanel {
         if (servico != null && servico.idOrcamento() != null && servico.idOrcamento() > 0) {
             try {
                 List<CatalogoServicoEntity> itensOrc =
-                    controller.listarItensDoOrcamento(servico.idOrcamento());
+                        controller.listarItensDoOrcamento(servico.idOrcamento());
                 for (CatalogoServicoEntity item : itensOrc) {
                     mdl_Checklist.addRow(new Object[]{Boolean.FALSE, item.getNome(), ""});
                     populado = true;
@@ -235,20 +243,14 @@ public class V_OrdemServico extends JPanel {
         }
         if (!populado) mdl_Checklist.addRow(new Object[]{Boolean.FALSE, "(sem itens no orçamento)", ""});
 
-        tbl_Checklist = new JTable(mdl_Checklist);
-        tbl_Checklist.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl_Checklist.setRowHeight(26);
-        tbl_Checklist.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl_Checklist.getTableHeader().setReorderingAllowed(false);
+        tbl_Checklist = criarTabela(mdl_Checklist);
         tbl_Checklist.getColumnModel().getColumn(0).setMaxWidth(55);
         tbl_Checklist.getColumnModel().getColumn(0).setMinWidth(45);
         tbl_Checklist.getColumnModel().getColumn(2).setPreferredWidth(110);
         tbl_Checklist.getColumnModel().getColumn(2).setMaxWidth(160);
 
         int alturaCheck = Math.min(Math.max((mdl_Checklist.getRowCount() * 26) + 30, 90), 220);
-        JScrollPane scpCheck = new JScrollPane(tbl_Checklist);
-        scpCheck.setBorder(BorderFactory.createLineBorder(Color.decode("#CCCCCC")));
-        scpCheck.setPreferredSize(new Dimension(600, alturaCheck));
+        JScrollPane scpCheck = scrollTabela(tbl_Checklist, alturaCheck);
 
         JPanel pnl_Check = new JPanel(new BorderLayout(0, 4));
         pnl_Check.setOpaque(false);
@@ -266,24 +268,12 @@ public class V_OrdemServico extends JPanel {
 
         boolean isRevisao = servico != null && "REVISAO".equalsIgnoreCase(servico.tipoServico());
         if (isRevisao) {
-            JButton btn_OrcInterno = new JButton("Gerar Orçamento Interno");
-            btn_OrcInterno.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btn_OrcInterno.setBackground(Color.decode("#17A2B8"));
-            btn_OrcInterno.setForeground(Color.WHITE);
-            btn_OrcInterno.setFocusPainted(false);
-            btn_OrcInterno.setBorderPainted(false);
-            btn_OrcInterno.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            JButton btn_OrcInterno = botaoAcao("Gerar Orçamento Interno", COR_INFO);
             btn_OrcInterno.addActionListener(e -> gerarOrcamentoInterno());
             pnl_Botoes.add(btn_OrcInterno);
         }
 
-        JButton btn_Confirmar = new JButton("✔ Confirmar Etapa");
-        btn_Confirmar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn_Confirmar.setBackground(COR_LARANJA);
-        btn_Confirmar.setForeground(Color.WHITE);
-        btn_Confirmar.setFocusPainted(false);
-        btn_Confirmar.setBorderPainted(false);
-        btn_Confirmar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn_Confirmar = botaoAcao("✔ Confirmar Etapa", COR_LARANJA);
         btn_Confirmar.addActionListener(e -> confirmarEtapa());
         pnl_Botoes.add(btn_Confirmar);
 
@@ -302,13 +292,13 @@ public class V_OrdemServico extends JPanel {
 
         // Descrição geral (etapa=0)
         ServicoResponseDTO.ItemView descItem = servico.itens().stream()
-            .filter(it -> it.etapa() == 0).findFirst().orElse(null);
+                .filter(it -> it.etapa() == 0).findFirst().orElse(null);
         String descricao = descItem != null ? descItem.descricao() : "(sem descrição)";
-        pnl.add(criarCardLeitura("Descrição do trabalho", descricao, "#2980B9"), BorderLayout.NORTH);
+        pnl.add(criarCardLeitura("Descrição do trabalho", descricao, COR_AZUL), BorderLayout.NORTH);
 
         // Checklist (etapa=1)
         List<ServicoResponseDTO.ItemView> checkItems = servico.itens().stream()
-            .filter(it -> it.etapa() == 1).toList();
+                .filter(it -> it.etapa() == 1).toList();
 
         String[] cols = {"Feito", "Item realizado", "Tempo gasto"};
         DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
@@ -322,23 +312,23 @@ public class V_OrdemServico extends JPanel {
                 mdl.addRow(new Object[]{"CONCLUIDO".equals(it.status()), it.descricao(), it.tempoGasto()});
         }
 
-        JTable tbl = new JTable(mdl);
-        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setRowHeight(26);
-        tbl.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl.getTableHeader().setReorderingAllowed(false);
+        JTable tbl = criarTabela(mdl);
         tbl.getColumnModel().getColumn(0).setMaxWidth(55);
         tbl.getColumnModel().getColumn(0).setMinWidth(45);
         tbl.getColumnModel().getColumn(2).setPreferredWidth(110);
         tbl.getColumnModel().getColumn(2).setMaxWidth(160);
 
         int alturaTabela = Math.min((mdl.getRowCount() * 26) + 30, 220);
-        JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(Color.decode("#E0E0E0")), "Itens realizados"));
-        scp.setPreferredSize(new Dimension(600, alturaTabela));
 
-        pnl.add(scp, BorderLayout.CENTER);
+        JLabel lblItens = criarLabelCampo("Itens realizados");
+        JScrollPane scp = scrollTabela(tbl, alturaTabela);
+
+        JPanel pnl_Itens = new JPanel(new BorderLayout(0, 4));
+        pnl_Itens.setOpaque(false);
+        pnl_Itens.add(lblItens, BorderLayout.NORTH);
+        pnl_Itens.add(scp, BorderLayout.CENTER);
+
+        pnl.add(pnl_Itens, BorderLayout.CENTER);
         return pnl;
     }
 
@@ -346,32 +336,16 @@ public class V_OrdemServico extends JPanel {
     // Painel de finalização — OS em andamento
     // -----------------------------------------------------------------------
     private JPanel construirPainelFinalizacao() {
-        JLabel lblEtapa = new JLabel("ETAPA — FINALIZAÇÃO DO SERVIÇO");
-        lblEtapa.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblEtapa.setForeground(COR_VERDE);
-        lblEtapa.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        lblEtapa.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lblEtapa = criarLabelEtapa("ETAPA — FINALIZAÇÃO DO SERVIÇO", COR_VERDE);
 
-        JPanel pnl = new JPanel(new BorderLayout(0, 12));
-        pnl.setOpaque(false);
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 12));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E5E5E5"), 1),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
+        pnl.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
 
-        JLabel lblMecanico = new JLabel("Mecânico responsável:");
-        lblMecanico.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel lblMecanico = criarLabelCampo("Mecânico responsável:");
 
-        JComboBox<FuncionarioEntity> cmb_Mecanico = new JComboBox<>();
-        cmb_Mecanico.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean sel, boolean focus) {
-                super.getListCellRendererComponent(l, v, i, sel, focus);
-                if (v instanceof FuncionarioEntity f) setText(f.getNome() + " — " + f.getCargo());
-                return this;
-            }
-        });
+        GlassComboBox<FuncionarioEntity> cmb_Mecanico = criarCombo();
+        cmb_Mecanico.setRenderer(criarRendererFuncionario());
         for (FuncionarioEntity f : controller.listarFuncionarios()) cmb_Mecanico.addItem(f);
 
         JPanel pnl_Mecanico = new JPanel(new BorderLayout(0, 4));
@@ -379,23 +353,15 @@ public class V_OrdemServico extends JPanel {
         pnl_Mecanico.add(lblMecanico, BorderLayout.NORTH);
         pnl_Mecanico.add(cmb_Mecanico, BorderLayout.CENTER);
 
-        JLabel lblObs = new JLabel("Observação do mecânico — estado do veículo na saída:");
-        lblObs.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel lblObs = criarLabelCampo("Observação do mecânico — estado do veículo na saída:");
         lblObs.setBorder(BorderFactory.createEmptyBorder(8, 0, 4, 0));
 
-        JTextArea txa_ObsSaida = new JTextArea(4, 40);
-        txa_ObsSaida.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txa_ObsSaida.setLineWrap(true);
-        txa_ObsSaida.setWrapStyleWord(true);
-        txa_ObsSaida.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(6, 8, 6, 8)
-        ));
+        GlassTextArea txa_ObsSaida = new GlassTextArea(4, 40);
 
         JPanel pnl_Obs = new JPanel(new BorderLayout(0, 4));
         pnl_Obs.setOpaque(false);
         pnl_Obs.add(lblObs, BorderLayout.NORTH);
-        pnl_Obs.add(new JScrollPane(txa_ObsSaida), BorderLayout.CENTER);
+        pnl_Obs.add(envolverEmScroll(txa_ObsSaida), BorderLayout.CENTER);
 
         JPanel pnl_Centro = new JPanel(new BorderLayout(0, 8));
         pnl_Centro.setOpaque(false);
@@ -405,13 +371,7 @@ public class V_OrdemServico extends JPanel {
         JPanel pnl_Botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         pnl_Botoes.setOpaque(false);
 
-        JButton btn_Finalizar = new JButton("✔ Finalizar Serviço");
-        btn_Finalizar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn_Finalizar.setBackground(COR_VERDE);
-        btn_Finalizar.setForeground(Color.WHITE);
-        btn_Finalizar.setFocusPainted(false);
-        btn_Finalizar.setBorderPainted(false);
-        btn_Finalizar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn_Finalizar = botaoAcao("✔ Finalizar Serviço", COR_VERDE);
         btn_Finalizar.addActionListener(e -> finalizarServico(cmb_Mecanico, txa_ObsSaida));
         pnl_Botoes.add(btn_Finalizar);
 
@@ -430,32 +390,32 @@ public class V_OrdemServico extends JPanel {
         FuncionarioEntity mecanico = (FuncionarioEntity) cmb.getSelectedItem();
         if (mecanico == null) {
             JOptionPane.showMessageDialog(this, "Selecione o mecânico responsável.",
-                "Atenção", JOptionPane.WARNING_MESSAGE);
+                    "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String observacao = txa.getText().trim();
         if (observacao.length() < 3) {
             JOptionPane.showMessageDialog(this,
-                "Descreva o estado do veículo na saída (mínimo 3 caracteres).",
-                "Atenção", JOptionPane.WARNING_MESSAGE);
+                    "Descreva o estado do veículo na saída (mínimo 3 caracteres).",
+                    "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Confirma a finalização desta O.S.? O status ficará CONCLUÍDA e não poderá ser reaberto.",
-            "Confirmar Finalização", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                "Confirma a finalização desta O.S.? O status ficará CONCLUÍDA e não poderá ser reaberto.",
+                "Confirmar Finalização", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         try {
             controller.finalizarOS(idOS, observacao, mecanico.getIdFuncionario());
             JOptionPane.showMessageDialog(this,
-                "O.S. finalizada com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "O.S. finalizada com sucesso!",
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             carregarServico();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                "Erro", JOptionPane.ERROR_MESSAGE);
+                    "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -464,7 +424,7 @@ public class V_OrdemServico extends JPanel {
     // -----------------------------------------------------------------------
     private JPanel construirCardObservacaoSaida() {
         ServicoResponseDTO.ItemView obsItem = servico.itens().stream()
-            .filter(it -> it.etapa() == 2).findFirst().orElse(null);
+                .filter(it -> it.etapa() == 2).findFirst().orElse(null);
         if (obsItem == null) return null;
 
         String titulo = "Estado do veículo na saída";
@@ -476,7 +436,7 @@ public class V_OrdemServico extends JPanel {
                 }
             }
         }
-        return criarCardLeitura(titulo, obsItem.descricao(), "#27AE60");
+        return criarCardLeitura(titulo, obsItem.descricao(), COR_VERDE);
     }
 
     // -----------------------------------------------------------------------
@@ -487,8 +447,8 @@ public class V_OrdemServico extends JPanel {
         String descricao = txa_Descricao != null ? txa_Descricao.getText().trim() : "";
         if (descricao.length() < 3) {
             JOptionPane.showMessageDialog(this,
-                "Informe a descrição geral do trabalho (mínimo 3 caracteres).",
-                "Atenção", JOptionPane.WARNING_MESSAGE);
+                    "Informe a descrição geral do trabalho (mínimo 3 caracteres).",
+                    "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -506,37 +466,32 @@ public class V_OrdemServico extends JPanel {
         try {
             controller.registrarEtapaOS(idOS, descricao, checklist);
             JOptionPane.showMessageDialog(this,
-                "Etapa registrada. O.S. movida para EM ANDAMENTO.",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "Etapa registrada. O.S. movida para EM ANDAMENTO.",
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             carregarServico();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                "Erro", JOptionPane.ERROR_MESSAGE);
+                    "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void gerarOrcamentoInterno() {
         if (servico == null) return;
-        JTextField txtValor = new JTextField();
-        JComboBox<FuncionarioEntity> cmbResponsavel = new JComboBox<>();
-        cmbResponsavel.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean sel, boolean focus) {
-                super.getListCellRendererComponent(l, v, i, sel, focus);
-                if (v instanceof FuncionarioEntity f) setText(f.getNome() + " — " + f.getCargo());
-                return this;
-            }
-        });
+        GlassTextField txtValor = criarTextField();
+        GlassComboBox<FuncionarioEntity> cmbResponsavel = criarCombo();
+        cmbResponsavel.setRenderer(criarRendererFuncionario());
         for (FuncionarioEntity f : controller.listarFuncionarios()) cmbResponsavel.addItem(f);
-        JTextField txtObs = new JTextField();
-        JPanel form = new JPanel(new GridLayout(0, 1, 0, 4));
-        form.add(new JLabel("Valor estimado (R$):")); form.add(txtValor);
-        form.add(new JLabel("Mecânico responsável:")); form.add(cmbResponsavel);
-        form.add(new JLabel("Observação:"));           form.add(txtObs);
+        GlassTextField txtObs = criarTextField();
+
+        JPanel form = new JPanel(new GridLayout(0, 1, 0, 6));
+        form.setOpaque(false);
+        form.add(criarLabelCampo("Valor estimado (R$):")); form.add(txtValor);
+        form.add(criarLabelCampo("Mecânico responsável:")); form.add(cmbResponsavel);
+        form.add(criarLabelCampo("Observação:"));           form.add(txtObs);
 
         int res = JOptionPane.showConfirmDialog(this, form,
-            "Gerar Orçamento Interno — OS " + servico.codigo(),
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                "Gerar Orçamento Interno — OS " + servico.codigo(),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (res != JOptionPane.OK_OPTION) return;
 
         double valor;
@@ -556,9 +511,9 @@ public class V_OrdemServico extends JPanel {
             long idVeic = servico.idVeiculo() != null ? servico.idVeiculo() : 0L;
             long idCliente = controller.getIdClientePorVeiculo(idVeic);
             controller.criarOrcamentoRevisao(idOS, valor, resp.getNome(),
-                txtObs.getText().trim(), idVeic, idCliente, resp.getIdFuncionario());
+                    txtObs.getText().trim(), idVeic, idCliente, resp.getIdFuncionario());
             JOptionPane.showMessageDialog(this, "Orçamento interno criado com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
@@ -573,14 +528,13 @@ public class V_OrdemServico extends JPanel {
         catch (Exception e) { return null; }
         if (itens.isEmpty()) return null;
 
-        JPanel pnl = new JPanel(new BorderLayout(0, 6));
-        pnl.setOpaque(false);
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 8));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setBorder(BorderFactory.createEmptyBorder(14, 16, 14, 16));
 
         JLabel lbl = new JLabel("SERVIÇOS DO ORÇAMENTO");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lbl.setForeground(COR_AZUL);
-        lbl.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
 
         String[] cols = {"Serviço", "Tipo"};
         javax.swing.table.DefaultTableModel mdl = new javax.swing.table.DefaultTableModel(cols, 0) {
@@ -593,20 +547,12 @@ public class V_OrdemServico extends JPanel {
             mdl.addRow(new Object[]{item.getNome(), tipo});
         }
 
-        JTable tbl = new JTable(mdl);
-        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setRowHeight(26);
-        tbl.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl.getTableHeader().setReorderingAllowed(false);
+        JTable tbl = criarTabela(mdl);
         tbl.getColumnModel().getColumn(1).setMaxWidth(80);
         tbl.getColumnModel().getColumn(1).setMinWidth(60);
 
         int altura = Math.min((mdl.getRowCount() * 26) + 30, 200);
-        JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E5E5E5")),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)));
-        scp.setPreferredSize(new Dimension(600, altura));
+        JScrollPane scp = scrollTabela(tbl, altura);
 
         pnl.add(lbl, BorderLayout.NORTH);
         pnl.add(scp, BorderLayout.CENTER);
@@ -622,14 +568,13 @@ public class V_OrdemServico extends JPanel {
         catch (Exception e) { return null; }
         if (pecas.isEmpty()) return null;
 
-        JPanel pnl = new JPanel(new BorderLayout(0, 6));
-        pnl.setOpaque(false);
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 8));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setBorder(BorderFactory.createEmptyBorder(14, 16, 14, 16));
 
         JLabel lbl = new JLabel("PEÇAS UTILIZADAS");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lbl.setForeground(COR_VERDE);
-        lbl.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
 
         String[] cols = {"Peça", "Nome Técnico", "Fabricante"};
         javax.swing.table.DefaultTableModel mdl = new javax.swing.table.DefaultTableModel(cols, 0) {
@@ -641,24 +586,16 @@ public class V_OrdemServico extends JPanel {
             String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
             String fabricante = triple.length > 3 ? (String) triple[3] : "";
             mdl.addRow(new Object[]{
-                p.getNomeExibicao(),
-                nomeTecnico.isBlank() ? "—" : nomeTecnico,
-                fabricante.isBlank() ? "—" : fabricante
+                    p.getNomeExibicao(),
+                    nomeTecnico.isBlank() ? "—" : nomeTecnico,
+                    fabricante.isBlank() ? "—" : fabricante
             });
         }
 
-        JTable tbl = new JTable(mdl);
-        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setRowHeight(26);
-        tbl.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl.getTableHeader().setReorderingAllowed(false);
+        JTable tbl = criarTabela(mdl);
 
         int altura = Math.min((mdl.getRowCount() * 26) + 30, 200);
-        JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E5E5E5")),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)));
-        scp.setPreferredSize(new Dimension(600, altura));
+        JScrollPane scp = scrollTabela(tbl, altura);
 
         pnl.add(lbl, BorderLayout.NORTH);
         pnl.add(scp, BorderLayout.CENTER);
@@ -666,23 +603,29 @@ public class V_OrdemServico extends JPanel {
     }
 
     // -----------------------------------------------------------------------
-    private JPanel criarCardLeitura(String titulo, String conteudo, String corHex) {
-        JPanel pnl = new JPanel(new BorderLayout(0, 6));
-        pnl.setBackground(Color.decode("#F9F9F9"));
-        pnl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E5E5E5"), 1),
-            BorderFactory.createEmptyBorder(12, 14, 12, 14)
-        ));
+    // Card de leitura genérico (usado em "Descrição do trabalho" e
+    // "Estado do veículo na saída"). Antes não definia alignmentX, então
+    // ficava CENTRALIZADO quando adicionado direto ao BoxLayout de pnl_Corpo
+    // (etapa concluída) — corrigido abaixo.
+    // -----------------------------------------------------------------------
+    private JPanel criarCardLeitura(String titulo, String conteudo, Color cor) {
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 6));
+        pnl.setAlignmentX(Component.LEFT_ALIGNMENT); // <- correção do alinhamento
+        pnl.setBorder(BorderFactory.createEmptyBorder(14, 16, 14, 16));
+
         JLabel lbl = new JLabel(titulo);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(Color.decode(corHex));
+        lbl.setForeground(cor);
         pnl.add(lbl, BorderLayout.NORTH);
+
         JTextArea txa = new JTextArea(conteudo);
-        txa.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txa.setForeground(Color.decode("#2C3E50"));
-        txa.setLineWrap(true); txa.setWrapStyleWord(true);
+        txa.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+        txa.setForeground(COR_TEXTO_CAMPO);
+        txa.setLineWrap(true);
+        txa.setWrapStyleWord(true);
         txa.setEditable(false);
-        txa.setBackground(Color.decode("#F9F9F9"));
+        txa.setOpaque(false);
+        txa.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
         pnl.add(txa, BorderLayout.CENTER);
         return pnl;
     }
@@ -690,5 +633,521 @@ public class V_OrdemServico extends JPanel {
     private void navegar(JPanel destino) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
+    }
+
+    // ===== helpers visuais =====
+    private JLabel criarLabelEtapa(String texto, Color cor) {
+        JLabel l = new JLabel(texto);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        l.setForeground(cor);
+        l.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return l;
+    }
+
+    private JLabel criarLabelCampo(String texto) {
+        JLabel l = new JLabel(texto);
+        l.setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_LABEL));
+        l.setForeground(COR_LABEL);
+        return l;
+    }
+
+    private <T> GlassComboBox<T> criarCombo() {
+        GlassComboBox<T> cmb = new GlassComboBox<>();
+        cmb.setPreferredSize(new Dimension(100, ALTURA_CAMPO));
+        return cmb;
+    }
+
+    private GlassTextField criarTextField() {
+        GlassTextField f = new GlassTextField();
+        f.setPreferredSize(new Dimension(0, ALTURA_CAMPO));
+        return f;
+    }
+
+    private JScrollPane envolverEmScroll(JTextArea area) {
+        JScrollPane scp = new JScrollPane(area);
+        scp.setOpaque(false);
+        scp.getViewport().setOpaque(false);
+        scp.setBorder(BorderFactory.createEmptyBorder());
+        return scp;
+    }
+
+    private DefaultListCellRenderer criarRendererFuncionario() {
+        return new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean sel, boolean focus) {
+                JLabel lbl = (JLabel) super.getListCellRendererComponent(l, v, i, sel, focus);
+                if (v instanceof FuncionarioEntity f) lbl.setText(f.getNome() + " — " + f.getCargo());
+                estilizarCelula(lbl, i, sel);
+                return lbl;
+            }
+        };
+    }
+
+    private void estilizarCelula(JLabel lbl, int indice, boolean selecionado) {
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+        lbl.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        if (indice == -1) {
+            lbl.setOpaque(false);
+            lbl.setForeground(COR_TEXTO_CAMPO);
+        } else if (selecionado) {
+            lbl.setOpaque(true);
+            lbl.setBackground(new Color(255, 173, 51, 60));
+            lbl.setForeground(COR_TEXTO_CAMPO);
+        } else {
+            lbl.setOpaque(true);
+            lbl.setBackground(Color.WHITE);
+            lbl.setForeground(COR_TEXTO_CAMPO);
+        }
+    }
+
+    private JButton botaoAcao(String texto, Color cor) {
+        return new BotaoAcaoPequeno(texto, cor);
+    }
+
+    private JButton botaoLink(String texto, Color cor) {
+        JButton btn = new JButton(texto);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setForeground(cor);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private JTable criarTabela(DefaultTableModel model) {
+        JTable tbl = new JTable(model) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(245, 247, 250));
+                } else {
+                    c.setBackground(new Color(255, 173, 51, 80));
+                }
+                return c;
+            }
+        };
+        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tbl.setForeground(COR_TEXTO_CAMPO);
+        tbl.setRowHeight(26);
+        tbl.setShowGrid(false);
+        tbl.setIntercellSpacing(new Dimension(0, 0));
+        tbl.setSelectionBackground(new Color(255, 173, 51, 80));
+        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
+        JTableHeader header = tbl.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        header.setForeground(COR_TITULO);
+        header.setBackground(COR_CARD_BASE);
+        header.setReorderingAllowed(false);
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 28));
+        tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        return tbl;
+    }
+
+    private JScrollPane scrollTabela(JTable tbl, int altura) {
+        JScrollPane scp = new JScrollPane(tbl);
+        scp.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
+        scp.getViewport().setBackground(Color.WHITE);
+        scp.setPreferredSize(new Dimension(0, altura));
+        return scp;
+    }
+
+    private static class RoundedBorder implements javax.swing.border.Border {
+        private final int raio; private final Color cor;
+        RoundedBorder(int r, Color c) { this.raio = r; this.cor = c; }
+        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
+        public boolean isBorderOpaque() { return false; }
+        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(cor);
+            g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
+            g2.dispose();
+        }
+    }
+
+    /** Selo/pill do status, com fundo translúcido na cor da etapa atual. */
+    private static class SeloStatus extends JLabel {
+        private Color corDestaque = COR_LARANJA;
+
+        SeloStatus(String texto) {
+            super(texto);
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            setOpaque(false);
+        }
+
+        void setCorDestaque(Color cor) {
+            this.corDestaque = cor;
+            setForeground(cor);
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            g2.setColor(new Color(corDestaque.getRed(), corDestaque.getGreen(), corDestaque.getBlue(), 35));
+            g2.fill(new RoundRectangle2D.Double(0, 0, w, h, h, h));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Campo de texto com efeito de vidro translúcido (glassmorphism), no mesmo
+     * padrão visual usado em V_CadastrarCliente / V_CadastrarOrcamento.
+     */
+    private static class GlassTextField extends JTextField {
+        private boolean focado = false;
+
+        GlassTextField() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : COR_BORDA_SUAVE;
+            float espessura = focado ? 1.6f : 1f;
+
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * Variante em "vidro" do JTextArea, usada nos campos de descrição/observação,
+     * seguindo exatamente a mesma linguagem visual do GlassTextField.
+     */
+    private static class GlassTextArea extends JTextArea {
+        private boolean focado = false;
+
+        GlassTextArea(int linhas, int colunas) {
+            super(linhas, colunas);
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.3), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : COR_BORDA_SUAVE;
+            float espessura = focado ? 1.6f : 1f;
+
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * ComboBox com o mesmo acabamento em vidro dos demais campos: pintura própria
+     * do fundo/gradiente/borda, com o botão de seta redesenhado via GlassComboBoxUI.
+     */
+    private static class GlassComboBox<T> extends JComboBox<T> {
+        private boolean focado = false;
+
+        GlassComboBox() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setFocusable(true);
+            setUI(new GlassComboBoxUI());
+            setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 28));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : COR_BORDA_SUAVE;
+            float espessura = focado ? 1.6f : 1f;
+
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /** UI mínima que remove a pintura padrão do Swing e estiliza apenas o botão de seta. */
+    private static class GlassComboBoxUI extends BasicComboBoxUI {
+        @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // vazio de propósito: o próprio JComboBox já pinta o fundo em vidro
+        }
+
+        @Override
+        protected JButton createArrowButton() {
+            JButton seta = new JButton("\u25BE");
+            seta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            seta.setForeground(COR_LABEL);
+            seta.setContentAreaFilled(false);
+            seta.setBorderPainted(false);
+            seta.setFocusPainted(false);
+            seta.setOpaque(false);
+            seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return seta;
+        }
+    }
+
+    /**
+     * Barra de rolagem fina e translúcida, no mesmo tom de vidro dos demais
+     * componentes: trilho quase invisível, "thumb" arredondado que ganha a cor
+     * de destaque ao passar o mouse/arrastar, sem os botões de seta padrão do Swing.
+     */
+    private static class GlassScrollBarUI extends BasicScrollBarUI {
+        @Override
+        protected void configureScrollBarColors() {
+            // cores tratadas manualmente em paintThumb/paintTrack
+        }
+
+        @Override
+        protected JButton createDecreaseButton(int orientation) {
+            return criarBotaoInvisivel();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) {
+            return criarBotaoInvisivel();
+        }
+
+        private JButton criarBotaoInvisivel() {
+            JButton b = new JButton();
+            b.setPreferredSize(new Dimension(0, 0));
+            b.setMinimumSize(new Dimension(0, 0));
+            b.setMaximumSize(new Dimension(0, 0));
+            return b;
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(160, 175, 195, 30));
+            g2.fill(new RoundRectangle2D.Double(trackBounds.x + 2, trackBounds.y, trackBounds.width - 4, trackBounds.height, 6, 6));
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !c.isEnabled()) return;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color cor = (isDragging || isThumbRollover()) ? new Color(255, 153, 0, 190) : new Color(160, 175, 195, 150);
+            int x = thumbBounds.x + 2;
+            int y = thumbBounds.y + 1;
+            int w = thumbBounds.width - 4;
+            int h = thumbBounds.height - 2;
+            g2.setColor(cor);
+            g2.fill(new RoundRectangle2D.Double(x, y, Math.max(w, 0), Math.max(h, 0), 6, 6));
+            g2.dispose();
+        }
+
+        @Override
+        protected Dimension getMinimumThumbSize() {
+            return new Dimension(9, 24);
+        }
+    }
+
+    /**
+     * Painel "cartão" translúcido usado para envolver cada bloco de conteúdo da
+     * página (edição, leitura, finalização, tabelas de orçamento/peças etc.),
+     * reforçando a hierarquia visual sobre o fundo cinza-claro da página.
+     */
+    private static class PainelCartao extends JPanel {
+        PainelCartao(LayoutManager layout) {
+            super(layout);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 18));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE + 4, RAIO_COMPONENTE + 4));
+
+            g2.setColor(new Color(255, 255, 255, 205));
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 4, RAIO_COMPONENTE + 4, RAIO_COMPONENTE + 4));
+
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(COR_BORDA_SUAVE);
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 4, RAIO_COMPONENTE + 4, RAIO_COMPONENTE + 4));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação compacto com a mesma linguagem visual dos campos em vidro.
+     * A cor de hover/clique é derivada automaticamente da cor base
+     * (brighter()/darker()), então basta uma única cor por chamada. Sem
+     * tamanho fixo — cresce conforme o texto, evitando corte em rótulos longos
+     * como "Gerar Orçamento Interno".
+     */
+    private static class BotaoAcaoPequeno extends JButton {
+        private final Color corBase;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcaoPequeno(String texto, Color corBase) {
+            super(texto);
+            this.corBase = corBase;
+            setFont(new Font("Segoe UI", Font.BOLD, 13));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int raio = RAIO_COMPONENTE - 2;
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1, 2, w - 2, h - 2, raio, raio));
+
+            Color corPreenchimento = pressionado ? corBase.darker() : (sobreMouse ? corBase.brighter() : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio));
+
+            g2.setColor(new Color(255, 255, 255, 40));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), raio - 3, raio - 3));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }

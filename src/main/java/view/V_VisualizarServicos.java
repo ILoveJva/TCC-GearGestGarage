@@ -11,7 +11,17 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.util.*;
@@ -20,13 +30,69 @@ import java.util.stream.Collectors;
 
 public class V_VisualizarServicos extends JPanel {
 
+    // =========================================================================
+    // PALETA E MEDIDAS — mexa só aqui para alterar tudo de uma vez
+    // =========================================================================
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#FAFBFC");
+    private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
+    private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+
+    // Cores do popup da lista suspensa — precisa ser SÓLIDO (o vidro é só na caixa fechada)
+    private static final Color COR_POPUP_FUNDO   = Color.decode("#FFFFFF");
+    private static final Color COR_POPUP_SELECAO = Color.decode("#FFE4BF");
+    private static final Color COR_POPUP_BORDA   = Color.decode("#C3CDDA");
+
+    // Ação principal: "+ Criar OS" (tema laranja original preservado)
+    private static final Color COR_ACAO         = Color.decode("#FF9900");
+    private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
+    private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
+
+    // Ação secundária: "Gerar OS do selecionado" (tema azul-petróleo original preservado)
+    private static final Color COR_INFO         = Color.decode("#17A2B8");
+    private static final Color COR_INFO_CLARA   = Color.decode("#33B8CC");
+    private static final Color COR_INFO_ESCURA  = Color.decode("#148A9C");
+
+    // Seção "Orçamentos pendentes" — identidade âmbar preservada
+    private static final Color COR_PEND_TEXTO       = Color.decode("#B8860B");
+    private static final Color COR_PEND_BORDA       = Color.decode("#FFD580");
+    private static final Color COR_PEND_CARD_TOPO   = Color.decode("#FFFDF6");
+    private static final Color COR_PEND_CARD_BASE   = Color.decode("#FFF3D6");
+    private static final Color COR_PEND_BTN         = Color.decode("#B8860B");
+    private static final Color COR_PEND_BTN_CLARA   = Color.decode("#C79A2A");
+    private static final Color COR_PEND_BTN_ESCURA  = Color.decode("#9C7209");
+
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
+    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
+
+    // Tabela de dados
+    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_GRADE   = Color.decode("#E3E9F0");
+    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
+
+    private static final int RAIO_COMPONENTE     = 12;
+    private static final int TAMANHO_FONTE_CAMPO = 12;
+    private static final int ALTURA_CAMPO        = 32;
+    private static final int TAMANHO_FONTE_BOTAO = 12;
+    private static final int ALTURA_BOTAO        = 34;
+    private static final int ALTURA_CABECALHO    = 26;
+    private static final int ALTURA_LINHA_TABELA = 24;
+
     private final OficinaController controller;
 
     private List<ServicoResponseDTO> todos = new ArrayList<>();
     private List<Orcamento> orcamentosPendentes = new ArrayList<>();
     private Map<Long, Veiculo> veicMap = new HashMap<>();
 
-    private JTextField txt_Busca;
+    private GlassTextField txt_Busca;
     private JComboBox<String> cmb_Tipo;
     private JComboBox<String> cmb_Status;
 
@@ -37,14 +103,14 @@ public class V_VisualizarServicos extends JPanel {
     private JTable tbl_Pendentes;
     private JPanel pnl_Pendentes;
     private JPanel pnl_PendentesCorpo;
-    private JButton btn_TogglePendentes;
+    private BotaoAcao btn_TogglePendentes;
 
     private static final String[] STATUS_LABELS = {"Todos os status", "Aberta", "Em Andamento", "Concluída"};
     private static final String[] STATUS_CODES  = {null, "ABERTA", "EM_ANDAMENTO", "CONCLUIDA"};
 
     public V_VisualizarServicos(OficinaController controller) {
         this.controller = controller;
-        setBackground(Color.decode("#F5F5F5"));
+        setBackground(COR_FUNDO_PAGINA);
         setLayout(new BorderLayout(0, 0));
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         construir();
@@ -55,16 +121,10 @@ public class V_VisualizarServicos extends JPanel {
         // ---- Breadcrumb + botão criar OS ----
         JLabel lbl_Titulo = new JLabel("Página Inicial > Consultar Serviços");
         lbl_Titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl_Titulo.setForeground(Color.decode("#4D4D4D"));
+        lbl_Titulo.setForeground(COR_TITULO);
 
-        JButton btn_CriarOS = new JButton("+ Criar OS");
-        btn_CriarOS.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_CriarOS.setForeground(Color.WHITE);
-        btn_CriarOS.setBackground(Color.decode("#FF9900"));
-        btn_CriarOS.setFocusPainted(false);
-        btn_CriarOS.setBorderPainted(false);
-        btn_CriarOS.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_CriarOS.setPreferredSize(new Dimension(140, 36));
+        BotaoAcao btn_CriarOS = new BotaoAcao("+ Criar OS", COR_ACAO, COR_ACAO_CLARA, COR_ACAO_ESCURA);
+        btn_CriarOS.setPreferredSize(new Dimension(140, ALTURA_BOTAO));
         btn_CriarOS.addActionListener(e -> navegar(new V_CadastrarServico(controller)));
 
         JPanel pnl_Linha1 = new JPanel(new BorderLayout());
@@ -73,12 +133,8 @@ public class V_VisualizarServicos extends JPanel {
         pnl_Linha1.add(btn_CriarOS, BorderLayout.EAST);
 
         // ---- Filtros ----
-        txt_Busca = new JTextField();
-        txt_Busca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txt_Busca.setPreferredSize(new Dimension(240, 32));
-        txt_Busca.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+        txt_Busca = new GlassTextField();
+        txt_Busca.setPreferredSize(new Dimension(240, ALTURA_CAMPO));
         txt_Busca.putClientProperty("JTextField.placeholderText", "Buscar por título ou veículo...");
 
         // Combo tipo: "Todos os tipos" + cada TipoServicoOS
@@ -86,21 +142,19 @@ public class V_VisualizarServicos extends JPanel {
         tiposLabels[0] = "Todos os tipos";
         for (int i = 0; i < OrdemDeServico.TipoServicoOS.values().length; i++)
             tiposLabels[i + 1] = OrdemDeServico.TipoServicoOS.values()[i].getLabel();
-        cmb_Tipo = new JComboBox<>(tiposLabels);
-        cmb_Tipo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cmb_Tipo.setPreferredSize(new Dimension(165, 32));
-        cmb_Tipo.setBackground(Color.WHITE);
+        cmb_Tipo = new GlassComboBox<>(tiposLabels);
+        cmb_Tipo.setPreferredSize(new Dimension(165, ALTURA_CAMPO));
 
-        cmb_Status = new JComboBox<>(STATUS_LABELS);
-        cmb_Status.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cmb_Status.setPreferredSize(new Dimension(175, 32));
-        cmb_Status.setBackground(Color.WHITE);
+        cmb_Status = new GlassComboBox<>(STATUS_LABELS);
+        cmb_Status.setPreferredSize(new Dimension(175, ALTURA_CAMPO));
 
         JLabel lbl_B = new JLabel("Buscar:");
         JLabel lbl_T = new JLabel("Tipo:");
         JLabel lbl_S = new JLabel("Status:");
-        for (JLabel l : new JLabel[]{lbl_B, lbl_T, lbl_S})
+        for (JLabel l : new JLabel[]{lbl_B, lbl_T, lbl_S}) {
             l.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            l.setForeground(COR_LABEL);
+        }
 
         JPanel pnl_Filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pnl_Filtros.setOpaque(false);
@@ -111,25 +165,19 @@ public class V_VisualizarServicos extends JPanel {
         pnl_Filtros.add(lbl_S); pnl_Filtros.add(cmb_Status);
 
         // ---- Seção orçamentos pendentes (colapsável) ----
-        pnl_Pendentes = new JPanel(new BorderLayout(0, 6));
-        pnl_Pendentes.setOpaque(false);
+        pnl_Pendentes = new PainelGradiente(new BorderLayout(0, 6), COR_PEND_CARD_TOPO, COR_PEND_CARD_BASE);
         pnl_Pendentes.setVisible(false);
         pnl_Pendentes.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#FFD580")),
-            BorderFactory.createEmptyBorder(8, 0, 10, 0)));
+                BorderFactory.createLineBorder(COR_PEND_BORDA),
+                BorderFactory.createEmptyBorder(8, 10, 10, 10)));
 
         JPanel pnl_PendentesHeader = new JPanel(new BorderLayout());
         pnl_PendentesHeader.setOpaque(false);
         JLabel lbl_Pend = new JLabel("⚠  Orçamentos aprovados aguardando OS");
         lbl_Pend.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl_Pend.setForeground(Color.decode("#B8860B"));
-        btn_TogglePendentes = new JButton("Mostrar ▾");
-        btn_TogglePendentes.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        btn_TogglePendentes.setForeground(Color.decode("#B8860B"));
-        btn_TogglePendentes.setBackground(Color.decode("#FFF8E1"));
-        btn_TogglePendentes.setFocusPainted(false);
-        btn_TogglePendentes.setBorder(BorderFactory.createLineBorder(Color.decode("#FFD580")));
-        btn_TogglePendentes.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lbl_Pend.setForeground(COR_PEND_TEXTO);
+        btn_TogglePendentes = new BotaoAcao("Mostrar ▾", COR_PEND_BTN, COR_PEND_BTN_CLARA, COR_PEND_BTN_ESCURA);
+        btn_TogglePendentes.setPreferredSize(new Dimension(100, 26));
         pnl_PendentesHeader.add(lbl_Pend, BorderLayout.WEST);
         pnl_PendentesHeader.add(btn_TogglePendentes, BorderLayout.EAST);
 
@@ -142,22 +190,17 @@ public class V_VisualizarServicos extends JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tbl_Pendentes = new JTable(mdl_Pendentes);
-        tbl_Pendentes.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tbl_Pendentes.setRowHeight(24);
-        tbl_Pendentes.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl_Pendentes.getTableHeader().setReorderingAllowed(false);
-        tbl_Pendentes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        estilizarTabela(tbl_Pendentes);
+        tbl_Pendentes.setRowHeight(ALTURA_LINHA_TABELA);
         JScrollPane scp_Pend = new JScrollPane(tbl_Pendentes);
-        scp_Pend.setBorder(BorderFactory.createLineBorder(Color.decode("#FFD580")));
+        scp_Pend.getViewport().setBackground(COR_TABELA_FUNDO);
+        scp_Pend.getViewport().setOpaque(true);
+        scp_Pend.setOpaque(false);
+        scp_Pend.setBorder(BorderFactory.createLineBorder(COR_PEND_BORDA));
         scp_Pend.setPreferredSize(new Dimension(0, 100));
 
-        JButton btn_GerarOS = new JButton("Gerar OS do selecionado →");
-        btn_GerarOS.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn_GerarOS.setForeground(Color.WHITE);
-        btn_GerarOS.setBackground(Color.decode("#17A2B8"));
-        btn_GerarOS.setFocusPainted(false);
-        btn_GerarOS.setBorderPainted(false);
-        btn_GerarOS.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        BotaoAcao btn_GerarOS = new BotaoAcao("Gerar OS do selecionado →", COR_INFO, COR_INFO_CLARA, COR_INFO_ESCURA);
+        btn_GerarOS.setPreferredSize(new Dimension(210, 32));
         btn_GerarOS.addActionListener(e -> gerarOSDeOrcamento());
         JPanel pnl_BtnGerar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         pnl_BtnGerar.setOpaque(false);
@@ -227,10 +270,10 @@ public class V_VisualizarServicos extends JPanel {
         mdl_Pendentes.setRowCount(0);
         for (Orcamento o : orcamentosPendentes) {
             String cod = o.getCodigo() != null && !o.getCodigo().isEmpty()
-                ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
+                    ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
             mdl_Pendentes.addRow(new Object[]{
-                cod, o.getNomeCliente(), o.getPlacaVeiculo(),
-                o.getResponsavel(), String.format("R$ %.2f", o.getValor())
+                    cod, o.getNomeCliente(), o.getPlacaVeiculo(),
+                    o.getResponsavel(), String.format("R$ %.2f", o.getValor())
             });
         }
         pnl_Pendentes.setVisible(!orcamentosPendentes.isEmpty());
@@ -244,31 +287,31 @@ public class V_VisualizarServicos extends JPanel {
         int idxStatus      = cmb_Status.getSelectedIndex();
         String statusCode  = (idxStatus > 0) ? STATUS_CODES[idxStatus] : null;
         String tipoLabel   = (idxTipo > 0)
-            ? OrdemDeServico.TipoServicoOS.values()[idxTipo - 1].getLabel() : null;
+                ? OrdemDeServico.TipoServicoOS.values()[idxTipo - 1].getLabel() : null;
 
         List<ServicoResponseDTO> filtrados = todos.stream()
-            .filter(dto -> statusCode == null || statusCode.equalsIgnoreCase(dto.status()))
-            .filter(dto -> tipoLabel == null ||
-                (dto.tipoServico() != null &&
-                 OrdemDeServico.TipoServicoOS.fromName(dto.tipoServico()).getLabel().equals(tipoLabel)))
-            .filter(dto -> {
-                if (busca.isEmpty()) return true;
-                String titulo  = dto.titulo() != null ? dto.titulo().toLowerCase() : "";
-                Veiculo v = dto.idVeiculo() != null ? veicMap.get(dto.idVeiculo()) : null;
-                String placa   = v != null ? v.getPlaca().toLowerCase() : "";
-                String modelo  = v != null && v.getModelo() != null ? v.getModelo().getNome().toLowerCase() : "";
-                return titulo.contains(busca) || placa.contains(busca) || modelo.contains(busca);
-            })
-            .collect(Collectors.toList());
+                .filter(dto -> statusCode == null || statusCode.equalsIgnoreCase(dto.status()))
+                .filter(dto -> tipoLabel == null ||
+                        (dto.tipoServico() != null &&
+                                OrdemDeServico.TipoServicoOS.fromName(dto.tipoServico()).getLabel().equals(tipoLabel)))
+                .filter(dto -> {
+                    if (busca.isEmpty()) return true;
+                    String titulo  = dto.titulo() != null ? dto.titulo().toLowerCase() : "";
+                    Veiculo v = dto.idVeiculo() != null ? veicMap.get(dto.idVeiculo()) : null;
+                    String placa   = v != null ? v.getPlaca().toLowerCase() : "";
+                    String modelo  = v != null && v.getModelo() != null ? v.getModelo().getNome().toLowerCase() : "";
+                    return titulo.contains(busca) || placa.contains(busca) || modelo.contains(busca);
+                })
+                .collect(Collectors.toList());
 
         corpo.removeAll();
 
         if (filtrados.isEmpty()) {
             JLabel vazio = new JLabel(todos.isEmpty()
-                ? "Nenhuma Ordem de Serviço cadastrada. Clique em '+ Criar OS' para começar."
-                : "Nenhuma O.S. corresponde ao filtro.");
+                    ? "Nenhuma Ordem de Serviço cadastrada. Clique em '+ Criar OS' para começar."
+                    : "Nenhuma O.S. corresponde ao filtro.");
             vazio.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-            vazio.setForeground(Color.decode("#888888"));
+            vazio.setForeground(COR_LABEL);
             vazio.setAlignmentX(Component.LEFT_ALIGNMENT);
             vazio.setBorder(BorderFactory.createEmptyBorder(20, 4, 0, 0));
             corpo.add(vazio);
@@ -281,18 +324,15 @@ public class V_VisualizarServicos extends JPanel {
     }
 
     private JPanel criarCardGrupos(List<ServicoResponseDTO> itens) {
-        JPanel card = new JPanel(new BorderLayout(0, 12));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+        JPanel card = new PainelGradiente(new BorderLayout(0, 12), COR_CARD_TOPO, COR_CARD_BASE);
+        card.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lbl = new JLabel("Ordens de Serviço  (" + itens.size() + ")");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lbl.setForeground(Color.decode("#FF9900"));
-        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
+        lbl.setForeground(COR_ACAO);
+        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COR_CARD_BASE));
         lbl.setPreferredSize(new Dimension(0, 32));
         card.add(lbl, BorderLayout.NORTH);
 
@@ -314,7 +354,7 @@ public class V_VisualizarServicos extends JPanel {
 
             JLabel lblTipo = new JLabel("  ▸  " + entry.getKey().getLabel());
             lblTipo.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            lblTipo.setForeground(Color.decode("#555555"));
+            lblTipo.setForeground(COR_LABEL);
             lblTipo.setBorder(BorderFactory.createEmptyBorder(8, 0, 4, 0));
             lblTipo.setAlignmentX(Component.LEFT_ALIGNMENT);
             gruposPanel.add(lblTipo);
@@ -334,10 +374,10 @@ public class V_VisualizarServicos extends JPanel {
         for (ServicoResponseDTO dto : itens) {
             Veiculo v = dto.idVeiculo() != null ? veicMap.get(dto.idVeiculo()) : null;
             String veiculo = v != null
-                ? (v.getModelo() != null
+                    ? (v.getModelo() != null
                     ? v.getModelo().getNome() + "  ·  " + v.getPlaca()
                     : v.getPlaca())
-                : "—";
+                    : "—";
             String statusLabel = formatarStatus(dto.status());
             String manut = formatarManut(dto.tipoManutencao());
             String data  = dto.dataServico() != null && !dto.dataServico().isBlank() ? dto.dataServico() : "—";
@@ -345,13 +385,8 @@ public class V_VisualizarServicos extends JPanel {
         }
 
         JTable tabela = new JTable(mdl);
-        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabela.setRowHeight(26);
-        tabela.setShowGrid(false);
-        tabela.setIntercellSpacing(new Dimension(0, 0));
-        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
-        tabela.getTableHeader().setReorderingAllowed(false);
+        estilizarTabela(tabela);
+        tabela.setRowHeight(ALTURA_LINHA_TABELA);
         tabela.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         // Larguras fixas
@@ -364,7 +399,7 @@ public class V_VisualizarServicos extends JPanel {
         tabela.getColumnModel().getColumn(5).setMinWidth(90);
         tabela.getColumnModel().getColumn(5).setMaxWidth(100);
 
-        // Renderer colorido para Status (col 2)
+        // Renderer colorido para Status (col 2) — sobrepõe o CelulaBrancaRenderer padrão só nessa coluna
         tabela.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -378,7 +413,7 @@ public class V_VisualizarServicos extends JPanel {
                         case "Aberta"       -> { c.setForeground(Color.decode("#C0392B")); c.setBackground(Color.decode("#FDECEA")); }
                         case "Em Andamento" -> { c.setForeground(Color.decode("#9A6700")); c.setBackground(Color.decode("#FEF6E4")); }
                         case "Concluída"    -> { c.setForeground(Color.decode("#1E8449")); c.setBackground(Color.decode("#E9F7EF")); }
-                        default             -> { c.setForeground(Color.decode("#333333")); c.setBackground(Color.WHITE); }
+                        default             -> { c.setForeground(COR_TEXTO_CAMPO); c.setBackground(COR_TABELA_FUNDO); }
                     }
                 } else {
                     c.setForeground(Color.WHITE);
@@ -403,14 +438,17 @@ public class V_VisualizarServicos extends JPanel {
 
         JScrollPane sp = new JScrollPane(tabela);
         sp.setAlignmentX(Component.LEFT_ALIGNMENT);
-        int altTabela = tabela.getRowHeight() * itens.size() + 28;
+        int altTabela = tabela.getRowHeight() * itens.size() + ALTURA_CABECALHO;
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela));
         sp.setPreferredSize(new Dimension(0, altTabela));
-        sp.setBorder(BorderFactory.createLineBorder(Color.decode("#E8E8E8")));
+        sp.getViewport().setBackground(COR_TABELA_FUNDO);
+        sp.getViewport().setOpaque(true);
+        sp.setOpaque(false);
+        sp.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
 
         JLabel dica = new JLabel("Duplo clique para abrir a O.S.");
         dica.setFont(new Font("Segoe UI", Font.ITALIC, 10));
-        dica.setForeground(Color.decode("#BBBBBB"));
+        dica.setForeground(COR_LABEL);
         dica.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
 
         JPanel wrapper = new JPanel(new BorderLayout(0, 2));
@@ -423,11 +461,31 @@ public class V_VisualizarServicos extends JPanel {
         return wrapper;
     }
 
+    /** Aplica o vidro Aero cinza no cabeçalho e fundo branco nas células, igual às demais telas. */
+    private void estilizarTabela(JTable tabela) {
+        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabela.setBackground(COR_TABELA_FUNDO);
+        tabela.setForeground(COR_TEXTO_CAMPO);
+        tabela.setOpaque(true);
+        tabela.setShowGrid(false);
+        tabela.setIntercellSpacing(new Dimension(0, 0));
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabela.setSelectionBackground(COR_TABELA_SELECAO);
+        tabela.setSelectionForeground(COR_TEXTO_CAMPO);
+        tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
+
+        JTableHeader cabecalho = tabela.getTableHeader();
+        cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
+        cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
+        cabecalho.setReorderingAllowed(false);
+        cabecalho.setOpaque(false);
+    }
+
     private void gerarOSDeOrcamento() {
         int linha = tbl_Pendentes.getSelectedRow();
         if (linha < 0 || linha >= orcamentosPendentes.size()) {
             JOptionPane.showMessageDialog(this, "Selecione um orçamento na tabela.",
-                "Atenção", JOptionPane.WARNING_MESSAGE);
+                    "Atenção", JOptionPane.WARNING_MESSAGE);
             return;
         }
         Orcamento o = orcamentosPendentes.get(linha);
@@ -450,16 +508,16 @@ public class V_VisualizarServicos extends JPanel {
         form.add(new JLabel("KM atual:"));        form.add(txtKm);
 
         String codOrc = (o.getCodigo() != null && !o.getCodigo().isEmpty())
-            ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
+                ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
         int res = JOptionPane.showConfirmDialog(this, form,
-            "Gerar OS — Orçamento " + codOrc,
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                "Gerar OS — Orçamento " + codOrc,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (res != JOptionPane.OK_OPTION) return;
 
         String titulo = txtTitulo.getText().trim();
         if (titulo.length() < 3) {
             JOptionPane.showMessageDialog(this, "Título deve ter pelo menos 3 caracteres.",
-                "Atenção", JOptionPane.WARNING_MESSAGE); return;
+                    "Atenção", JOptionPane.WARNING_MESSAGE); return;
         }
         int km;
         try {
@@ -467,19 +525,19 @@ public class V_VisualizarServicos extends JPanel {
             if (km < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Informe um KM válido.",
-                "Atenção", JOptionPane.WARNING_MESSAGE); return;
+                    "Atenção", JOptionPane.WARNING_MESSAGE); return;
         }
         try {
             OrdemDeServico.TipoServicoOS tipoEnum = OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
             OrdemDeServico.TipoManutencao manutEnum = OrdemDeServico.TipoManutencao.fromLabel((String) cmbManut.getSelectedItem());
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
-                txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
+                    txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
             JOptionPane.showMessageDialog(this, "Ordem de Serviço gerada com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             carregar();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro ao gerar OS: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -507,17 +565,409 @@ public class V_VisualizarServicos extends JPanel {
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
     }
 
-    private static class RoundedBorder implements javax.swing.border.Border {
-        private final int raio; private final Color cor;
-        RoundedBorder(int r, Color c) { this.raio = r; this.cor = c; }
-        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
-        public boolean isBorderOpaque() { return false; }
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+    // =========================================================================
+    // INNER CLASSES — RENDERERS DA TABELA
+    // =========================================================================
+
+    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7). */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setForeground(COR_AERO_TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(cor);
-            g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 140));
+            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+
+            g2.setColor(COR_AERO_SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
             g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Células de dados sempre com fundo branco (e destaque no tom do tema quando selecionadas). */
+    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
+        CelulaBrancaRenderer() {
+            setOpaque(true);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+            setForeground(COR_TEXTO_CAMPO);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+            return this;
+        }
+    }
+
+    // =========================================================================
+    // INNER CLASSES — COMPONENTES EM VIDRO
+    // =========================================================================
+
+    /** Campo de texto com efeito de vidro translúcido: cantos arredondados, sombra leve, reflexo no topo. */
+    private static class GlassTextField extends JTextField {
+        private boolean focado = false;
+
+        GlassTextField() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : new Color(160, 175, 195, 130);
+            float espessura = focado ? 1.6f : 1f;
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /** Painel com fundo em gradiente suave, harmonizando cada cartão com o restante das telas. */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, getHeight(), corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação com a mesma linguagem visual dos campos em vidro: cantos
+     * arredondados, sombra suave, reflexo no topo e reação a hover/clique.
+     * Cor configurável — laranja (ação principal), azul-petróleo (gerar OS)
+     * ou âmbar (mostrar/ocultar pendentes).
+     */
+    private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(6, 16, 6, 16));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** JComboBox com o mesmo efeito de vidro dos campos de texto. */
+    private static class GlassComboBox<T> extends JComboBox<T> {
+        private boolean focado = false;
+
+        GlassComboBox() { super(); estilizar(); }
+        GlassComboBox(T[] itens) { super(itens); estilizar(); }
+
+        private void estilizar() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            // Não usar cor transparente: o BasicComboPopup copia este background
+            // para a lista suspensa, e um alpha 0 deixaria o popup transparente.
+            setBackground(COR_POPUP_FUNDO);
+            setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 4));
+            setFocusable(true);
+            setUI(new GlassComboBoxUI());
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : new Color(160, 175, 195, 130);
+            float espessura = focado ? 1.6f : 1f;
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * UI do GlassComboBox: impede que o Swing pinte fundo sólido (inclusive o
+     * azul de seleção quando em foco) por cima do vidro, troca a seta padrão
+     * por um triângulo vetorial e usa um popup arredondado.
+     */
+    private static class GlassComboBoxUI extends BasicComboBoxUI {
+        @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // Vazio de propósito — o fundo já é pintado em GlassComboBox.paintComponent().
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            ListCellRenderer renderer = comboBox.getRenderer();
+            Component c = renderer.getListCellRendererComponent(
+                    listBox, comboBox.getSelectedItem(), -1, false, false);
+            c.setFont(comboBox.getFont());
+            c.setForeground(comboBox.isEnabled() ? COR_TEXTO_CAMPO : Color.GRAY);
+
+            boolean opacoOriginal = false;
+            if (c instanceof JComponent) {
+                opacoOriginal = ((JComponent) c).isOpaque();
+                ((JComponent) c).setOpaque(false);
+            }
+
+            boolean shouldValidate = c instanceof JPanel;
+            currentValuePane.paintComponent(g, c, comboBox, bounds.x, bounds.y, bounds.width, bounds.height, shouldValidate);
+
+            if (c instanceof JComponent) {
+                ((JComponent) c).setOpaque(opacoOriginal);
+            }
+        }
+
+        @Override
+        protected ComboPopup createPopup() {
+            return new GlassComboPopup(comboBox);
+        }
+
+        @Override
+        protected JButton createArrowButton() {
+            JButton seta = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    int w = getWidth(), h = getHeight();
+                    int cx = w / 2, cy = h / 2;
+                    Path2D triangulo = new Path2D.Double();
+                    triangulo.moveTo(cx - 4, cy - 2);
+                    triangulo.lineTo(cx + 4, cy - 2);
+                    triangulo.lineTo(cx, cy + 3);
+                    triangulo.closePath();
+                    g2.setColor(COR_LABEL);
+                    g2.fill(triangulo);
+                    g2.dispose();
+                }
+            };
+            seta.setPreferredSize(new Dimension(20, 20));
+            seta.setContentAreaFilled(false);
+            seta.setBorderPainted(false);
+            seta.setFocusPainted(false);
+            seta.setOpaque(false);
+            seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return seta;
+        }
+    }
+
+    /** Popup do combo com cantos arredondados e conteúdo sólido/legível. */
+    private static class GlassComboPopup extends BasicComboPopup {
+
+        GlassComboPopup(JComboBox<Object> combo) {
+            super(combo);
+        }
+
+        @Override
+        protected void configurePopup() {
+            super.configurePopup();
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        }
+
+        @Override
+        protected void configureList() {
+            super.configureList();
+            list.setOpaque(true);
+            list.setBackground(COR_POPUP_FUNDO);
+            list.setForeground(COR_TEXTO_CAMPO);
+            list.setSelectionBackground(COR_POPUP_SELECAO);
+            list.setSelectionForeground(COR_TEXTO_CAMPO);
+            list.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+        }
+
+        @Override
+        protected JScrollPane createScroller() {
+            JScrollPane scroller = super.createScroller();
+            scroller.setOpaque(false);
+            scroller.getViewport().setOpaque(false);
+            scroller.setBorder(BorderFactory.createEmptyBorder());
+            return scroller;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(COR_POPUP_FUNDO);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(COR_POPUP_BORDA);
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void show() {
+            super.show();
+            try {
+                Window janela = SwingUtilities.getWindowAncestor(this);
+                if (janela != null) {
+                    janela.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), RAIO_COMPONENTE, RAIO_COMPONENTE));
+                }
+            } catch (Exception | Error ignorado) {
+                // Sem suporte a formato de janela nesta plataforma.
+            }
         }
     }
 }

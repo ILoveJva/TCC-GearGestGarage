@@ -9,14 +9,57 @@ import model.Orcamento;
 import model.OrdemDeServico;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 public class V_VisualizarOrcamento extends JPanel {
+
+    // =========================================================================
+    // PALETA E MEDIDAS — mexa só aqui para alterar tudo de uma vez
+    // =========================================================================
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#FAFBFC");
+    private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
+    private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+    private static final Color COR_BORDA_CARD   = Color.decode("#DDE3EA");
+
+    // Rodapé de totais — vidro âmbar/laranja (tema original preservado)
+    private static final Color COR_TOTAL_TOPO   = Color.decode("#FFF8F0");
+    private static final Color COR_TOTAL_BASE   = Color.decode("#FFE9CC");
+    private static final Color COR_TOTAL_BORDA  = Color.decode("#FF9900");
+
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
+    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
+
+    // Tabela de dados
+    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_GRADE   = Color.decode("#E3E9F0");
+    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
+
+    private static final int RAIO_COMPONENTE     = 12;
+    private static final int TAMANHO_FONTE_BOTAO = 13;
+    private static final int LARGURA_BOTAO       = 130;
+    private static final int ALTURA_BOTAO        = 34;
+    private static final int ALTURA_CABECALHO    = 28;
+    private static final int ALTURA_LINHA_TABELA = 26;
 
     private final OficinaController controller;
     private final Orcamento orcamento;
@@ -30,7 +73,7 @@ public class V_VisualizarOrcamento extends JPanel {
         this.controller = controller;
         this.orcamento = orcamento;
         carregarDados();
-        setBackground(Color.decode("#F5F5F5"));
+        setBackground(COR_FUNDO_PAGINA);
         setLayout(new BorderLayout(0, 0));
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         construir();
@@ -92,31 +135,36 @@ public class V_VisualizarOrcamento extends JPanel {
 
         JLabel lbl = new JLabel("Orçamentos > Detalhes do Orçamento");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl.setForeground(Color.decode("#4D4D4D"));
+        lbl.setForeground(COR_TITULO);
 
         JPanel botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botoes.setOpaque(false);
 
         String status = orcamento.getStatus();
         if ("PENDENTE".equalsIgnoreCase(status)) {
-            JButton btnAprovar = criarBotao("Aprovar", "#28A745");
-            JButton btnReprovar = criarBotao("Reprovar", "#DC3545");
+            BotaoAcao btnAprovar = criarBotao("Aprovar", "#28A745");
+            BotaoAcao btnReprovar = criarBotao("Reprovar", "#DC3545");
             btnAprovar.addActionListener(e -> mudarStatus(true));
             btnReprovar.addActionListener(e -> mudarStatus(false));
             botoes.add(btnReprovar);
             botoes.add(btnAprovar);
         } else if ("APROVADO".equalsIgnoreCase(status)) {
-            JButton btnGerar = criarBotao("Gerar Serviço", "#17A2B8");
+            BotaoAcao btnGerar = criarBotao("Gerar Serviço", "#17A2B8");
             btnGerar.addActionListener(e -> gerarServico());
             botoes.add(btnGerar);
         }
 
         JButton btnVoltar = new JButton("← Voltar");
         btnVoltar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnVoltar.setForeground(COR_LABEL);
         btnVoltar.setFocusPainted(false);
         btnVoltar.setBorderPainted(false);
         btnVoltar.setContentAreaFilled(false);
         btnVoltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnVoltar.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { btnVoltar.setForeground(COR_TITULO); }
+            @Override public void mouseExited(MouseEvent e)  { btnVoltar.setForeground(COR_LABEL); }
+        });
         btnVoltar.addActionListener(e -> navegar(new V_AprovarOrcamento(controller)));
         botoes.add(btnVoltar);
 
@@ -134,13 +182,12 @@ public class V_VisualizarOrcamento extends JPanel {
         };
 
         String codigo = orcamento.getCodigo().isEmpty()
-            ? String.format("#%04d", orcamento.getIdOrcamento())
-            : orcamento.getCodigo();
+                ? String.format("#%04d", orcamento.getIdOrcamento())
+                : orcamento.getCodigo();
 
-        JPanel pnl = new JPanel(new BorderLayout(12, 0));
+        JPanel pnl = new PainelStatusVidro(new BorderLayout(12, 0), cor);
         pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnl.setBackground(cor);
         pnl.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
         JLabel lblCodigo = new JLabel("Orçamento " + codigo);
@@ -157,11 +204,8 @@ public class V_VisualizarOrcamento extends JPanel {
     }
 
     private JPanel criarCardInfo() {
-        JPanel card = new JPanel(new GridLayout(0, 4, 16, 10));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(14, 16, 14, 16)));
+        JPanel card = new PainelGradiente(new GridLayout(0, 4, 16, 10), COR_CARD_TOPO, COR_CARD_BASE, COR_BORDA_CARD);
+        card.setBorder(BorderFactory.createEmptyBorder(14, 16, 14, 16));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
@@ -174,21 +218,18 @@ public class V_VisualizarOrcamento extends JPanel {
     }
 
     private JPanel criarCardReclamacao() {
-        JPanel card = new JPanel(new BorderLayout(0, 6));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(12, 16, 12, 16)));
+        JPanel card = new PainelGradiente(new BorderLayout(0, 6), COR_CARD_TOPO, COR_CARD_BASE, COR_BORDA_CARD);
+        card.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
         JLabel lbl = new JLabel("Reclamação / Descrição do Problema");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(Color.decode("#555555"));
+        lbl.setForeground(COR_LABEL);
 
         JLabel val = new JLabel("<html>" + valorOuTracinho(orcamento.getReclamacao()).replace("\n", "<br>") + "</html>");
         val.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        val.setForeground(Color.decode("#333333"));
+        val.setForeground(COR_TEXTO_CAMPO);
 
         card.add(lbl, BorderLayout.NORTH);
         card.add(val, BorderLayout.CENTER);
@@ -203,7 +244,7 @@ public class V_VisualizarOrcamento extends JPanel {
 
         JLabel lbl = new JLabel("Itens de Serviço");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(Color.decode("#333333"));
+        lbl.setForeground(COR_TITULO);
 
         String[] cols = {"Serviço", "Tipo", "Valor (R$)"};
         DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
@@ -218,7 +259,10 @@ public class V_VisualizarOrcamento extends JPanel {
 
         JTable tbl = criarTabela(mdl);
         JScrollPane scroll = new JScrollPane(tbl);
-        scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        scroll.getViewport().setBackground(COR_TABELA_FUNDO);
+        scroll.getViewport().setOpaque(true);
+        scroll.setOpaque(false);
+        scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
 
         sec.add(lbl, BorderLayout.NORTH);
         sec.add(scroll, BorderLayout.CENTER);
@@ -233,14 +277,14 @@ public class V_VisualizarOrcamento extends JPanel {
 
         JLabel lbl = new JLabel("Peças a Substituir");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(Color.decode("#333333"));
+        lbl.setForeground(COR_TITULO);
 
         sec.add(lbl, BorderLayout.NORTH);
 
         if (dadosPecas.isEmpty()) {
             JLabel lblVazio = new JLabel("Nenhuma peça vinculada a este orçamento.");
             lblVazio.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-            lblVazio.setForeground(Color.decode("#888888"));
+            lblVazio.setForeground(COR_LABEL);
             sec.add(lblVazio, BorderLayout.CENTER);
         } else {
             String[] cols = {"Peça (Popular)", "Nome Técnico", "Fabricante", "Valor (R$)"};
@@ -257,23 +301,23 @@ public class V_VisualizarOrcamento extends JPanel {
             }
             JTable tbl = criarTabela(mdl);
             JScrollPane scroll = new JScrollPane(tbl);
-            scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+            scroll.getViewport().setBackground(COR_TABELA_FUNDO);
+            scroll.getViewport().setOpaque(true);
+            scroll.setOpaque(false);
+            scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
             sec.add(scroll, BorderLayout.CENTER);
         }
         return sec;
     }
 
     private JPanel criarRodapeTotal() {
-        JPanel pnl = new JPanel(new GridLayout(3, 2, 0, 4));
-        pnl.setBackground(Color.decode("#FFF8F0"));
-        pnl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#FF9900")),
-            BorderFactory.createEmptyBorder(12, 16, 12, 16)));
+        JPanel pnl = new PainelGradiente(new GridLayout(3, 2, 0, 4), COR_TOTAL_TOPO, COR_TOTAL_BASE, COR_TOTAL_BORDA);
+        pnl.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
         pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
-        addLinhaTotais(pnl, "Serviços:", String.format("R$ %.2f", subtotalServicos), "#555555", 12, Font.PLAIN);
-        addLinhaTotais(pnl, "Peças:", String.format("R$ %.2f", subtotalPecas), "#555555", 12, Font.PLAIN);
+        addLinhaTotais(pnl, "Serviços:", String.format("R$ %.2f", subtotalServicos), "#57626F", 12, Font.PLAIN);
+        addLinhaTotais(pnl, "Peças:", String.format("R$ %.2f", subtotalPecas), "#57626F", 12, Font.PLAIN);
         addLinhaTotais(pnl, "Total:", String.format("R$ %.2f", subtotalServicos + subtotalPecas), "#FF9900", 15, Font.BOLD);
 
         return pnl;
@@ -282,7 +326,7 @@ public class V_VisualizarOrcamento extends JPanel {
     private void addLinhaTotais(JPanel pnl, String rotulo, String valor, String corHex, int tamanho, int estilo) {
         JLabel lbl = new JLabel(rotulo);
         lbl.setFont(new Font("Segoe UI", estilo, tamanho));
-        lbl.setForeground(Color.decode("#555555"));
+        lbl.setForeground(COR_LABEL);
 
         JLabel val = new JLabel(valor);
         val.setFont(new Font("Segoe UI", estilo, tamanho));
@@ -299,12 +343,12 @@ public class V_VisualizarOrcamento extends JPanel {
             if (aprovar) controller.aprovarOrcamento(orcamento.getIdOrcamento());
             else controller.reprovarOrcamento(orcamento.getIdOrcamento());
             JOptionPane.showMessageDialog(this,
-                "Orçamento " + (aprovar ? "aprovado" : "reprovado") + " com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "Orçamento " + (aprovar ? "aprovado" : "reprovado") + " com sucesso!",
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             navegar(new V_AprovarOrcamento(controller));
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -327,8 +371,8 @@ public class V_VisualizarOrcamento extends JPanel {
         form.add(new JLabel("KM atual:"));           form.add(txtKm);
 
         int r = JOptionPane.showConfirmDialog(this, form,
-            "Gerar Serviço do Orçamento " + orcamento.getCodigo(),
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                "Gerar Serviço do Orçamento " + orcamento.getCodigo(),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (r != JOptionPane.OK_OPTION) return;
 
         String titulo = txtTitulo.getText().trim();
@@ -339,17 +383,17 @@ public class V_VisualizarOrcamento extends JPanel {
 
         try {
             OrdemDeServico.TipoServicoOS tipoEnum =
-                OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
+                    OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
             OrdemDeServico.TipoManutencao manutEnum =
-                OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
+                    OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
-                txtData.getText().trim(), km, orcamento.getIdVeiculo(), orcamento.getIdOrcamento());
+                    txtData.getText().trim(), km, orcamento.getIdVeiculo(), orcamento.getIdOrcamento());
             JOptionPane.showMessageDialog(this, "Ordem de Serviço gerada com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             navegar(new V_AprovarOrcamento(controller));
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Erro ao gerar serviço: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -365,7 +409,7 @@ public class V_VisualizarOrcamento extends JPanel {
     private boolean confirmarComSenha(String acao) {
         JPasswordField pwd = new JPasswordField();
         int r = JOptionPane.showConfirmDialog(this, pwd, "Confirme a senha para " + acao,
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (r != JOptionPane.OK_OPTION) return false;
         String senha = new String(pwd.getPassword());
         if (senha.isEmpty() || !controller.confirmarSenha(senha)) {
@@ -378,37 +422,268 @@ public class V_VisualizarOrcamento extends JPanel {
     private void addCampo(JPanel pnl, String rotulo, String valor) {
         JLabel lbl = new JLabel(rotulo);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(Color.decode("#555555"));
+        lbl.setForeground(COR_LABEL);
         JLabel val = new JLabel(valor);
         val.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        val.setForeground(Color.decode("#333333"));
+        val.setForeground(COR_TEXTO_CAMPO);
         pnl.add(lbl);
         pnl.add(val);
     }
 
+    /** Monta a tabela com o vidro Aero cinza no cabeçalho e fundo branco nas células. */
     private JTable criarTabela(DefaultTableModel mdl) {
         JTable tbl = new JTable(mdl);
         tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setRowHeight(26);
-        tbl.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl.getTableHeader().setReorderingAllowed(false);
+        tbl.setRowHeight(ALTURA_LINHA_TABELA);
+        tbl.setBackground(COR_TABELA_FUNDO);
+        tbl.setForeground(COR_TEXTO_CAMPO);
+        tbl.setOpaque(true);
+        tbl.setShowGrid(true);
+        tbl.setGridColor(COR_TABELA_GRADE);
+        tbl.setIntercellSpacing(new Dimension(0, 0));
         tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl.setSelectionBackground(COR_TABELA_SELECAO);
+        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
+        tbl.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
+
+        JTableHeader cabecalho = tbl.getTableHeader();
+        cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
+        cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
+        cabecalho.setReorderingAllowed(false);
+        cabecalho.setOpaque(false);
         return tbl;
     }
 
-    private JButton criarBotao(String texto, String cor) {
-        JButton btn = new JButton(texto);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(Color.decode(cor));
-        btn.setPreferredSize(new Dimension(130, 34));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    /** Cria um BotaoAcao com as sombras/hover derivadas automaticamente da cor base informada. */
+    private BotaoAcao criarBotao(String texto, String corHex) {
+        Color base = Color.decode(corHex);
+        BotaoAcao btn = new BotaoAcao(texto, base, clarear(base), escurecer(base));
+        btn.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
         return btn;
     }
 
     private String valorOuTracinho(String s) {
         return (s == null || s.isBlank()) ? "—" : s;
+    }
+
+    // =========================================================================
+    // UTILITÁRIOS DE COR
+    // =========================================================================
+    private static Color clarear(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1] * 0.75f, Math.min(1f, hsb[2] * 1.18f));
+    }
+
+    private static Color escurecer(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2] * 0.82f);
+    }
+
+    // =========================================================================
+    // INNER CLASSES — RENDERERS DA TABELA
+    // =========================================================================
+
+    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7). */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setForeground(COR_AERO_TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 140));
+            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+
+            g2.setColor(COR_AERO_SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Células de dados sempre com fundo branco (e destaque no tom do tema quando selecionadas). */
+    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
+        CelulaBrancaRenderer() {
+            setOpaque(true);
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+            setForeground(COR_TEXTO_CAMPO);
+            setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            return this;
+        }
+    }
+
+    // =========================================================================
+    // INNER CLASSES — COMPONENTES EM VIDRO
+    // =========================================================================
+
+    /**
+     * Painel com fundo em gradiente suave, opcionalmente com uma borda
+     * arredondada colorida — usado nos cartões de informação e no rodapé
+     * de totais, harmonizando com o restante das telas.
+     */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+        private final Color corBorda;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            this(layout, corTopo, corBase, null);
+        }
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase, Color corBorda) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            this.corBorda = corBorda;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, h, corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14));
+
+            if (corBorda != null) {
+                g2.setStroke(new BasicStroke(1.3f));
+                g2.setColor(corBorda);
+                g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.5, h - 1.5, 14, 14));
+            }
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Banner de status em vidro: gradiente da cor do status (verde/vermelho/
+     * laranja) com um leve brilho no topo, mesma linguagem visual dos botões.
+     */
+    private static class PainelStatusVidro extends JPanel {
+        private final Color base;
+
+        PainelStatusVidro(LayoutManager layout, Color base) {
+            super(layout);
+            this.base = base;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            GradientPaint gp = new GradientPaint(0, 0, clarear(base), 0, h, base);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14));
+
+            g2.setColor(new Color(255, 255, 255, 55));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.35), 10, 10));
+
+            g2.setColor(escurecer(base));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação com a mesma linguagem visual usada em todo o sistema:
+     * cantos arredondados, sombra suave, reflexo no topo e reação a
+     * hover/clique. A cor é configurável.
+     */
+    private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }

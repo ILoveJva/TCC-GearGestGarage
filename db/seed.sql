@@ -13,21 +13,44 @@ USE GearGestGarage;
 -- ============================================================
 
 INSERT INTO oficina (nome, endereco, telefone, cnpj)
-VALUES ('Garagem Cecconi', 'Rua Itapetinga, 794 - Santa Luzia', '', '');
+VALUES ('Garagem Cecconi', 'Rua Itapetinga, 794 - Santa Luzia', '11 1111-1111', '00.000.000/0000-00'),
+('Oficina 01', 'Rua dos Bobos, 67', '11 1111-1112', '00.000.000/0000-01'),
+('Oficina 02', 'Rua dos Bobos, 10', '11 1111-1113', '00.000.000/0000-02'),
+('Oficina 03', 'Rua dos Bobos, 677', '11 1111-1114', '00.000.000/0000-03')
+;
 
 INSERT INTO usuario (nome, cpf, email, senha, telefone, id_oficina)
 VALUES
 ('Arthur Cecconi', '00000000000', 'oficina@geargest.com', '123456', '(11) 90000-0000', 1),
-('João Silva', '12345678900', 'joaosilva@gmail.com', 'silva123', '(11) 98765-4321', 1)
+('João Silva', '12345678900', 'joaosilva@gmail.com', 'silva123', '(11) 98765-4321', 1),
+('Adriano Imperador', '12345678901', 'adrianoimperador@gmail.com', 'apa123', '(11) 98765-4322', 2),
+('Roberto Carlos', '12345678902', 'robertocarlos@gmail.com', 'ime123', '(11) 98765-4323', 3)
 ;
 
 INSERT INTO funcionario (nome, cargo, endereco, id_usuario)
-VALUES ('Arthur Cecconi', 'Gerente', '', 1);
+VALUES ('Arthur Cecconi', 'Gerente', '', 1),
+('Adriano Imperador', 'Gerente', '', 3),
+('Roberto Carlos', 'Gerente', '', 4)
+;
+
 INSERT INTO cliente (id_usuario) VALUE (2);
 
 -- ============================================================
 -- Catálogo de Serviços
 -- ============================================================
+
+INSERT INTO Montadora (nome,pais_origem)
+VALUES ('Honda', 'Japão'), --1
+('Ford', 'EUA'),--2
+('Fiat', 'Italia') --3
+;
+
+INSERT INTO Modelo (nome,ano,tipo,id_montadora)
+VALUES ('Fit', '2006', 'carro', 1), --1
+('Mustang', '1978', 'carro', 2),
+('Palio', '2006', 'carro', 3),
+('Versallies', '1993', 'carro', 2)
+;
 
 INSERT INTO catalogo_servico
     (nome, descricao, valor, tipo, tipo_manutencao, sistema, validade_km, validade_meses)

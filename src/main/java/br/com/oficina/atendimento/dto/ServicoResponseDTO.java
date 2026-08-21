@@ -11,6 +11,7 @@ public record ServicoResponseDTO(
     String status,
     String dataServico,
     Long idVeiculo,
+    Long idOficina,
     Long idOrcamento,
     List<ItemView> itens
 ) {

@@ -39,14 +39,14 @@ INSERT INTO cliente (id_usuario) VALUE (2);
 -- Catálogo de Serviços
 -- ============================================================
 
-INSERT INTO Montadora (nome,pais_origem)
-VALUES ('Honda', 'Japão'), --1
-('Ford', 'EUA'),--2
-('Fiat', 'Italia') --3
+INSERT INTO montadora (nome,pais_origem)
+VALUES ('Honda', 'Japão'),
+('Ford', 'EUA'),
+('Fiat', 'Italia')
 ;
 
-INSERT INTO Modelo (nome,ano,tipo,id_montadora)
-VALUES ('Fit', '2006', 'carro', 1), --1
+INSERT INTO modelo (nome,ano,tipo,id_montadora)
+VALUES ('Fit', '2006', 'carro', 1),
 ('Mustang', '1978', 'carro', 2),
 ('Palio', '2006', 'carro', 3),
 ('Versallies', '1993', 'carro', 2)

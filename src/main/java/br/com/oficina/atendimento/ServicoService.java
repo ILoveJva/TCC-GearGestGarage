@@ -77,7 +77,7 @@ public class ServicoService {
                 i.getCodigo(), i.getDescricao(), i.getStatus(), i.getTempoGasto(), i.getIdFuncionario()));
         return new ServicoResponseDTO(s.getIdServico(), s.getCodigo(), s.getTitulo(),
             s.getTipoServico(), s.getTipoManutencao(), s.getStatus(), s.getDataServico(),
-            s.getIdVeiculo(), s.getIdOrcamento(), itens);
+            s.getIdVeiculo(), s.getIdOficina(), s.getIdOrcamento(), itens);
     }
 
     public List<ServicoResponseDTO> listar() {

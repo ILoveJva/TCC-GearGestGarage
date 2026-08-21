@@ -63,8 +63,50 @@ public class OficinaController {
 
     public boolean autenticar(String email, String senha) {
         UsuarioEntity u = bridge.usuarioController.login(email, senha);
-        if (u != null) this.usuarioLogado = u;
+        if (u != null) {
+            this.usuarioLogado = u;
+            this.oficinaLogada = buscarOficinaPorId(u.getIdOficina());
+        }
         return u != null;
+    }
+
+    private model.Oficina buscarOficinaPorId(Long id) {
+        if (id == null) return oficinaLogada;
+        for (model.Oficina o : listarTodas())
+            if (o.getIdOficina() == id) return o;
+        return oficinaLogada;
+    }
+
+    // ============== ESCOPO POR OFICINA ==============
+    // O login define a oficina ativa; todas as listagens de clientes, veículos,
+    // funcionários, orçamentos e ordens de serviço são restritas a ela. O catálogo
+    // (montadoras, modelos, peças, serviços) permanece global/compartilhado.
+
+    /** Oficina do usuário logado (fallback: oficina atual/primeira). */
+    private long idOficinaAtual() {
+        if (usuarioLogado != null && usuarioLogado.getIdOficina() != null)
+            return usuarioLogado.getIdOficina();
+        return getOficina().getIdOficina();
+    }
+
+    /** id_usuario de todos os usuários (clientes e funcionários) da oficina ativa. */
+    private java.util.Set<Long> idsUsuariosDaOficina() {
+        long idOf = idOficinaAtual();
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        for (UsuarioEntity u : bridge.usuarioController.todos())
+            if (u.getIdOficina() != null && u.getIdOficina() == idOf && u.getIdUsuario() != null)
+                ids.add(u.getIdUsuario());
+        return ids;
+    }
+
+    /** id_cliente (PK) de todos os clientes da oficina ativa. */
+    private java.util.Set<Long> idsClientesDaOficina() {
+        java.util.Set<Long> usuarios = idsUsuariosDaOficina();
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        for (ClienteEntity c : bridge.clienteController.entidades())
+            if (c.getIdUsuario() != null && usuarios.contains(c.getIdUsuario()) && c.getIdCliente() != null)
+                ids.add(c.getIdCliente());
+        return ids;
     }
 
     /** Reconfirma a senha do usuário atualmente logado, usada para proteger ações sensíveis. */
@@ -75,9 +117,12 @@ public class OficinaController {
 
     // ============== CLIENTES ==============
     public ArrayList<Cliente> listarClientes() {
+        java.util.Set<Long> usuarios = idsUsuariosDaOficina();
         ArrayList<Cliente> out = new ArrayList<>();
-        for (var dto : bridge.clienteController.todos()) {
-            Cliente c = new Cliente(dto.idCliente(), dto.nome(), dto.cpf(), dto.telefone(), dto.email());
+        for (ClienteEntity ce : bridge.clienteController.entidades()) {
+            if (ce.getIdUsuario() == null || !usuarios.contains(ce.getIdUsuario())) continue;
+            Cliente c = new Cliente(ce.getIdCliente(), ce.getNome(),
+                ce.getCpf() == null ? "" : ce.getCpf(), ce.getTelefone(), ce.getEmail());
             anexarVeiculos(c);
             out.add(c);
         }
@@ -99,8 +144,11 @@ public class OficinaController {
 
     // ============== VEICULOS ==============
     public List<Veiculo> listarVeiculos() {
+        java.util.Set<Long> clientes = idsClientesDaOficina();
         List<Veiculo> out = new ArrayList<>();
-        for (VeiculoResponseDTO dto : bridge.veiculoController.todos()) out.add(montarVeiculo(dto));
+        for (VeiculoResponseDTO dto : bridge.veiculoController.todos())
+            if (dto.idCliente() != null && clientes.contains(dto.idCliente()))
+                out.add(montarVeiculo(dto));
         return out;
     }
 
@@ -295,8 +343,10 @@ public class OficinaController {
         for (FuncionarioEntity f : listarFuncionarios())
             if (f.getIdUsuario() != null) nomes.put(f.getIdUsuario(), f.getNome() + " (Func.)");
 
+        java.util.Set<Long> clientes = idsClientesDaOficina();
         List<model.Orcamento> out = new ArrayList<>();
         for (OrcamentoResponseDTO dto : bridge.orcamentoController.entrada()) {
+            if (dto.idCliente() == null || !clientes.contains(dto.idCliente())) continue;
             long idVeic = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
             long idCli  = dto.idCliente() != null ? dto.idCliente() : 0L;
             out.add(new model.Orcamento(
@@ -356,7 +406,11 @@ public class OficinaController {
     }
 
     public List<FuncionarioEntity> listarFuncionarios() {
-        return bridge.funcionarioController.todos();
+        java.util.Set<Long> usuarios = idsUsuariosDaOficina();
+        List<FuncionarioEntity> out = new ArrayList<>();
+        for (FuncionarioEntity f : bridge.funcionarioController.todos())
+            if (f.getIdUsuario() != null && usuarios.contains(f.getIdUsuario())) out.add(f);
+        return out;
     }
 
     public void atualizarFuncionario(long idFuncionario, String nome, String cargo, String endereco,
@@ -390,9 +444,11 @@ public class OficinaController {
         java.util.Map<Long, String> nomes = new java.util.HashMap<>();
         for (Cliente c : listarClientes()) nomes.put(c.getIdUsuario(), c.getNome());
 
+        java.util.Set<Long> clientes = idsClientesDaOficina();
         List<model.Orcamento> out = new ArrayList<>();
         for (OrcamentoResponseDTO dto : bridge.orcamentoController.entrada()) {
             if (!"APROVADO".equalsIgnoreCase(dto.status())) continue;
+            if (dto.idCliente() == null || !clientes.contains(dto.idCliente())) continue;
             long id = dto.idOrcamento() != null ? dto.idOrcamento() : 0L;
             if (orcamentosComOS.contains(id)) continue;
             long idVeic = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
@@ -449,8 +505,10 @@ public class OficinaController {
         java.util.Map<Long, Veiculo> veicMap = new java.util.HashMap<>();
         for (Veiculo v : listarVeiculos()) veicMap.put(v.getIdVeiculo(), v);
 
+        long idOf = idOficinaAtual();
         List<OrdemDeServico> out = new ArrayList<>();
         for (ServicoResponseDTO dto : bridge.servicoController.todas()) {
+            if (dto.idOficina() == null || dto.idOficina() != idOf) continue;
             Veiculo v = dto.idVeiculo() != null ? veicMap.get(dto.idVeiculo()) : null;
             OrdemDeServico os = new OrdemDeServico(dto.idServico(), dto.titulo(),
                 mapStatusOS(dto.status()), v);
@@ -468,7 +526,11 @@ public class OficinaController {
     }
 
     public List<ServicoResponseDTO> listarTodosServicos() {
-        return bridge.servicoController.todas();
+        long idOf = idOficinaAtual();
+        List<ServicoResponseDTO> out = new ArrayList<>();
+        for (ServicoResponseDTO dto : bridge.servicoController.todas())
+            if (dto.idOficina() != null && dto.idOficina() == idOf) out.add(dto);
+        return out;
     }
 
     public java.util.Map<Long, String> mapaReclamacaoPorIdOrcamento() {

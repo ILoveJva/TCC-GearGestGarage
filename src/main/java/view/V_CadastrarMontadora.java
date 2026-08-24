@@ -118,23 +118,17 @@ public class V_CadastrarMontadora extends JPanel {
 
             if (nome.length() < 2) {
                 marcarErro(txt_Nome);
-                JOptionPane.showMessageDialog(this,
-                        "O nome da montadora deve ter pelo menos 2 caracteres.",
-                        "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "O nome da montadora deve ter pelo menos 2 caracteres.", "Campo Inválido");
                 return;
             }
 
             try {
                 controller.salvarMontadora(nome, pais.isEmpty() ? "Não informado" : pais);
-                JOptionPane.showMessageDialog(this,
-                        "Montadora \"" + nome + "\" cadastrada com sucesso!",
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Montadora \"" + nome + "\" cadastrada com sucesso!", "Sucesso");
                 txt_Nome.setText("");
                 txt_Pais.setText("");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Erro ao cadastrar montadora: " + ex.getMessage(),
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar montadora: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

@@ -175,9 +175,7 @@ public class V_CadastrarPeca extends JPanel {
             String nomePopular = txt_NomePopular.getText().trim();
             if (nomePopular.length() < 2) {
                 marcarErro(txt_NomePopular);
-                JOptionPane.showMessageDialog(this,
-                    "Nome da peça deve ter pelo menos 2 caracteres.",
-                    "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Nome da peça deve ter pelo menos 2 caracteres.", "Campo Inválido");
                 return;
             }
             String vidaTempo = txt_VidaTempo.getText().trim();
@@ -190,17 +188,13 @@ public class V_CadastrarPeca extends JPanel {
                     vidaKm.isEmpty()    ? "Não informado" : vidaKm,
                     sistema != null ? sistema.codigo : "OUTROS",
                     servico != null && servico.id != null ? servico.id : 0L);
-                JOptionPane.showMessageDialog(this,
-                    "Peça \"" + nomePopular + "\" cadastrada com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Peça \"" + nomePopular + "\" cadastrada com sucesso!", "Sucesso");
                 txt_NomePopular.setText("");
                 txt_VidaTempo.setText("");
                 txt_VidaKm.setText("");
                 atualizarServicosDoSistema();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao cadastrar peça: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar peça: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }
@@ -601,6 +595,7 @@ public class V_CadastrarPeca extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

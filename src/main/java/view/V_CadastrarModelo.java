@@ -198,23 +198,17 @@ public class V_CadastrarModelo extends JPanel {
             }
 
             if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Corrija os campos destacados em vermelho:\n\n" + erros,
-                        "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Corrija os campos destacados em vermelho:\n\n" + erros, "Dados Inválidos");
                 return;
             }
 
             try {
                 controller.salvarModelo(nome, ano, tipo, montadora.getIdMontadora());
-                JOptionPane.showMessageDialog(this,
-                        "Modelo \"" + nome + "\" (" + tipo + ") cadastrado com sucesso!",
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Modelo \"" + nome + "\" (" + tipo + ") cadastrado com sucesso!", "Sucesso");
                 txt_Nome.setText("");
                 txt_Ano.setText("");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Erro ao cadastrar modelo: " + ex,
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar modelo: " + ex, "Erro no Sistema");
             }
         });
     }
@@ -642,6 +636,7 @@ public class V_CadastrarModelo extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

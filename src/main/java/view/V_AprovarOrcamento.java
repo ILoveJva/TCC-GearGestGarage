@@ -77,6 +77,7 @@ public class V_AprovarOrcamento extends JPanel {
 
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
 
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
@@ -125,8 +126,7 @@ public class V_AprovarOrcamento extends JPanel {
             else controller.reprovarOrcamento(o.getIdOrcamento());
             carregar();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -175,12 +175,9 @@ public class V_AprovarOrcamento extends JPanel {
                 OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
                 txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
-            JOptionPane.showMessageDialog(this,
-                "Ordem de Serviço gerada a partir do orçamento!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada a partir do orçamento!", "Sucesso");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao gerar serviço: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao gerar serviço: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -190,18 +187,15 @@ public class V_AprovarOrcamento extends JPanel {
     }
 
     private void aviso(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Atenção", JOptionPane.WARNING_MESSAGE);
+        DialogoAlerta.aviso(this, msg, "Atenção");
     }
 
     /** Exige a senha de acesso do usuário logado antes de prosseguir com uma ação sensível. */
     private boolean confirmarComSenha(String acao) {
-        JPasswordField pwd = new JPasswordField();
-        int r = JOptionPane.showConfirmDialog(this, pwd, "Confirme a senha para " + acao,
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return false;
-        String senha = new String(pwd.getPassword());
+        String senha = DialogoConfirmacao.pedirSenha(this, "Confirme a senha para " + acao);
+        if (senha == null) return false;
         if (senha.isEmpty() || !controller.confirmarSenha(senha)) {
-            JOptionPane.showMessageDialog(this, "Senha incorreta.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Senha incorreta.", "Acesso Negado");
             return false;
         }
         return true;

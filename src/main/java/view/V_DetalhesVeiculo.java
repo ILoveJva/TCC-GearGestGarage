@@ -304,6 +304,7 @@ public class V_DetalhesVeiculo extends JPanel {
         scrollServicos.setPreferredSize(new Dimension(0, 140));
         scrollServicos.getViewport().setBackground(COR_TABELA_FUNDO);
         scrollServicos.getViewport().setOpaque(true);
+        ScrollBarPadrao.aplicar(scrollServicos);
         scrollServicos.setOpaque(false);
         scrollServicos.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
         pnlAreaServicos.add(scrollServicos, BorderLayout.CENTER);
@@ -374,13 +375,9 @@ public class V_DetalhesVeiculo extends JPanel {
                     txt_Freios.getText().trim(),
                     txt_Cor.getText().trim(),
                     txt_Vin.getText().trim());
-            JOptionPane.showMessageDialog(this,
-                    "Detalhes do veículo salvos com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Detalhes do veículo salvos com sucesso!", "Sucesso");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao salvar detalhes: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao salvar detalhes: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 

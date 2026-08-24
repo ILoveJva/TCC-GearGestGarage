@@ -182,9 +182,7 @@ public class V_CadastrarCliente extends JPanel {
         }
 
         if (!ok) {
-            JOptionPane.showMessageDialog(this,
-                    "Corrija os campos destacados em vermelho:\n\n" + msg,
-                    "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Corrija os campos destacados em vermelho:\n\n" + msg, "Dados Inválidos");
         }
         return ok;
     }
@@ -221,19 +219,13 @@ public class V_CadastrarCliente extends JPanel {
             if (controller != null) {
                 try {
                     controller.salvarCliente(nome, cpf, celular, email);
-                    JOptionPane.showMessageDialog(this,
-                            "Cliente \"" + nome + "\" cadastrado com sucesso!",
-                            "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    DialogoAlerta.sucesso(this, "Cliente \"" + nome + "\" cadastrado com sucesso!", "Sucesso");
                     limparCamposFormulario();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this,
-                            "Erro ao salvar cliente: " + ex.getMessage(),
-                            "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                    DialogoAlerta.erro(this, "Erro ao salvar cliente: " + ex.getMessage(), "Erro no Sistema");
                 }
             } else {
-                JOptionPane.showMessageDialog(this,
-                        "Erro: O controlador do sistema não foi localizado.",
-                        "Erro de Link de Dados", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro: O controlador do sistema não foi localizado.", "Erro de Link de Dados");
             }
         });
     }

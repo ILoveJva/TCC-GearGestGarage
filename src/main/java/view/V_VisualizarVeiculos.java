@@ -63,6 +63,7 @@ public class V_VisualizarVeiculos extends JPanel {
 
         scp_ScrollVeiculos = new JScrollPane(tbl_Veiculos);
         scp_ScrollVeiculos.setBorder(BorderFactory.createLineBorder(Color.decode("#CCCCCC")));
+        ScrollBarPadrao.aplicar(scp_ScrollVeiculos);
 
         btn_CadastrarVeiculo = new JButton("+ Cadastrar Veículo");
         btn_CadastrarVeiculo.setFont(new Font("Segoe UI", Font.BOLD, 12));

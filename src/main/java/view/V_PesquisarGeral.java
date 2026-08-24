@@ -83,7 +83,7 @@ public class V_PesquisarGeral extends JPanel {
      */
     private void executarPesquisa(String termoBusca) {
         if (termoBusca.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor, insira um termo para pesquisar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Por favor, insira um termo para pesquisar.", "Aviso");
             return;
         }
         // A sua lógica de pesquisa com o Banco de dados entrará aqui

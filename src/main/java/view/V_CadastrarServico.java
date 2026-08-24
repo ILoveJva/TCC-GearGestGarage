@@ -100,6 +100,7 @@ public class V_CadastrarServico extends JPanel {
         JScrollPane scroll = new JScrollPane(tbl_Orcamentos);
         scroll.getViewport().setBackground(Color.WHITE);
         scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, Color.decode("#EEEEEE")));
+        ScrollBarPadrao.aplicar(scroll);
 
         JLabel lbl_Instrucao = new JLabel("Selecione um orçamento APROVADO para criar a Ordem de Serviço:");
         lbl_Instrucao.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -254,9 +255,7 @@ public class V_CadastrarServico extends JPanel {
         }
 
         if (erros.length() > 0) {
-            JOptionPane.showMessageDialog(this,
-                "Corrija os campos:\n\n" + erros,
-                "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Corrija os campos:\n\n" + erros, "Dados Inválidos");
             return;
         }
 
@@ -269,14 +268,10 @@ public class V_CadastrarServico extends JPanel {
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
                 data, km, selecionado.getIdVeiculo(), selecionado.getIdOrcamento());
 
-            JOptionPane.showMessageDialog(this,
-                "Ordem de Serviço aberta com sucesso!\nOrçamento: " + selecionado.getCodigo(),
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Ordem de Serviço aberta com sucesso!\nOrçamento: " + selecionado.getCodigo(), "Sucesso");
             carregarDados();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Erro ao abrir OS: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao abrir OS: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 

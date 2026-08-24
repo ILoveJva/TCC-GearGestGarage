@@ -140,9 +140,7 @@ public class V_VisualizarClientes extends JPanel {
         btn_EditarCliente.addActionListener(e -> {
             Cliente alvo = obterClienteSelecionado();
             if (alvo == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Selecione um cliente na lista para editar.",
-                    "Nenhum cliente selecionado", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Selecione um cliente na lista para editar.", "Nenhum cliente selecionado");
                 return;
             }
             Window w = SwingUtilities.getWindowAncestor(V_VisualizarClientes.this);
@@ -152,25 +150,19 @@ public class V_VisualizarClientes extends JPanel {
         btn_ExcluirCliente.addActionListener(e -> {
             Cliente alvo = obterClienteSelecionado();
             if (alvo == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Selecione um cliente na lista para excluir.",
-                    "Nenhum cliente selecionado", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Selecione um cliente na lista para excluir.", "Nenhum cliente selecionado");
                 return;
             }
-            int resp = JOptionPane.showConfirmDialog(this,
+            boolean confirmado = DialogoConfirmacao.confirmar(this,
                 "Tem certeza que deseja excluir o cliente \"" + alvo.getNome() + "\"?",
-                "Confirmar exclusão", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (resp != JOptionPane.YES_OPTION) return;
+                "Confirmar exclusão");
+            if (!confirmado) return;
             try {
                 controller.excluirCliente(alvo.getIdUsuario());
-                JOptionPane.showMessageDialog(this,
-                    "Cliente excluído com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Cliente excluído com sucesso!", "Sucesso");
                 carregarDadosClientes();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao excluir cliente: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao excluir cliente: " + ex.getMessage(), "Erro no Sistema");
             }
         });
 

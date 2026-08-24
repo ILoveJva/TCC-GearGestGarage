@@ -88,7 +88,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
 
         // Listeners
@@ -239,6 +239,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela));
         sp.setPreferredSize(new Dimension(0, altTabela));
         sp.setBorder(BorderFactory.createLineBorder(Color.decode("#E8E8E8")));
+        ScrollBarPadrao.aplicar(sp);
 
         JLabel lnk_Editar = new JLabel("<html><u>✎ Editar selecionado</u></html>");
         lnk_Editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -249,8 +250,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int row = tabela.getSelectedRow();
                 if (row >= 0 && row < itens.size()) abrirEditor(itens.get(row));
-                else JOptionPane.showMessageDialog(V_VisualizarCatalogoServicos.this,
-                    "Selecione um serviço na tabela para editar.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                else DialogoAlerta.aviso(V_VisualizarCatalogoServicos.this, "Selecione um serviço na tabela para editar.", "Atenção");
             }
         });
 
@@ -500,6 +500,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

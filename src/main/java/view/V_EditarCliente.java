@@ -132,9 +132,7 @@ public class V_EditarCliente extends JPanel {
         }
 
         if (!ok) {
-            JOptionPane.showMessageDialog(this,
-                "Corrija os campos destacados em vermelho:\n\n" + msg,
-                "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Corrija os campos destacados em vermelho:\n\n" + msg, "Dados Inválidos");
         }
         return ok;
     }
@@ -176,14 +174,10 @@ public class V_EditarCliente extends JPanel {
 
             try {
                 controller.atualizarCliente(cliente.getIdUsuario(), nome, cpf, email, celular);
-                JOptionPane.showMessageDialog(this,
-                    "Cliente \"" + nome + "\" atualizado com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Cliente \"" + nome + "\" atualizado com sucesso!", "Sucesso");
                 navegarPara(new V_VisualizarClientes(controller));
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao atualizar cliente: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao atualizar cliente: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

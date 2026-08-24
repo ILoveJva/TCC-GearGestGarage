@@ -114,6 +114,7 @@ public class V_VisualizarPecas extends JPanel {
 
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        ScrollBarPadrao.aplicar(scroll);
 
         JLabel lnk_Editar = new JLabel("<html><u>✎ Editar selecionada</u></html>");
         lnk_Editar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -198,8 +199,7 @@ public class V_VisualizarPecas extends JPanel {
         if (row >= 0 && row < pecasFiltradas.size()) {
             navegar(new V_EditarPeca(controller, pecasFiltradas.get(row)));
         } else {
-            JOptionPane.showMessageDialog(this,
-                "Selecione uma peça para editar.", "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Selecione uma peça para editar.", "Atenção");
         }
     }
 
@@ -439,6 +439,7 @@ public class V_VisualizarPecas extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

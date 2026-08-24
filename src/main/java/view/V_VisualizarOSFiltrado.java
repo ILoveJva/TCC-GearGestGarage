@@ -165,6 +165,7 @@ public class V_VisualizarOSFiltrado extends JPanel {
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
         scroll.getViewport().setBackground(Color.WHITE);
+        ScrollBarPadrao.aplicar(scroll);
 
         JLabel dica = new JLabel("Duplo clique em uma linha para abrir a O.S. completa.");
         dica.setFont(new Font("Segoe UI", Font.ITALIC, 11));

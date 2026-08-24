@@ -162,7 +162,7 @@ public class V_EditarItemServico extends JPanel {
         card.add(titulo, BorderLayout.NORTH);
         card.add(new JScrollPane(form) {{
             setBorder(null); setOpaque(false); getViewport().setOpaque(false);
-            getVerticalScrollBar().setUnitIncrement(12);
+            ScrollBarPadrao.aplicar(this);
         }}, BorderLayout.CENTER);
         card.add(pnl_Btn, BorderLayout.SOUTH);
 
@@ -238,6 +238,7 @@ public class V_EditarItemServico extends JPanel {
         JScrollPane scrollPecas = new JScrollPane(tbl_Pecas);
         scrollPecas.setPreferredSize(new Dimension(0, 100));
         scrollPecas.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        ScrollBarPadrao.aplicar(scrollPecas);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);
@@ -293,13 +294,11 @@ public class V_EditarItemServico extends JPanel {
     private void adicionarPeca() {
         ItemPeca sel = (ItemPeca) cmb_NovaPeca.getSelectedItem();
         if (sel == null || sel.peca == null) {
-            JOptionPane.showMessageDialog(this, "Cadastre peças antes de associá-las.",
-                "Sem peças", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Cadastre peças antes de associá-las.", "Sem peças"); return;
         }
         // evitar duplicata na UI
         if (linksAtuais.containsValue(sel.peca.getIdPeca())) {
-            JOptionPane.showMessageDialog(this, "Esta peça já está associada ao item.",
-                "Duplicata", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Esta peça já está associada ao item.", "Duplicata"); return;
         }
         try {
             controller.adicionarPecaAItemCatalogo(item.getIdCatalogoServico(), sel.peca.getIdPeca());
@@ -308,9 +307,9 @@ public class V_EditarItemServico extends JPanel {
             String msg = "Peça adicionada!" + (qtdOrc > 0
                 ? "\n" + qtdOrc + " orçamento(s) com este serviço foram atualizados automaticamente."
                 : "");
-            JOptionPane.showMessageDialog(this, msg, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, msg, "Sucesso");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
@@ -320,15 +319,15 @@ public class V_EditarItemServico extends JPanel {
         List<Long> linkIds = new ArrayList<>(linksAtuais.keySet());
         if (row >= linkIds.size()) return;
         long idLink = linkIds.get(row);
-        int conf = JOptionPane.showConfirmDialog(this,
+        boolean confirmado = DialogoConfirmacao.confirmar(this,
             "Remover esta peça do item de serviço?\n(Orçamentos existentes não serão alterados.)",
-            "Confirmar remoção", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (conf != JOptionPane.YES_OPTION) return;
+            "Confirmar remoção");
+        if (!confirmado) return;
         try {
             controller.removerPecaDeItemCatalogo(idLink);
             carregarPecasAssociadas();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
@@ -339,16 +338,14 @@ public class V_EditarItemServico extends JPanel {
         String sistema  = SISTEMAS[cmb_Sistema.getSelectedIndex()];
 
         if (nome.length() < 3) {
-            JOptionPane.showMessageDialog(this, "O nome deve ter pelo menos 3 caracteres.",
-                "Campo Inválido", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "O nome deve ter pelo menos 3 caracteres.", "Campo Inválido"); return;
         }
         double valor;
         try {
             valor = Double.parseDouble(valorTxt);
             if (valor < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Informe um valor válido (ex: 120.00).",
-                "Campo Inválido", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Informe um valor válido (ex: 120.00).", "Campo Inválido"); return;
         }
 
         Integer validadeKm = null, validadeMeses = null;
@@ -362,12 +359,10 @@ public class V_EditarItemServico extends JPanel {
         try {
             controller.atualizarItemServico(item.getIdCatalogoServico(), nome, "", valor,
                 tipo, sistema, validadeKm, validadeMeses);
-            JOptionPane.showMessageDialog(this,
-                "Item \"" + nome + "\" atualizado com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Item \"" + nome + "\" atualizado com sucesso!", "Sucesso");
             navegar(new V_CadastrarItemServico(controller));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 

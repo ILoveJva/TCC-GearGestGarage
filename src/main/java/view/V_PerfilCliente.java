@@ -88,7 +88,7 @@ public class V_PerfilCliente extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -138,6 +138,7 @@ public class V_PerfilCliente extends JPanel {
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setPreferredSize(new Dimension(0, 180));
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        ScrollBarPadrao.aplicar(scroll);
 
         JPanel corpo = (JPanel) card.getComponent(1);
         if (mdl.getRowCount() == 0) {
@@ -157,31 +158,26 @@ public class V_PerfilCliente extends JPanel {
     }
 
     private void excluirCliente() {
-        int resp = JOptionPane.showConfirmDialog(this,
+        boolean confirmado = DialogoConfirmacao.confirmar(this,
             "Tem certeza que deseja excluir o cliente \"" + cliente.getNome() + "\"?",
-            "Confirmar exclusão", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (resp != JOptionPane.YES_OPTION) return;
+            "Confirmar exclusão");
+        if (!confirmado) return;
         if (!confirmarComSenha("excluir este cliente")) return;
         try {
             controller.excluirCliente(cliente.getIdUsuario());
-            JOptionPane.showMessageDialog(this,
-                "Cliente excluído com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Cliente excluído com sucesso!", "Sucesso");
             navegarPara(new V_VisualizarClientes(controller));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Erro ao excluir cliente: " + ex.getMessage(), "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao excluir cliente: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
     /** Exige a senha de acesso do usuário logado antes de prosseguir com uma ação sensível. */
     private boolean confirmarComSenha(String acao) {
-        JPasswordField pwd = new JPasswordField();
-        int r = JOptionPane.showConfirmDialog(this, pwd, "Confirme a senha para " + acao,
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return false;
-        String senha = new String(pwd.getPassword());
+        String senha = DialogoConfirmacao.pedirSenha(this, "Confirme a senha para " + acao);
+        if (senha == null) return false;
         if (senha.isEmpty() || !controller.confirmarSenha(senha)) {
-            JOptionPane.showMessageDialog(this, "Senha incorreta.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Senha incorreta.", "Acesso Negado");
             return false;
         }
         return true;

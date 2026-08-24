@@ -222,7 +222,7 @@ public class V_PaginaInicial extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        estilizarScrollBar(scroll.getVerticalScrollBar());
+        ScrollBarPadrao.aplicar(scroll);
 
         add(pnl_Header, BorderLayout.NORTH);
         add(scroll, BorderLayout.CENTER);
@@ -502,107 +502,6 @@ public class V_PaginaInicial extends JPanel {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), raio, raio);
             g2.dispose();
             super.paintComponent(g);
-        }
-    }
-
-    // ==========================================
-    // SCROLLBAR CUSTOMIZADA E ANIMADA
-    // ==========================================
-
-    /**
-     * Aplica a UI customizada na barra de rolagem: sem setas, "polegar" fino e arredondado
-     * que cresce e fica mais opaco suavemente quando o mouse passa por cima (animação via
-     * javax.swing.Timer, sem bibliotecas externas).
-     */
-    private void estilizarScrollBar(JScrollBar barra) {
-        barra.setUI(new ScrollBarAnimada());
-        barra.setUnitIncrement(14);
-        barra.setOpaque(false);
-        barra.setPreferredSize(new Dimension(12, 100));
-    }
-
-    private static class ScrollBarAnimada extends BasicScrollBarUI {
-        // Reaproveita o laranja de destaque já usado nos títulos dos cards — nenhuma cor nova.
-        private static final Color COR_THUMB = Color.decode("#FF9900");
-        private static final int LARGURA_MIN = 5;
-        private static final int LARGURA_MAX = 9;
-
-        private float larguraAtual = LARGURA_MIN;
-        private float alphaAtual = 100f;
-        private boolean crescendo = false;
-        private Timer timerAnimacao;
-
-        @Override
-        protected void configureScrollBarColors() {
-            this.thumbColor = COR_THUMB;
-            this.trackColor = new Color(0, 0, 0, 0);
-        }
-
-        @Override
-        protected JButton createDecreaseButton(int orientation) { return botaoInvisivel(); }
-
-        @Override
-        protected JButton createIncreaseButton(int orientation) { return botaoInvisivel(); }
-
-        private JButton botaoInvisivel() {
-            JButton botao = new JButton();
-            botao.setPreferredSize(new Dimension(0, 0));
-            botao.setMinimumSize(new Dimension(0, 0));
-            botao.setMaximumSize(new Dimension(0, 0));
-            return botao;
-        }
-
-        @Override
-        protected void installListeners() {
-            super.installListeners();
-            scrollbar.addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { animarPara(true); }
-                @Override public void mouseExited(MouseEvent e)  { animarPara(false); }
-            });
-        }
-
-        private void animarPara(boolean crescer) {
-            this.crescendo = crescer;
-            if (timerAnimacao != null && timerAnimacao.isRunning()) {
-                timerAnimacao.stop();
-            }
-            timerAnimacao = new Timer(12, e -> {
-                float alvoLargura = crescendo ? LARGURA_MAX : LARGURA_MIN;
-                float alvoAlpha   = crescendo ? 230f : 100f;
-                larguraAtual += (alvoLargura - larguraAtual) * 0.28f;
-                alphaAtual    += (alvoAlpha - alphaAtual) * 0.28f;
-                if (scrollbar != null) scrollbar.repaint();
-                if (Math.abs(larguraAtual - alvoLargura) < 0.3f && Math.abs(alphaAtual - alvoAlpha) < 1f) {
-                    larguraAtual = alvoLargura;
-                    alphaAtual = alvoAlpha;
-                    ((Timer) e.getSource()).stop();
-                }
-            });
-            timerAnimacao.start();
-        }
-
-        @Override
-        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
-            // Trilho invisível: só o "polegar" aparece, estilo flutuante e discreto.
-        }
-
-        @Override
-        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
-            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int espessura = Math.round(larguraAtual);
-            int x = thumbBounds.x + (thumbBounds.width - espessura) / 2;
-
-            g2.setColor(new Color(COR_THUMB.getRed(), COR_THUMB.getGreen(), COR_THUMB.getBlue(), Math.round(alphaAtual)));
-            g2.fillRoundRect(x, thumbBounds.y + 2, espessura, thumbBounds.height - 4, espessura, espessura);
-            g2.dispose();
-        }
-
-        @Override
-        protected Dimension getMinimumThumbSize() {
-            return new Dimension(LARGURA_MAX, 30);
         }
     }
 

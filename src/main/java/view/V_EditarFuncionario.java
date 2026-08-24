@@ -163,23 +163,17 @@ public class V_EditarFuncionario extends JPanel {
             }
 
             if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                    "Corrija os campos destacados em vermelho:\n\n" + erros,
-                    "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Corrija os campos destacados em vermelho:\n\n" + erros, "Dados Inválidos");
                 return;
             }
 
             String cargo = cbb_Cargo.getSelectedItem().toString();
             try {
                 controller.atualizarFuncionario(funcionario.getIdFuncionario(), nome, cargo, endereco, cpf, email, telefone);
-                JOptionPane.showMessageDialog(this,
-                    "Funcionário \"" + nome + "\" atualizado com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Funcionário \"" + nome + "\" atualizado com sucesso!", "Sucesso");
                 navegarPara(new V_Configuracoes(controller));
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao atualizar funcionário: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao atualizar funcionário: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

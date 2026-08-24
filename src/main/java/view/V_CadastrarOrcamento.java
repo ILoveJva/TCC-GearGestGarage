@@ -201,10 +201,7 @@ public class V_CadastrarOrcamento extends JPanel {
         scrollForm.setBorder(null);
         scrollForm.setOpaque(false);
         scrollForm.getViewport().setOpaque(false);
-        scrollForm.getVerticalScrollBar().setUnitIncrement(14);
-        scrollForm.getVerticalScrollBar().setUI(new GlassScrollBarUI());
-        scrollForm.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
-        scrollForm.getVerticalScrollBar().setOpaque(false);
+        ScrollBarPadrao.aplicar(scrollForm);
 
         card.add(titulo, BorderLayout.NORTH);
         card.add(scrollForm, BorderLayout.CENTER);
@@ -591,9 +588,7 @@ public class V_CadastrarOrcamento extends JPanel {
                         new ArrayList<>(pecasSelecionadas), new ArrayList<>(valoresPecasSelecionadas),
                         new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas));
 
-                JOptionPane.showMessageDialog(this,
-                        String.format("Orçamento criado! Total: R$ %.2f  |  Status: PENDENTE.", total),
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, String.format("Orçamento criado! Total: R$ %.2f  |  Status: PENDENTE.", total), "Sucesso");
 
                 txt_Reclamacao.setText("");
                 itensSelecionados.clear();
@@ -606,15 +601,13 @@ public class V_CadastrarOrcamento extends JPanel {
                 lbl_Total.setText("Total: R$ 0,00");
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Erro ao criar orçamento: " + ex.getMessage(),
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao criar orçamento: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }
 
     private void aviso(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+        DialogoAlerta.aviso(this, msg, "Campo Inválido");
     }
 
     // ===== inner classes (modelo de dados — não alteradas) =====
@@ -708,6 +701,7 @@ public class V_CadastrarOrcamento extends JPanel {
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
         scp.setBorder(BorderFactory.createEmptyBorder());
+        ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 
@@ -790,6 +784,7 @@ public class V_CadastrarOrcamento extends JPanel {
         scp.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
         scp.getViewport().setBackground(Color.WHITE);
         scp.setPreferredSize(new Dimension(0, altura));
+        ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 
@@ -1019,66 +1014,6 @@ public class V_CadastrarOrcamento extends JPanel {
             seta.setOpaque(false);
             seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
             return seta;
-        }
-    }
-
-    /**
-     * Barra de rolagem fina e translúcida, no mesmo tom de vidro dos demais
-     * componentes: trilho quase invisível, "thumb" arredondado que ganha a cor
-     * de destaque ao passar o mouse/arrastar, sem os botões de seta padrão do Swing.
-     */
-    private static class GlassScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
-        @Override
-        protected void configureScrollBarColors() {
-            // cores tratadas manualmente em paintThumb/paintTrack
-        }
-
-        @Override
-        protected JButton createDecreaseButton(int orientation) {
-            return criarBotaoInvisivel();
-        }
-
-        @Override
-        protected JButton createIncreaseButton(int orientation) {
-            return criarBotaoInvisivel();
-        }
-
-        private JButton criarBotaoInvisivel() {
-            JButton b = new JButton();
-            b.setPreferredSize(new Dimension(0, 0));
-            b.setMinimumSize(new Dimension(0, 0));
-            b.setMaximumSize(new Dimension(0, 0));
-            return b;
-        }
-
-        @Override
-        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
-            // trilho praticamente invisível, deixando o vidro de fundo aparecer
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(160, 175, 195, 30));
-            g2.fill(new RoundRectangle2D.Double(trackBounds.x + 2, trackBounds.y, trackBounds.width - 4, trackBounds.height, 6, 6));
-            g2.dispose();
-        }
-
-        @Override
-        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
-            if (thumbBounds.isEmpty() || !c.isEnabled()) return;
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            Color cor = (isDragging || isThumbRollover()) ? new Color(255, 153, 0, 190) : new Color(160, 175, 195, 150);
-            int x = thumbBounds.x + 2;
-            int y = thumbBounds.y + 1;
-            int w = thumbBounds.width - 4;
-            int h = thumbBounds.height - 2;
-            g2.setColor(cor);
-            g2.fill(new RoundRectangle2D.Double(x, y, Math.max(w, 0), Math.max(h, 0), 6, 6));
-            g2.dispose();
-        }
-
-        @Override
-        protected Dimension getMinimumThumbSize() {
-            return new Dimension(9, 24);
         }
     }
 

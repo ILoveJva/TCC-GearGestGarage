@@ -126,9 +126,7 @@ public class V_EditarPeca extends JPanel {
             String nome = txt_NomePopular.getText().trim();
             if (nome.length() < 2) {
                 marcarErro(txt_NomePopular);
-                JOptionPane.showMessageDialog(this,
-                    "Nome da peça deve ter pelo menos 2 caracteres.",
-                    "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Nome da peça deve ter pelo menos 2 caracteres.", "Campo Inválido");
                 return;
             }
             String tempo = txt_VidaTempo.getText().trim();
@@ -140,14 +138,10 @@ public class V_EditarPeca extends JPanel {
                     tempo.isEmpty() ? "Não informado" : tempo,
                     km.isEmpty()    ? "Não informado" : km,
                     sistema != null ? sistema.codigo : "OUTROS");
-                JOptionPane.showMessageDialog(this,
-                    "Peça \"" + nome + "\" atualizada com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Peça \"" + nome + "\" atualizada com sucesso!", "Sucesso");
                 navegar(new V_VisualizarPecas(controller));
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao salvar: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao salvar: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

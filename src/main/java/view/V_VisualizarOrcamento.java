@@ -125,7 +125,7 @@ public class V_VisualizarOrcamento extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -262,6 +262,7 @@ public class V_VisualizarOrcamento extends JPanel {
         scroll.getViewport().setBackground(COR_TABELA_FUNDO);
         scroll.getViewport().setOpaque(true);
         scroll.setOpaque(false);
+        ScrollBarPadrao.aplicar(scroll);
         scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
 
         sec.add(lbl, BorderLayout.NORTH);
@@ -305,6 +306,7 @@ public class V_VisualizarOrcamento extends JPanel {
             scroll.getViewport().setOpaque(true);
             scroll.setOpaque(false);
             scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+            ScrollBarPadrao.aplicar(scroll);
             sec.add(scroll, BorderLayout.CENTER);
         }
         return sec;
@@ -342,13 +344,10 @@ public class V_VisualizarOrcamento extends JPanel {
         try {
             if (aprovar) controller.aprovarOrcamento(orcamento.getIdOrcamento());
             else controller.reprovarOrcamento(orcamento.getIdOrcamento());
-            JOptionPane.showMessageDialog(this,
-                    "Orçamento " + (aprovar ? "aprovado" : "reprovado") + " com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Orçamento " + (aprovar ? "aprovado" : "reprovado") + " com sucesso!", "Sucesso");
             navegar(new V_AprovarOrcamento(controller));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -388,12 +387,10 @@ public class V_VisualizarOrcamento extends JPanel {
                     OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
                     txtData.getText().trim(), km, orcamento.getIdVeiculo(), orcamento.getIdOrcamento());
-            JOptionPane.showMessageDialog(this, "Ordem de Serviço gerada com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada com sucesso!", "Sucesso");
             navegar(new V_AprovarOrcamento(controller));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao gerar serviço: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao gerar serviço: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -403,17 +400,14 @@ public class V_VisualizarOrcamento extends JPanel {
     }
 
     private void aviso(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Atenção", JOptionPane.WARNING_MESSAGE);
+        DialogoAlerta.aviso(this, msg, "Atenção");
     }
 
     private boolean confirmarComSenha(String acao) {
-        JPasswordField pwd = new JPasswordField();
-        int r = JOptionPane.showConfirmDialog(this, pwd, "Confirme a senha para " + acao,
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return false;
-        String senha = new String(pwd.getPassword());
+        String senha = DialogoConfirmacao.pedirSenha(this, "Confirme a senha para " + acao);
+        if (senha == null) return false;
         if (senha.isEmpty() || !controller.confirmarSenha(senha)) {
-            JOptionPane.showMessageDialog(this, "Senha incorreta.", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Senha incorreta.", "Acesso Negado");
             return false;
         }
         return true;

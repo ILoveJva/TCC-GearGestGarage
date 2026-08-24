@@ -116,10 +116,7 @@ public class V_OrdemServico extends JPanel {
         scp.setBorder(BorderFactory.createEmptyBorder());
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
-        scp.getVerticalScrollBar().setUnitIncrement(16);
-        scp.getVerticalScrollBar().setUI(new GlassScrollBarUI());
-        scp.getVerticalScrollBar().setPreferredSize(new Dimension(9, 0));
-        scp.getVerticalScrollBar().setOpaque(false);
+        ScrollBarPadrao.aplicar(scp);
 
         JPanel pnl_Central = new JPanel(new BorderLayout());
         pnl_Central.setOpaque(false);
@@ -389,33 +386,27 @@ public class V_OrdemServico extends JPanel {
     private void finalizarServico(JComboBox<FuncionarioEntity> cmb, JTextArea txa) {
         FuncionarioEntity mecanico = (FuncionarioEntity) cmb.getSelectedItem();
         if (mecanico == null) {
-            JOptionPane.showMessageDialog(this, "Selecione o mecânico responsável.",
-                    "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Selecione o mecânico responsável.", "Atenção");
             return;
         }
 
         String observacao = txa.getText().trim();
         if (observacao.length() < 3) {
-            JOptionPane.showMessageDialog(this,
-                    "Descreva o estado do veículo na saída (mínimo 3 caracteres).",
-                    "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Descreva o estado do veículo na saída (mínimo 3 caracteres).", "Atenção");
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this,
+        boolean confirmado = DialogoConfirmacao.confirmar(this,
                 "Confirma a finalização desta O.S.? O status ficará CONCLUÍDA e não poderá ser reaberto.",
-                "Confirmar Finalização", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+                "Confirmar Finalização");
+        if (!confirmado) return;
 
         try {
             controller.finalizarOS(idOS, observacao, mecanico.getIdFuncionario());
-            JOptionPane.showMessageDialog(this,
-                    "O.S. finalizada com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "O.S. finalizada com sucesso!", "Sucesso");
             carregarServico();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
@@ -446,9 +437,7 @@ public class V_OrdemServico extends JPanel {
 
         String descricao = txa_Descricao != null ? txa_Descricao.getText().trim() : "";
         if (descricao.length() < 3) {
-            JOptionPane.showMessageDialog(this,
-                    "Informe a descrição geral do trabalho (mínimo 3 caracteres).",
-                    "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Informe a descrição geral do trabalho (mínimo 3 caracteres).", "Atenção");
             return;
         }
 
@@ -465,13 +454,10 @@ public class V_OrdemServico extends JPanel {
 
         try {
             controller.registrarEtapaOS(idOS, descricao, checklist);
-            JOptionPane.showMessageDialog(this,
-                    "Etapa registrada. O.S. movida para EM ANDAMENTO.",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Etapa registrada. O.S. movida para EM ANDAMENTO.", "Sucesso");
             carregarServico();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(),
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
@@ -499,12 +485,12 @@ public class V_OrdemServico extends JPanel {
             valor = Double.parseDouble(txtValor.getText().trim().replace(",", "."));
             if (valor < 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Informe um valor válido.", "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Informe um valor válido.", "Atenção");
             return;
         }
         FuncionarioEntity resp = (FuncionarioEntity) cmbResponsavel.getSelectedItem();
         if (resp == null) {
-            JOptionPane.showMessageDialog(this, "Selecione o mecânico responsável.", "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Selecione o mecânico responsável.", "Atenção");
             return;
         }
         try {
@@ -512,10 +498,9 @@ public class V_OrdemServico extends JPanel {
             long idCliente = controller.getIdClientePorVeiculo(idVeic);
             controller.criarOrcamentoRevisao(idOS, valor, resp.getNome(),
                     txtObs.getText().trim(), idVeic, idCliente, resp.getIdFuncionario());
-            JOptionPane.showMessageDialog(this, "Orçamento interno criado com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Orçamento interno criado com sucesso!", "Sucesso");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
@@ -669,6 +654,7 @@ public class V_OrdemServico extends JPanel {
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
         scp.setBorder(BorderFactory.createEmptyBorder());
+        ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 
@@ -751,6 +737,7 @@ public class V_OrdemServico extends JPanel {
         scp.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
         scp.getViewport().setBackground(Color.WHITE);
         scp.setPreferredSize(new Dimension(0, altura));
+        ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 
@@ -1002,65 +989,6 @@ public class V_OrdemServico extends JPanel {
             seta.setOpaque(false);
             seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
             return seta;
-        }
-    }
-
-    /**
-     * Barra de rolagem fina e translúcida, no mesmo tom de vidro dos demais
-     * componentes: trilho quase invisível, "thumb" arredondado que ganha a cor
-     * de destaque ao passar o mouse/arrastar, sem os botões de seta padrão do Swing.
-     */
-    private static class GlassScrollBarUI extends BasicScrollBarUI {
-        @Override
-        protected void configureScrollBarColors() {
-            // cores tratadas manualmente em paintThumb/paintTrack
-        }
-
-        @Override
-        protected JButton createDecreaseButton(int orientation) {
-            return criarBotaoInvisivel();
-        }
-
-        @Override
-        protected JButton createIncreaseButton(int orientation) {
-            return criarBotaoInvisivel();
-        }
-
-        private JButton criarBotaoInvisivel() {
-            JButton b = new JButton();
-            b.setPreferredSize(new Dimension(0, 0));
-            b.setMinimumSize(new Dimension(0, 0));
-            b.setMaximumSize(new Dimension(0, 0));
-            return b;
-        }
-
-        @Override
-        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(160, 175, 195, 30));
-            g2.fill(new RoundRectangle2D.Double(trackBounds.x + 2, trackBounds.y, trackBounds.width - 4, trackBounds.height, 6, 6));
-            g2.dispose();
-        }
-
-        @Override
-        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
-            if (thumbBounds.isEmpty() || !c.isEnabled()) return;
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            Color cor = (isDragging || isThumbRollover()) ? new Color(255, 153, 0, 190) : new Color(160, 175, 195, 150);
-            int x = thumbBounds.x + 2;
-            int y = thumbBounds.y + 1;
-            int w = thumbBounds.width - 4;
-            int h = thumbBounds.height - 2;
-            g2.setColor(cor);
-            g2.fill(new RoundRectangle2D.Double(x, y, Math.max(w, 0), Math.max(h, 0), 6, 6));
-            g2.dispose();
-        }
-
-        @Override
-        protected Dimension getMinimumThumbSize() {
-            return new Dimension(9, 24);
         }
     }
 

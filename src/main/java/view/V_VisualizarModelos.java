@@ -102,6 +102,7 @@ public class V_VisualizarModelos extends JPanel {
         scroll.getViewport().setOpaque(true);
         scroll.setOpaque(false);
         scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+        ScrollBarPadrao.aplicar(scroll);
 
         BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
         btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));

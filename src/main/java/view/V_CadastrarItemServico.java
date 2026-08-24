@@ -200,6 +200,7 @@ public class V_CadastrarItemServico extends JPanel {
             "Itens de Serviço cadastrados",
             0, 0, new Font("Segoe UI", Font.BOLD, 12), Color.decode("#666666")));
         scroll.setPreferredSize(new Dimension(0, 160));
+        ScrollBarPadrao.aplicar(scroll);
         pnl_Lista.add(scroll, BorderLayout.CENTER);
         pnl_Lista.add(pnl_ListaRodape, BorderLayout.SOUTH);
 
@@ -269,6 +270,7 @@ public class V_CadastrarItemServico extends JPanel {
         JScrollPane scrollPecas = new JScrollPane(tbl_Pecas);
         scrollPecas.setPreferredSize(new Dimension(0, 70));
         scrollPecas.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        ScrollBarPadrao.aplicar(scrollPecas);
 
         JLabel lbl_Hint = new JLabel("Ao adicionar este serviço a um orçamento, as peças aqui listadas serão incluídas automaticamente.");
         lbl_Hint.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -300,8 +302,7 @@ public class V_CadastrarItemServico extends JPanel {
         String sistema  = SISTEMAS[cmb_Sistema.getSelectedIndex()];
 
         if (nome.length() < 3) {
-            JOptionPane.showMessageDialog(this, "O nome deve ter pelo menos 3 caracteres.",
-                "Campo Inválido", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "O nome deve ter pelo menos 3 caracteres.", "Campo Inválido"); return;
         }
 
         double valor;
@@ -309,8 +310,7 @@ public class V_CadastrarItemServico extends JPanel {
             valor = Double.parseDouble(valorTxt);
             if (valor < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Informe um valor válido (ex: 120.00).",
-                "Campo Inválido", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Informe um valor válido (ex: 120.00).", "Campo Inválido"); return;
         }
 
         Integer validadeKm = null, validadeMeses = null;
@@ -324,9 +324,7 @@ public class V_CadastrarItemServico extends JPanel {
         try {
             controller.salvarItemServico(nome, "", valor, tipo, sistema,
                 validadeKm, validadeMeses, new ArrayList<>(idPecasSelecionadas));
-            JOptionPane.showMessageDialog(this,
-                "Item \"" + nome + "\" cadastrado com sucesso!",
-                "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Item \"" + nome + "\" cadastrado com sucesso!", "Sucesso");
             txt_Nome.setText(""); txt_Valor.setText("");
             txt_ValidadeKm.setText(""); txt_ValidadeMeses.setText("");
             idPecasSelecionadas.clear();
@@ -335,9 +333,7 @@ public class V_CadastrarItemServico extends JPanel {
             pnl_Validade.setVisible(true);
             carregarLista();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Erro ao cadastrar item: " + ex.getMessage(),
-                "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao cadastrar item: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -350,9 +346,7 @@ public class V_CadastrarItemServico extends JPanel {
     private void editarSelecionado() {
         int row = tbl_Itens.getSelectedRow();
         if (row < 0 || row >= itensCadastrados.size()) {
-            JOptionPane.showMessageDialog(this,
-                "Selecione um item na lista para editar.",
-                "Nenhum selecionado", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Selecione um item na lista para editar.", "Nenhum selecionado");
             return;
         }
         navegar(new V_EditarItemServico(controller, itensCadastrados.get(row)));

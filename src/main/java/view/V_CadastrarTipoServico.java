@@ -77,6 +77,7 @@ public class V_CadastrarTipoServico extends JPanel {
         lst_Tipos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JScrollPane scroll = new JScrollPane(lst_Tipos);
+        ScrollBarPadrao.aplicar(scroll);
         scroll.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
             "Tipos de Serviço cadastrados",
@@ -109,23 +110,17 @@ public class V_CadastrarTipoServico extends JPanel {
             String nome = txt_Nome.getText().trim();
             if (nome.length() < 3) {
                 marcarErro(txt_Nome);
-                JOptionPane.showMessageDialog(this,
-                    "O nome deve ter pelo menos 3 caracteres.",
-                    "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "O nome deve ter pelo menos 3 caracteres.", "Campo Inválido");
                 return;
             }
             limparErro(txt_Nome);
             try {
                 controller.salvarTipoServico(nome);
-                JOptionPane.showMessageDialog(this,
-                    "Tipo de serviço \"" + nome + "\" cadastrado com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Tipo de serviço \"" + nome + "\" cadastrado com sucesso!", "Sucesso");
                 txt_Nome.setText("");
                 carregarLista();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao cadastrar: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

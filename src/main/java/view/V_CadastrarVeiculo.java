@@ -432,9 +432,7 @@ public class V_CadastrarVeiculo extends JPanel {
             // Validação de proprietário feita no bloco try abaixo
 
             if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Corrija os problemas abaixo:\n\n" + erros,
-                        "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Corrija os problemas abaixo:\n\n" + erros, "Dados Inválidos");
                 return;
             }
 
@@ -446,9 +444,7 @@ public class V_CadastrarVeiculo extends JPanel {
                     JTable tbl = pnl_SelecaoCliente.getTbl_Clientes();
                     int linhaSelecionada = tbl.getSelectedRow();
                     if (linhaSelecionada == -1) {
-                        JOptionPane.showMessageDialog(this,
-                                "Corrija os problemas abaixo:\n\n• Selecione o cliente proprietário na tabela.\n",
-                                "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                        DialogoAlerta.aviso(this, "Corrija os problemas abaixo:\n\n• Selecione o cliente proprietário na tabela.\n", "Dados Inválidos");
                         return;
                     }
                     idDono = Long.parseLong(tbl.getValueAt(linhaSelecionada, 0).toString().trim());
@@ -456,9 +452,7 @@ public class V_CadastrarVeiculo extends JPanel {
                 } else {
                     FuncionarioEntity func = (FuncionarioEntity) cmb_Funcionario.getSelectedItem();
                     if (func == null || func.getIdUsuario() == null) {
-                        JOptionPane.showMessageDialog(this,
-                                "Corrija os problemas abaixo:\n\n• Selecione o funcionário proprietário.\n",
-                                "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                        DialogoAlerta.aviso(this, "Corrija os problemas abaixo:\n\n• Selecione o funcionário proprietário.\n", "Dados Inválidos");
                         return;
                     }
                     idDono = func.getIdUsuario();
@@ -467,16 +461,12 @@ public class V_CadastrarVeiculo extends JPanel {
 
                 controller.salvarVeiculo(modeloSelecionado, placa, idDono);
 
-                JOptionPane.showMessageDialog(this,
-                        "Veículo cadastrado com sucesso para: " + nomeDono,
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Veículo cadastrado com sucesso para: " + nomeDono, "Sucesso");
 
                 limparCampos();
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Erro ao cadastrar veículo: " + ex.getMessage(),
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar veículo: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }
@@ -946,6 +936,7 @@ public class V_CadastrarVeiculo extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

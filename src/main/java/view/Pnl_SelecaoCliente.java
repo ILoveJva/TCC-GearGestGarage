@@ -60,6 +60,7 @@ public class Pnl_SelecaoCliente extends JPanel {
 
         scp_ScrollClientes = new JScrollPane(tbl_Clientes);
         scp_ScrollClientes.setBorder(BorderFactory.createLineBorder(Color.decode("#4D4D4D")));
+        ScrollBarPadrao.aplicar(scp_ScrollClientes);
 
         add(scp_ScrollClientes, BorderLayout.CENTER);
     }

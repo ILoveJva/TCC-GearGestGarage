@@ -116,7 +116,7 @@ public class V_EditarOrcamento extends JPanel {
             setBorder(null);
             setOpaque(false);
             getViewport().setOpaque(false);
-            getVerticalScrollBar().setUnitIncrement(12);
+            ScrollBarPadrao.aplicar(this);
         }}, BorderLayout.CENTER);
         card.add(pnlBtn, BorderLayout.SOUTH);
 
@@ -410,8 +410,7 @@ public class V_EditarOrcamento extends JPanel {
             }
             atualizarTotal();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erro ao carregar orçamento: " + e.getMessage(),
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao carregar orçamento: " + e.getMessage(), "Erro");
         }
     }
 
@@ -482,8 +481,7 @@ public class V_EditarOrcamento extends JPanel {
     private void vincularAcoes() {
         btn_Salvar.addActionListener(e -> {
             if (itensSelecionados.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Adicione pelo menos um item de serviço.",
-                        "Campo Inválido", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Adicione pelo menos um item de serviço.", "Campo Inválido");
                 return;
             }
             try {
@@ -491,12 +489,10 @@ public class V_EditarOrcamento extends JPanel {
                         new ArrayList<>(itensSelecionados), new ArrayList<>(valoresItensSelecionados),
                         new ArrayList<>(pecasSelecionadas), new ArrayList<>(valoresPecasSelecionadas),
                         new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas));
-                JOptionPane.showMessageDialog(this, "Orçamento atualizado com sucesso!",
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Orçamento atualizado com sucesso!", "Sucesso");
                 navegar(new V_OrdemServico(controller, idOS));
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage(),
-                        "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao salvar: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }
@@ -547,6 +543,7 @@ public class V_EditarOrcamento extends JPanel {
         JScrollPane scp = new JScrollPane(tbl);
         scp.setBorder(BorderFactory.createLineBorder(Color.decode("#CCCCCC")));
         scp.setPreferredSize(new Dimension(0, altura));
+        ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 

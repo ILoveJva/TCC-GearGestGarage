@@ -158,25 +158,19 @@ public class V_CadastrarFuncionario extends JPanel {
             }
 
             if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                    "Corrija os campos destacados em vermelho:\n\n" + erros,
-                    "Dados Inválidos", JOptionPane.WARNING_MESSAGE);
+                DialogoAlerta.aviso(this, "Corrija os campos destacados em vermelho:\n\n" + erros, "Dados Inválidos");
                 return;
             }
 
             String cargo = cbb_Cargo.getSelectedItem().toString();
             try {
                 controller.salvarFuncionario(nome, cpf, endereco, email, telefone, cargo);
-                JOptionPane.showMessageDialog(this,
-                    "Funcionário \"" + nome + "\" cadastrado com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                DialogoAlerta.sucesso(this, "Funcionário \"" + nome + "\" cadastrado com sucesso!", "Sucesso");
                 txt_Nome.setText(""); txt_Cpf.setText("");
                 txt_Endereco.setText(""); txt_Email.setText("");
                 txt_Telefone.setText(""); cbb_Cargo.setSelectedIndex(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao cadastrar funcionário: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+                DialogoAlerta.erro(this, "Erro ao cadastrar funcionário: " + ex.getMessage(), "Erro no Sistema");
             }
         });
     }

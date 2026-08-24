@@ -198,6 +198,7 @@ public class V_VisualizarServicos extends JPanel {
         scp_Pend.setOpaque(false);
         scp_Pend.setBorder(BorderFactory.createLineBorder(COR_PEND_BORDA));
         scp_Pend.setPreferredSize(new Dimension(0, 100));
+        ScrollBarPadrao.aplicar(scp_Pend);
 
         BotaoAcao btn_GerarOS = new BotaoAcao("Gerar OS do selecionado →", COR_INFO, COR_INFO_CLARA, COR_INFO_ESCURA);
         btn_GerarOS.setPreferredSize(new Dimension(210, 32));
@@ -241,7 +242,7 @@ public class V_VisualizarServicos extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.getVerticalScrollBar().setUnitIncrement(14);
+        ScrollBarPadrao.aplicar(scroll);
 
         add(pnl_Norte, BorderLayout.NORTH);
         add(scroll,    BorderLayout.CENTER);
@@ -442,6 +443,7 @@ public class V_VisualizarServicos extends JPanel {
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela));
         sp.setPreferredSize(new Dimension(0, altTabela));
         sp.getViewport().setBackground(COR_TABELA_FUNDO);
+        ScrollBarPadrao.aplicar(sp);
         sp.getViewport().setOpaque(true);
         sp.setOpaque(false);
         sp.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
@@ -484,8 +486,7 @@ public class V_VisualizarServicos extends JPanel {
     private void gerarOSDeOrcamento() {
         int linha = tbl_Pendentes.getSelectedRow();
         if (linha < 0 || linha >= orcamentosPendentes.size()) {
-            JOptionPane.showMessageDialog(this, "Selecione um orçamento na tabela.",
-                    "Atenção", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Selecione um orçamento na tabela.", "Atenção");
             return;
         }
         Orcamento o = orcamentosPendentes.get(linha);
@@ -516,28 +517,24 @@ public class V_VisualizarServicos extends JPanel {
 
         String titulo = txtTitulo.getText().trim();
         if (titulo.length() < 3) {
-            JOptionPane.showMessageDialog(this, "Título deve ter pelo menos 3 caracteres.",
-                    "Atenção", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Título deve ter pelo menos 3 caracteres.", "Atenção"); return;
         }
         int km;
         try {
             km = Integer.parseInt(txtKm.getText().trim());
             if (km < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Informe um KM válido.",
-                    "Atenção", JOptionPane.WARNING_MESSAGE); return;
+            DialogoAlerta.aviso(this, "Informe um KM válido.", "Atenção"); return;
         }
         try {
             OrdemDeServico.TipoServicoOS tipoEnum = OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
             OrdemDeServico.TipoManutencao manutEnum = OrdemDeServico.TipoManutencao.fromLabel((String) cmbManut.getSelectedItem());
             controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
                     txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
-            JOptionPane.showMessageDialog(this, "Ordem de Serviço gerada com sucesso!",
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada com sucesso!", "Sucesso");
             carregar();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao gerar OS: " + ex.getMessage(),
-                    "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "Erro ao gerar OS: " + ex.getMessage(), "Erro no Sistema");
         }
     }
 
@@ -937,6 +934,7 @@ public class V_VisualizarServicos extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
             return scroller;
         }
 

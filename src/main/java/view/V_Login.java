@@ -158,18 +158,18 @@ public class V_Login extends JFrame {
         String senha = new String(txtSenha.getPassword());
 
         if (email.isEmpty() || senha.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Preencha e-mail e senha.", "Campos Vazios", JOptionPane.WARNING_MESSAGE);
+            DialogoAlerta.aviso(this, "Preencha e-mail e senha.", "Campos Vazios");
             return;
         }
 
         boolean autenticado = controller.autenticar(email, senha);
 
         if (autenticado) {
-            JOptionPane.showMessageDialog(this, "Login efetuado com sucesso!", "Bem-vindo", JOptionPane.INFORMATION_MESSAGE);
+            DialogoAlerta.sucesso(this, "Login efetuado com sucesso!", "Bem-vindo");
             this.dispose();
             SwingUtilities.invokeLater(() -> new V_Main(controller).setVisible(true));
         } else {
-            JOptionPane.showMessageDialog(this, "E-mail ou senha incorretos.", "Erro de Autenticacao", JOptionPane.ERROR_MESSAGE);
+            DialogoAlerta.erro(this, "E-mail ou senha incorretos.", "Erro de Autenticacao");
         }
     }
 

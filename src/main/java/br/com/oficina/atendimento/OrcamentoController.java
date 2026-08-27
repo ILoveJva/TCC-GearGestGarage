@@ -24,6 +24,7 @@ public class OrcamentoController {
     public void aprovar(long id) { service.aprovar(id); }
     public void reprovar(long id) { service.reprovar(id); }
     public void atualizarValor(long id, double valor) { service.atualizarValor(id, valor); }
+    public boolean revogarAprovacaoSeNecessario(long id) { return service.revogarAprovacaoSeNecessario(id); }
     public List<OrcamentoResponseDTO> todos() { return service.listar(); }
     public List<OrcamentoResponseDTO> entrada() { return service.listarEntrada(); }
     public OrcamentoResponseDTO porId(long id) { return service.paraDTO(service.buscar(id)); }

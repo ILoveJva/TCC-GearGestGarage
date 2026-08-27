@@ -21,7 +21,6 @@ public class V_EditarOrcamento extends JPanel {
 
     private final OficinaController controller;
     private final long idOrcamento;
-    private final long idOS;
 
     // Header de leitura
     private JPanel pnl_InfoHeader;
@@ -49,10 +48,9 @@ public class V_EditarOrcamento extends JPanel {
 
     private JButton btn_Salvar;
 
-    public V_EditarOrcamento(OficinaController controller, long idOrcamento, long idOS) {
+    public V_EditarOrcamento(OficinaController controller, long idOrcamento) {
         this.controller = controller;
         this.idOrcamento = idOrcamento;
-        this.idOS = idOS;
         setLayout(new GridBagLayout());
         setBackground(Color.WHITE);
         initComponents();
@@ -67,7 +65,7 @@ public class V_EditarOrcamento extends JPanel {
         card.setBackground(Color.WHITE);
         card.setPreferredSize(new Dimension(640, 680));
 
-        JLabel titulo = new JLabel("Editar Orçamento — O.S. " + String.format("%05d", idOS));
+        JLabel titulo = new JLabel("Editar Orçamento");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
 
@@ -104,7 +102,7 @@ public class V_EditarOrcamento extends JPanel {
         btn_Voltar.setContentAreaFilled(false);
         btn_Voltar.setBorderPainted(false);
         btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Voltar.addActionListener(e -> navegar(new V_OrdemServico(controller, idOS)));
+        btn_Voltar.addActionListener(e -> navegar(new V_VisualizarOrcamento(controller, controller.buscarOrcamentoModel(idOrcamento))));
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         pnlBtn.setOpaque(false);
@@ -490,7 +488,7 @@ public class V_EditarOrcamento extends JPanel {
                         new ArrayList<>(pecasSelecionadas), new ArrayList<>(valoresPecasSelecionadas),
                         new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas));
                 DialogoAlerta.sucesso(this, "Orçamento atualizado com sucesso!", "Sucesso");
-                navegar(new V_OrdemServico(controller, idOS));
+                navegar(new V_VisualizarOrcamento(controller, controller.buscarOrcamentoModel(idOrcamento)));
             } catch (Exception ex) {
                 DialogoAlerta.erro(this, "Erro ao salvar: " + ex.getMessage(), "Erro no Sistema");
             }

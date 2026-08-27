@@ -101,6 +101,13 @@ public class ServicoRepository {
         return out;
     }
 
+    /** Servico aberto a partir do orcamento informado, ou null se nao houver. */
+    public ServicoEntity buscarPorOrcamento(long idOrcamento) {
+        for (Registro r : tServico.filtrar(x -> x.getLong("id_orcamento") == idOrcamento))
+            return mapServico(r);
+        return null;
+    }
+
     public void atualizarStatus(long idServico, String status) {
         tServico.atualizar(idServico, "status", status);
     }

@@ -154,6 +154,12 @@ public class V_VisualizarOrcamento extends JPanel {
             botoes.add(btnGerar);
         }
 
+        if (!"REPROVADO".equalsIgnoreCase(status)) {
+            BotaoAcao btnEditar = criarBotao("✎ Editar", "#2980B9");
+            btnEditar.addActionListener(e -> navegar(new V_EditarOrcamento(controller, orcamento.getIdOrcamento())));
+            botoes.add(btnEditar);
+        }
+
         JButton btnVoltar = new JButton("← Voltar");
         btnVoltar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnVoltar.setForeground(COR_LABEL);

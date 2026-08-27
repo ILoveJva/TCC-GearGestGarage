@@ -1,7 +1,10 @@
 package view;
 
+import br.com.oficina.shared.viacep.ViaCepClient;
 import controller.OficinaController;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -136,6 +139,41 @@ public class V_CadastrarCliente extends JPanel {
         ((AbstractDocument) txt_Celular.getDocument()).setDocumentFilter(new FiltroCelular());
         ((AbstractDocument) txt_CEP.getDocument()).setDocumentFilter(new FiltroCep());
         ((AbstractDocument) txt_Numero.getDocument()).setDocumentFilter(new FiltroDigitos(10));
+
+        txt_CEP.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { verificarCep(); }
+            @Override public void removeUpdate(DocumentEvent e) { }
+            @Override public void changedUpdate(DocumentEvent e) { }
+        });
+    }
+
+    /** Dispara a busca automática na ViaCEP assim que o CEP tiver os 8 dígitos. */
+    private void verificarCep() {
+        String cep = txt_CEP.getText().replaceAll("[^0-9]", "");
+        if (cep.length() != 8) return;
+        buscarEnderecoPorCep(cep);
+    }
+
+    private void buscarEnderecoPorCep(String cep) {
+        new SwingWorker<ViaCepClient.Endereco, Void>() {
+            @Override protected ViaCepClient.Endereco doInBackground() throws Exception {
+                return ViaCepClient.buscar(cep);
+            }
+            @Override protected void done() {
+                try {
+                    ViaCepClient.Endereco end = get();
+                    if (end == null) {
+                        marcarErro(txt_CEP);
+                        return;
+                    }
+                    limparErro(txt_CEP);
+                    txt_Endereco.setText(end.formatado());
+                    if (!end.complemento().isBlank()) txt_Complemento.setText(end.complemento());
+                } catch (Exception ignored) {
+                    // Falha de rede/serviço indisponível: usuário preenche o endereço manualmente.
+                }
+            }
+        }.execute();
     }
 
     // =========================================================================

@@ -25,4 +25,6 @@ public class ServicoController {
     }
     public List<ServicoResponseDTO> todas() { return service.listar(); }
     public ServicoResponseDTO porId(long id) { return service.paraDTO(service.buscar(id)); }
+    public void congelarPorOrcamento(long idOrcamento) { service.congelarPorOrcamento(idOrcamento); }
+    public void reabrirPorOrcamento(long idOrcamento) { service.reabrirPorOrcamento(idOrcamento); }
 }

@@ -43,6 +43,7 @@ public class V_OrdemServico extends JPanel {
     private static final Color COR_AZUL    = Color.decode("#2980B9"); // etapa registro / editar orçamento
     private static final Color COR_VERDE   = Color.decode("#27AE60"); // etapa finalização / concluída
     private static final Color COR_INFO    = Color.decode("#17A2B8"); // orçamento interno (revisão)
+    private static final Color COR_CONGELADA = Color.decode("#6C757D"); // serviço congelado aguardando orçamento
 
     // Paleta harmonizada com o mesmo efeito de vidro usado nas demais telas
     private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F7FA");
@@ -142,23 +143,17 @@ public class V_OrdemServico extends JPanel {
         boolean aberta = "ABERTA".equalsIgnoreCase(servico.status());
         boolean emAndamento = "EM_ANDAMENTO".equalsIgnoreCase(servico.status());
         boolean concluida = "CONCLUIDA".equalsIgnoreCase(servico.status());
+        boolean congelada = "CONGELADA".equalsIgnoreCase(servico.status());
 
         if (aberta) lbl_StatusTexto.setCorDestaque(COR_LARANJA);
         else if (emAndamento) lbl_StatusTexto.setCorDestaque(COR_AZUL);
         else if (concluida) lbl_StatusTexto.setCorDestaque(COR_VERDE);
+        else if (congelada) lbl_StatusTexto.setCorDestaque(COR_CONGELADA);
         else lbl_StatusTexto.setCorDestaque(COR_LABEL);
 
-        // Botão editar orçamento — visível quando há orçamento vinculado
+        // Itens/peças do orçamento vinculado — apenas leitura (edição acontece na tela de Visualizar Orçamento)
         if (servico.idOrcamento() != null && servico.idOrcamento() > 0) {
-            JPanel pnl_EditarOrc = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            pnl_EditarOrc.setOpaque(false);
-            pnl_EditarOrc.setAlignmentX(Component.LEFT_ALIGNMENT);
-            JButton btn_EditarOrc = botaoAcao("✎  Editar Orçamento", COR_AZUL);
             final long idOrcVinc = servico.idOrcamento();
-            btn_EditarOrc.addActionListener(e -> navegar(new V_EditarOrcamento(controller, idOrcVinc, idOS)));
-            pnl_EditarOrc.add(btn_EditarOrc);
-            pnl_Corpo.add(pnl_EditarOrc);
-            pnl_Corpo.add(Box.createVerticalStrut(10));
 
             JPanel pnl_ItensOrc = construirPainelItensOrcamento(idOrcVinc);
             if (pnl_ItensOrc != null) {
@@ -172,22 +167,26 @@ public class V_OrdemServico extends JPanel {
             }
         }
 
-        JLabel lblEtapa = criarLabelEtapa("ETAPA — REGISTRO DO TRABALHO", COR_AZUL);
-        pnl_Corpo.add(lblEtapa);
-
-        if (aberta) {
-            pnl_Corpo.add(construirPainelEdicao());
+        if (congelada) {
+            pnl_Corpo.add(construirAvisoCongelado());
         } else {
-            pnl_Corpo.add(construirPainelLeitura());
+            JLabel lblEtapa = criarLabelEtapa("ETAPA — REGISTRO DO TRABALHO", COR_AZUL);
+            pnl_Corpo.add(lblEtapa);
 
-            if (emAndamento) {
-                pnl_Corpo.add(Box.createVerticalStrut(14));
-                pnl_Corpo.add(construirPainelFinalizacao());
-            } else if (concluida) {
-                JPanel pnl_ObsSaida = construirCardObservacaoSaida();
-                if (pnl_ObsSaida != null) {
+            if (aberta) {
+                pnl_Corpo.add(construirPainelEdicao());
+            } else {
+                pnl_Corpo.add(construirPainelLeitura());
+
+                if (emAndamento) {
                     pnl_Corpo.add(Box.createVerticalStrut(14));
-                    pnl_Corpo.add(pnl_ObsSaida);
+                    pnl_Corpo.add(construirPainelFinalizacao());
+                } else if (concluida) {
+                    JPanel pnl_ObsSaida = construirCardObservacaoSaida();
+                    if (pnl_ObsSaida != null) {
+                        pnl_Corpo.add(Box.createVerticalStrut(14));
+                        pnl_Corpo.add(pnl_ObsSaida);
+                    }
                 }
             }
         }
@@ -276,6 +275,30 @@ public class V_OrdemServico extends JPanel {
 
         pnl.add(pnl_Centro, BorderLayout.CENTER);
         pnl.add(pnl_Botoes, BorderLayout.SOUTH);
+        return pnl;
+    }
+
+    // -----------------------------------------------------------------------
+    // Aviso — OS congelada aguardando atualização do orçamento
+    // -----------------------------------------------------------------------
+    private JPanel construirAvisoCongelado() {
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 6));
+        pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
+
+        JLabel lblTitulo = new JLabel("SERVIÇO CONGELADO — AGUARDANDO ATUALIZAÇÕES");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitulo.setForeground(COR_CONGELADA);
+
+        JLabel lblTexto = new JLabel("<html>O orçamento vinculado a esta O.S. foi editado e perdeu a "
+                + "aprovação. O registro do trabalho fica pausado até que o orçamento seja "
+                + "aprovado novamente na tela de Visualizar Orçamento.</html>");
+        lblTexto.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+        lblTexto.setForeground(COR_TEXTO_CAMPO);
+        lblTexto.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+
+        pnl.add(lblTitulo, BorderLayout.NORTH);
+        pnl.add(lblTexto, BorderLayout.CENTER);
         return pnl;
     }
 

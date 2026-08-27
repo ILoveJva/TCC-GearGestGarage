@@ -1,7 +1,10 @@
 package view;
 
+import br.com.oficina.shared.viacep.ViaCepClient;
 import controller.OficinaController;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -17,8 +20,8 @@ public class V_CadastrarFuncionario extends JPanel {
     private JLabel lbl_TituloPaginacao;
     private JPanel pnl_Formulario;
 
-    private JLabel lbl_Nome, lbl_Cpf, lbl_Endereco, lbl_Email, lbl_Telefone, lbl_Cargo;
-    private JTextField txt_Nome, txt_Cpf, txt_Endereco, txt_Email, txt_Telefone;
+    private JLabel lbl_Nome, lbl_Cpf, lbl_Cep, lbl_Endereco, lbl_Email, lbl_Telefone, lbl_Cargo;
+    private JTextField txt_Nome, txt_Cpf, txt_Cep, txt_Endereco, txt_Email, txt_Telefone;
     private JComboBox<String> cbb_Cargo;
     private JButton btn_Cadastrar;
 
@@ -43,7 +46,7 @@ public class V_CadastrarFuncionario extends JPanel {
         lbl_TituloPaginacao.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl_TituloPaginacao.setForeground(Color.decode("#4D4D4D"));
 
-        pnl_Formulario = new JPanel(new GridLayout(6, 1, 0, 12));
+        pnl_Formulario = new JPanel(new GridLayout(7, 1, 0, 12));
         pnl_Formulario.setBackground(Color.WHITE);
 
         lbl_Nome = criarLabel("Nome Completo *");
@@ -53,6 +56,10 @@ public class V_CadastrarFuncionario extends JPanel {
         lbl_Cpf = criarLabel("CPF *");
         txt_Cpf = criarTextField();
         txt_Cpf.setToolTipText("Somente números — 11 dígitos");
+
+        lbl_Cep = criarLabel("CEP");
+        txt_Cep = criarTextField();
+        txt_Cep.setToolTipText("Ex: 00000-000 — preenche o endereço automaticamente");
 
         lbl_Endereco = criarLabel("Endereço *");
         txt_Endereco = criarTextField();
@@ -76,6 +83,7 @@ public class V_CadastrarFuncionario extends JPanel {
 
         pnl_Formulario.add(criarContainerVertical(lbl_Nome, txt_Nome));
         pnl_Formulario.add(criarContainerVertical(lbl_Cpf, txt_Cpf));
+        pnl_Formulario.add(criarContainerVertical(lbl_Cep, txt_Cep));
         pnl_Formulario.add(criarContainerVertical(lbl_Endereco, txt_Endereco));
         pnl_Formulario.add(criarContainerVertical(lbl_Email, txt_Email));
         pnl_Formulario.add(criarContainerVertical(lbl_Telefone, txt_Telefone));
@@ -110,8 +118,36 @@ public class V_CadastrarFuncionario extends JPanel {
     private void aplicarFiltros() {
         ((AbstractDocument) txt_Nome.getDocument()).setDocumentFilter(new FiltroTexto());
         ((AbstractDocument) txt_Cpf.getDocument()).setDocumentFilter(new FiltroDigitos(11));
+        ((AbstractDocument) txt_Cep.getDocument()).setDocumentFilter(new FiltroCep());
         ((AbstractDocument) txt_Endereco.getDocument()).setDocumentFilter(new FiltroEndereco());
         ((AbstractDocument) txt_Telefone.getDocument()).setDocumentFilter(new FiltroDigitos(11));
+
+        txt_Cep.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { verificarCep(); }
+            @Override public void removeUpdate(DocumentEvent e) { }
+            @Override public void changedUpdate(DocumentEvent e) { }
+        });
+    }
+
+    /** Dispara a busca automática na ViaCEP assim que o CEP tiver os 8 dígitos. */
+    private void verificarCep() {
+        String cep = txt_Cep.getText().replaceAll("[^0-9]", "");
+        if (cep.length() != 8) return;
+        new SwingWorker<ViaCepClient.Endereco, Void>() {
+            @Override protected ViaCepClient.Endereco doInBackground() throws Exception {
+                return ViaCepClient.buscar(cep);
+            }
+            @Override protected void done() {
+                try {
+                    ViaCepClient.Endereco end = get();
+                    if (end == null) { marcarErro(txt_Cep); return; }
+                    limparErro(txt_Cep);
+                    txt_Endereco.setText(end.formatado());
+                } catch (Exception ignored) {
+                    // Falha de rede/serviço indisponível: usuário preenche o endereço manualmente.
+                }
+            }
+        }.execute();
     }
 
     private void vincularAcoes() {
@@ -166,7 +202,7 @@ public class V_CadastrarFuncionario extends JPanel {
             try {
                 controller.salvarFuncionario(nome, cpf, endereco, email, telefone, cargo);
                 DialogoAlerta.sucesso(this, "Funcionário \"" + nome + "\" cadastrado com sucesso!", "Sucesso");
-                txt_Nome.setText(""); txt_Cpf.setText("");
+                txt_Nome.setText(""); txt_Cpf.setText(""); txt_Cep.setText("");
                 txt_Endereco.setText(""); txt_Email.setText("");
                 txt_Telefone.setText(""); cbb_Cargo.setSelectedIndex(0);
             } catch (Exception ex) {
@@ -240,6 +276,30 @@ public class V_CadastrarFuncionario extends JPanel {
             super.replace(fb, off, len, filtrar(text), attr);
         }
         private String filtrar(String t) { return t == null ? "" : t.replaceAll("[^a-zA-ZÀ-ÿ0-9\\s'\\-.]", ""); }
+    }
+
+    /** Auto-formata CEP como XXXXX-XXX (aceita apenas dígitos). */
+    private static class FiltroCep extends DocumentFilter {
+        @Override public void insertString(FilterBypass fb, int off, String text, AttributeSet attr) throws BadLocationException {
+            String atual = fb.getDocument().getText(0, fb.getDocument().getLength());
+            aplicar(fb, atual.substring(0, off) + text + atual.substring(off), attr);
+        }
+        @Override public void replace(FilterBypass fb, int off, int len, String text, AttributeSet attr) throws BadLocationException {
+            String atual = fb.getDocument().getText(0, fb.getDocument().getLength());
+            aplicar(fb, atual.substring(0, off) + (text != null ? text : "") + atual.substring(off + len), attr);
+        }
+        @Override public void remove(FilterBypass fb, int off, int len) throws BadLocationException {
+            String atual = fb.getDocument().getText(0, fb.getDocument().getLength());
+            aplicar(fb, atual.substring(0, off) + atual.substring(off + len), null);
+        }
+        private void aplicar(FilterBypass fb, String texto, AttributeSet attr) throws BadLocationException {
+            String d = texto.replaceAll("[^0-9]", "");
+            if (d.length() > 8) d = d.substring(0, 8);
+            fb.replace(0, fb.getDocument().getLength(), formatar(d), attr);
+        }
+        private String formatar(String d) {
+            return d.length() <= 5 ? d : d.substring(0, 5) + "-" + d.substring(5);
+        }
     }
 
     private static class FiltroEndereco extends DocumentFilter {

@@ -39,6 +39,17 @@ public class OrcamentoService {
     public void reprovar(long id) { repository.atualizarStatus(id, "REPROVADO"); }
     public void atualizarValor(long id, double valor) { repository.atualizarValor(id, valor); }
 
+    /**
+     * Ao editar um orcamento ja aprovado, ele volta a exigir aprovacao.
+     * Retorna true se o status foi revogado (para o chamador congelar o servico vinculado).
+     */
+    public boolean revogarAprovacaoSeNecessario(long id) {
+        OrcamentoEntity o = buscar(id);
+        if (!"APROVADO".equalsIgnoreCase(o.getStatus())) return false;
+        repository.atualizarStatus(id, "PENDENTE");
+        return true;
+    }
+
     public OrcamentoResponseDTO paraDTO(OrcamentoEntity o) {
         return new OrcamentoResponseDTO(o.getIdOrcamento(), o.getValor(), o.getCodigo(),
             o.getTipo(), o.getResponsavel(), o.getReclamacao(), o.getDataCriacao(), o.getStatus(),

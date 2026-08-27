@@ -281,11 +281,30 @@ public class OficinaController {
                 }
         }
     }
-    public void aprovarOrcamento(long idOrcamento) { bridge.orcamentoController.aprovar(idOrcamento); }
+    public void aprovarOrcamento(long idOrcamento) {
+        bridge.orcamentoController.aprovar(idOrcamento);
+        bridge.servicoController.reabrirPorOrcamento(idOrcamento);
+    }
     public void reprovarOrcamento(long idOrcamento) { bridge.orcamentoController.reprovar(idOrcamento); }
 
     public br.com.oficina.atendimento.dto.OrcamentoResponseDTO buscarOrcamento(long idOrcamento) {
         return bridge.orcamentoController.porId(idOrcamento);
+    }
+
+    /** Monta o model.Orcamento (usado nas telas) a partir do id, com placa/nome já resolvidos. */
+    public model.Orcamento buscarOrcamentoModel(long idOrcamento) {
+        OrcamentoResponseDTO dto = bridge.orcamentoController.porId(idOrcamento);
+        java.util.Map<Long, String> placas = new java.util.HashMap<>();
+        for (Veiculo v : listarVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
+        java.util.Map<Long, String> nomes = new java.util.HashMap<>();
+        for (Cliente c : listarClientes()) nomes.put(c.getIdUsuario(), c.getNome());
+        for (FuncionarioEntity f : listarFuncionarios())
+            if (f.getIdUsuario() != null) nomes.put(f.getIdUsuario(), f.getNome() + " (Func.)");
+        long idV = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
+        long idC = dto.idCliente() != null ? dto.idCliente() : 0L;
+        return new model.Orcamento(dto.idOrcamento(), dto.codigo(), dto.tipo(),
+            dto.valor(), dto.responsavel(), dto.reclamacao(), dto.dataCriacao(), dto.status(),
+            idV, idC, placas.getOrDefault(idV, "—"), nomes.getOrDefault(idC, "—"));
     }
 
     public java.util.LinkedHashMap<CatalogoServicoEntity, Double> listarItensOrcamentoComValor(long idOrcamento) {
@@ -332,6 +351,9 @@ public class OficinaController {
         if (valoresItens != null) for (double v : valoresItens) total += v;
         if (valoresPecas != null) for (double v : valoresPecas) total += v;
         bridge.orcamentoController.atualizarValor(idOrcamento, total);
+
+        boolean eraAprovado = bridge.orcamentoController.revogarAprovacaoSeNecessario(idOrcamento);
+        if (eraAprovado) bridge.servicoController.congelarPorOrcamento(idOrcamento);
     }
 
     /** Lista apenas orçamentos externos (tipo=ENTRADA). */

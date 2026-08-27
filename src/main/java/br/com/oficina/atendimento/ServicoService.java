@@ -70,6 +70,27 @@ public class ServicoService {
         return s;
     }
 
+    /**
+     * Congela o servico vinculado ao orcamento editado, sinalizando que o
+     * trabalho registrado pode estar desatualizado em relacao ao orcamento.
+     * Servicos ja concluidos nao sao afetados.
+     */
+    public void congelarPorOrcamento(long idOrcamento) {
+        ServicoEntity s = repository.buscarPorOrcamento(idOrcamento);
+        if (s != null && !"CONCLUIDA".equals(s.getStatus()))
+            repository.atualizarStatus(s.getIdServico(), "CONGELADA");
+    }
+
+    /**
+     * Reabre o servico vinculado ao orcamento apos ele ser reaprovado,
+     * permitindo que o trabalho seja re-registrado com os itens atualizados.
+     */
+    public void reabrirPorOrcamento(long idOrcamento) {
+        ServicoEntity s = repository.buscarPorOrcamento(idOrcamento);
+        if (s != null && "CONGELADA".equals(s.getStatus()))
+            repository.atualizarStatus(s.getIdServico(), "ABERTA");
+    }
+
     public ServicoResponseDTO paraDTO(ServicoEntity s) {
         List<ServicoResponseDTO.ItemView> itens = new ArrayList<>();
         for (ItemServicoEntity i : s.getItens())

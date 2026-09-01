@@ -26,7 +26,7 @@ public class V_CadastrarCliente extends JPanel {
     private JLabel lbl_TituloPaginacao;
 
     private JLabel lbl_Nome, lbl_CPF, lbl_Celular, lbl_Email, lbl_CEP, lbl_Numero, lbl_Endereco, lbl_Complemento;
-    private GlassTextField txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero, txt_Endereco, txt_Complemento;
+    private CampoTexto txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero, txt_Endereco, txt_Complemento;
     private BotaoAcao btn_Cadastrar;
 
     // Paleta harmonizada com o efeito de vidro das caixas de texto
@@ -42,16 +42,22 @@ public class V_CadastrarCliente extends JPanel {
     private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
     private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
 
+    // Campo de texto padrão (vidro translúcido moderado, sem relevo/sombra 3D):
+    // borda neutra fina e vermelho apenas para o estado de erro
+    private static final Color COR_BORDA_PADRAO  = Color.decode("#D7DEE7");
+    private static final Color COR_ERRO          = Color.decode("#D63A44");
+
     // Ajustes rápidos de tipografia/tamanho — mexa só aqui para alterar tudo de uma vez
-    private static final int RAIO_COMPONENTE     = 12;   // arredondamento compartilhado (campos + botão)
-    private static final int TAMANHO_FONTE_LABEL = 18;
-    private static final int TAMANHO_FONTE_CAMPO = 16;
-    private static final int LARGURA_CAMPO       = 140;
-    private static final int ALTURA_CAMPO        = 26;
-    private static final int TAMANHO_FONTE_BOTAO = 22;
-    private static final int LARGURA_BOTAO       = 345;
-    private static final int ALTURA_BOTAO        = 66;
-    private static final int TAMANHO_ICONE_BOTAO = 40;
+    private static final int RAIO_COMPONENTE     = 12;   // arredondamento compartilhado (botão)
+    private static final int RAIO_CAMPO          = 8;    // arredondamento próprio dos campos (mais discreto)
+    private static final int TAMANHO_FONTE_LABEL = 16;
+    private static final int TAMANHO_FONTE_CAMPO = 15;
+    private static final int LARGURA_CAMPO       = 130;
+    private static final int ALTURA_CAMPO        = 23;
+    private static final int TAMANHO_FONTE_BOTAO = 16;
+    private static final int LARGURA_BOTAO       = 250;
+    private static final int ALTURA_BOTAO        = 46;
+    private static final int TAMANHO_ICONE_BOTAO = 22;
 
     private OficinaController controller;
 
@@ -86,7 +92,7 @@ public class V_CadastrarCliente extends JPanel {
         lbl_Celular  = criarLabel("Celular * (ex: (00) 00000-0000)");
         txt_Celular  = criarTextField();
 
-        lbl_Email    = criarLabel("E-mail *");
+        lbl_Email    = criarLabel("E-mail * (ex: xxxxxx@xxxxx.com)");
         txt_Email    = criarTextField();
 
         lbl_CEP      = criarLabel("CEP (ex: 00000-000)");
@@ -225,7 +231,7 @@ public class V_CadastrarCliente extends JPanel {
         return ok;
     }
 
-    private void marcarErro(GlassTextField field) {
+    private void marcarErro(CampoTexto field) {
         field.setEstadoErro(true);
         field.addFocusListener(new FocusAdapter() {
             @Override
@@ -236,12 +242,12 @@ public class V_CadastrarCliente extends JPanel {
         });
     }
 
-    private void limparErro(GlassTextField field) {
+    private void limparErro(CampoTexto field) {
         field.setEstadoErro(false);
     }
 
     private void limparTodosErros() {
-        for (GlassTextField f : new GlassTextField[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero })
+        for (CampoTexto f : new CampoTexto[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email, txt_CEP, txt_Numero })
             limparErro(f);
     }
 
@@ -292,8 +298,8 @@ public class V_CadastrarCliente extends JPanel {
         return l;
     }
 
-    private GlassTextField criarTextField() {
-        GlassTextField f = new GlassTextField();
+    private CampoTexto criarTextField() {
+        CampoTexto f = new CampoTexto();
         f.setPreferredSize(new Dimension(LARGURA_CAMPO, ALTURA_CAMPO));
         return f;
     }
@@ -431,25 +437,48 @@ public class V_CadastrarCliente extends JPanel {
     }
 
     /**
-     * Campo de texto com efeito de vidro translúcido (glassmorphism):
-     * preenchimento em gradiente semi-transparente, reflexo sutil no topo,
-     * sombra suave e borda que reage a foco/erro. Não altera nenhuma
-     * regra de negócio — apenas a pintura do componente.
+     * Campo de texto com efeito de glassmorphism: vidro fosco translúcido
+     * (nem opaco como "cerâmica", nem transparente demais) com um brilho
+     * difuso no topo — simulado por camadas translúcidas sobrepostas, já
+     * que o Swing não tem desfoque de fundo nativo — em vez de uma faixa
+     * de reflexo com borda dura. Contorno fino, com um realce claro na
+     * borda superior (luz "pegando" o vidro), e um indicador de foco
+     * animado — uma linha de destaque que cresce suavemente a partir do
+     * centro quando o campo recebe foco, e recolhe ao perdê-lo. Sem sombra
+     * ou relevo 3D. Não altera nenhuma regra de negócio — apenas a pintura
+     * do componente.
      */
-    private static class GlassTextField extends JTextField {
-        private boolean focado = false;
+    private static class CampoTexto extends JTextField {
         private boolean erro = false;
+        private boolean focado = false;
+        private float progressoFoco = 0f; // 0 = sem linha de destaque, 1 = linha completa
+        private Timer timerFoco;
 
-        GlassTextField() {
+        CampoTexto() {
             setOpaque(false);
             setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
             setForeground(COR_TEXTO_CAMPO);
             setCaretColor(COR_TEXTO_CAMPO);
             setSelectionColor(new Color(255, 153, 0, 90));
             setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+
+            // Anima a transição do indicador de foco em ~12 passos (~180ms),
+            // sem depender de nenhum efeito de profundidade/3D.
+            timerFoco = new Timer(15, e -> {
+                float alvo = focado ? 1f : 0f;
+                float passo = 0.16f;
+                if (Math.abs(progressoFoco - alvo) <= passo) {
+                    progressoFoco = alvo;
+                    timerFoco.stop();
+                } else {
+                    progressoFoco += (alvo > progressoFoco) ? passo : -passo;
+                }
+                repaint();
+            });
+
             addFocusListener(new FocusAdapter() {
-                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
-                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+                @Override public void focusGained(FocusEvent e) { focado = true; timerFoco.start(); }
+                @Override public void focusLost(FocusEvent e)   { focado = false; timerFoco.start(); }
             });
         }
 
@@ -464,22 +493,30 @@ public class V_CadastrarCliente extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             int w = getWidth();
             int h = getHeight();
+            RoundRectangle2D forma = new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_CAMPO, RAIO_CAMPO);
 
-            // Sombra suave por baixo do vidro, para dar sensação de profundidade
-            g2.setColor(new Color(70, 90, 110, 28));
-            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
-
-            // Preenchimento translúcido (o "vidro" propriamente dito)
+            // Preenchimento translúcido — o vidro propriamente dito, deixando
+            // o gradiente do card por trás aparecer sutilmente
             GradientPaint vidro = new GradientPaint(
-                    0, 0, new Color(255, 255, 255, erro ? 225 : 210),
-                    0, h, new Color(255, 255, 255, erro ? 175 : 145)
+                    0, 0, new Color(255, 255, 255, erro ? 195 : 175),
+                    0, h, new Color(255, 255, 255, erro ? 140 : 115)
             );
             g2.setPaint(vidro);
-            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.fill(forma);
 
-            // Reflexo sutil na parte superior, reforçando a leitura de vidro
-            g2.setColor(new Color(255, 255, 255, 110));
-            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+            // Brilho difuso no topo — várias camadas com alfa decrescente,
+            // simulando o desfoque de um vidro fosco (em vez de uma faixa de
+            // reflexo com borda dura, que lembrava relevo/3D)
+            Shape clipOriginal = g2.getClip();
+            g2.clip(forma);
+            for (int i = 0; i < 4; i++) {
+                int alpha = 22 - i * 5;
+                if (alpha <= 0) break;
+                double raio = h * (1.1 - i * 0.18);
+                g2.setColor(new Color(255, 255, 255, alpha));
+                g2.fill(new Ellipse2D.Double(-raio * 0.25, -raio * 0.85, w + raio * 0.5, raio * 1.3));
+            }
+            g2.setClip(clipOriginal);
 
             g2.dispose();
             super.paintComponent(g);
@@ -492,21 +529,31 @@ public class V_CadastrarCliente extends JPanel {
             int w = getWidth();
             int h = getHeight();
 
-            Color corBorda;
-            float espessura;
-            if (erro) {
-                corBorda = new Color(214, 58, 68, 220);
-                espessura = 1.6f;
-            } else if (focado) {
-                corBorda = new Color(255, 153, 0, 210);
-                espessura = 1.6f;
-            } else {
-                corBorda = new Color(160, 175, 195, 130);
-                espessura = 1f;
+            // Contorno base, fino e neutro (vermelho em erro)
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(erro ? COR_ERRO : COR_BORDA_PADRAO);
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 2, RAIO_CAMPO, RAIO_CAMPO));
+
+            // Realce claro só na borda superior — luz "pegando" a borda do vidro
+            if (!erro) {
+                g2.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(new Color(255, 255, 255, 170));
+                g2.draw(new Line2D.Double(RAIO_CAMPO * 0.7, 1.1, w - RAIO_CAMPO * 0.7, 1.1));
             }
-            g2.setStroke(new BasicStroke(espessura));
-            g2.setColor(corBorda);
-            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Indicador de foco animado: linha de destaque crescendo do centro.
+            // Em erro, fica sempre totalmente visível até o campo ser corrigido.
+            float progresso = erro ? 1f : progressoFoco;
+            float larguraMax = Math.max(0, w - 16);
+            float largura = larguraMax * progresso;
+            if (largura > 0.5f) {
+                float x = (w - largura) / 2f;
+                float y = h - 2f;
+                g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(erro ? COR_ERRO : COR_ACAO);
+                g2.draw(new Line2D.Double(x, y, x + largura, y));
+            }
+
             g2.dispose();
         }
     }
@@ -574,16 +621,16 @@ public class V_CadastrarCliente extends JPanel {
             int w = getWidth();
             int h = getHeight();
 
-            // Sombra suave, mesma linguagem visual usada nos campos em vidro
-            g2.setColor(new Color(180, 100, 0, 60));
+            // Sombra fina e neutra, mesma linguagem visual usada nos campos em vidro
+            g2.setColor(new Color(0, 0, 0, 35));
             g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
             Color corPreenchimento = pressionado ? COR_ACAO_ESCURA : (sobreMouse ? COR_ACAO_CLARA : COR_ACAO);
             g2.setColor(corPreenchimento);
             g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
-            // Reflexo sutil no topo, reforçando a mesma sensação de vidro dos campos
-            g2.setColor(new Color(255, 255, 255, 45));
+            // Reflexo suave no topo, reforçando a mesma sensação de vidro dos campos
+            g2.setColor(new Color(255, 255, 255, 25));
             g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
 
             g2.dispose();

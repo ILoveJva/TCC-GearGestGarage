@@ -58,14 +58,15 @@ public class V_CadastrarVeiculo extends JPanel {
     private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
     private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
 
-    // Vidro azulado estilo Windows 7 (Aero) — usado no cabeçalho da tabela
-    private static final Color COR_AERO_TOPO_A   = Color.decode("#F2F9FE");
-    private static final Color COR_AERO_TOPO_B   = Color.decode("#DCEEFB");
-    private static final Color COR_AERO_BASE_A   = Color.decode("#C2E1F7");
-    private static final Color COR_AERO_BASE_B   = Color.decode("#E2F1FC");
-    private static final Color COR_AERO_BORDA    = Color.decode("#8FBFE0");
-    private static final Color COR_AERO_SEPARA   = Color.decode("#B4D6EE");
-    private static final Color COR_AERO_TEXTO    = Color.decode("#1F3A52");
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho da tabela, igual às
+    // demais telas (V_VisualizarServicos, V_VisualizarMontadoras, V_VisualizarVeiculos)
+    private static final Color COR_AERO_TOPO_A   = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B   = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A   = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B   = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA    = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA   = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO    = Color.decode("#3A4149");
 
     // Tabela de dados
     private static final Color COR_TABELA_FUNDO     = Color.WHITE;
@@ -73,13 +74,13 @@ public class V_CadastrarVeiculo extends JPanel {
     private static final Color COR_TABELA_SELECAO   = Color.decode("#FFE4BF");
 
     private static final int RAIO_COMPONENTE     = 12;   // arredondamento compartilhado
-    private static final int TAMANHO_FONTE_LABEL = 20;
+    private static final int TAMANHO_FONTE_LABEL = 13;
     private static final int TAMANHO_FONTE_CAMPO = 12;
     private static final int ALTURA_CAMPO        = 34;
-    private static final int TAMANHO_FONTE_BOTAO = 14;
+    private static final int TAMANHO_FONTE_BOTAO = 13;
     private static final int LARGURA_BOTAO       = 220;
     private static final int ALTURA_BOTAO        = 44;
-    private static final int ALTURA_CABECALHO    = 32;
+    private static final int ALTURA_CABECALHO    = 26;
     private static final int ALTURA_LINHA_TABELA = 26;
 
     // =========================================================================
@@ -318,10 +319,10 @@ public class V_CadastrarVeiculo extends JPanel {
         tabela.setFillsViewportHeight(true);
         tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
 
-        // --- Cabeçalho: vidro azulado estilo Windows 7 ---
+        // --- Cabeçalho: vidro cinza claro estilo Windows 7, igual às demais telas ---
         JTableHeader cabecalho = tabela.getTableHeader();
         if (cabecalho != null) {
-            cabecalho.setDefaultRenderer(new CabecalhoVidroAzul());
+            cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
             cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
             cabecalho.setReorderingAllowed(false);
             cabecalho.setOpaque(false);
@@ -548,16 +549,17 @@ public class V_CadastrarVeiculo extends JPanel {
     // =========================================================================
 
     /**
-     * Cabeçalho de coluna com vidro azulado no estilo Aero (Windows 7):
-     * gradiente claro na metade superior, gradiente azul mais saturado na
-     * metade inferior, brilho de vidro no topo, separador entre colunas e
-     * linha de base mais escura.
+     * Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7),
+     * igual às demais telas de listagem: gradiente claro na metade superior,
+     * tom mais escuro na metade inferior, brilho de vidro discreto no topo
+     * (já reduzido — presente, mas sutil), separador entre colunas e linha
+     * de base.
      */
-    private static class CabecalhoVidroAzul extends JLabel implements TableCellRenderer {
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
 
-        CabecalhoVidroAzul() {
+        CabecalhoVidroClaro() {
             setOpaque(false);
-            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
             setForeground(COR_AERO_TEXTO);
             setHorizontalAlignment(SwingConstants.LEFT);
             setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
@@ -582,13 +584,13 @@ public class V_CadastrarVeiculo extends JPanel {
             g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
             g2.fillRect(0, 0, w, meio);
 
-            // Metade inferior: azul mais saturado, subindo de volta ao claro
+            // Metade inferior, subindo de volta ao claro
             g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
             g2.fillRect(0, meio, w, h - meio);
 
-            // Brilho de vidro no topo (o "gloss" característico do Aero)
-            g2.setColor(new Color(255, 255, 255, 140));
-            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+            // Brilho de vidro no topo — já suavizado (mais fino e discreto)
+            g2.setColor(new Color(255, 255, 255, 90));
+            g2.fillRect(0, 0, w, Math.max(1, h / 6));
 
             // Separador vertical entre colunas
             g2.setColor(COR_AERO_SEPARA);
@@ -757,14 +759,14 @@ public class V_CadastrarVeiculo extends JPanel {
             int w = getWidth();
             int h = getHeight();
 
-            g2.setColor(new Color(180, 100, 0, 60));
+            g2.setColor(new Color(0, 0, 0, 35));
             g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
             Color corPreenchimento = pressionado ? COR_ACAO_ESCURA : (sobreMouse ? COR_ACAO_CLARA : COR_ACAO);
             g2.setColor(corPreenchimento);
             g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
-            g2.setColor(new Color(255, 255, 255, 45));
+            g2.setColor(new Color(255, 255, 255, 25));
             g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
 
             g2.dispose();

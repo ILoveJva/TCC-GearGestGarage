@@ -10,6 +10,9 @@ import model.Veiculo;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
@@ -63,15 +66,35 @@ public class V_CadastrarOrcamento extends JPanel {
     private BotaoAcao btn_Cadastrar;
 
     // Paleta harmonizada com o mesmo efeito de vidro usado nas demais telas
-    // (V_CadastrarCliente, V_CadastrarVeiculo, V_CadastrarMontadora, V_CadastrarModelo)
-    private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F7FA");
-    private static final Color COR_CARD_TOPO    = Color.decode("#FFFFFF");
-    private static final Color COR_CARD_BASE    = Color.decode("#EEF2F7");
+    // (V_CadastrarCliente, V_CadastrarVeiculo, V_CadastrarMontadora, V_CadastrarModelo),
+    // com o tom acinzentado/corporativo trazido de V_VisualizarServicos para um
+    // acabamento mais sério e profissional.
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#FAFBFC");
+    private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
+    private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
     private static final Color COR_TITULO       = Color.decode("#4A5568");
     private static final Color COR_LABEL        = Color.decode("#57626F");
     private static final Color COR_LABEL_SUTIL  = Color.decode("#8A94A3");
     private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
     private static final Color COR_BORDA_SUAVE  = new Color(160, 175, 195, 130);
+
+    // Cores do popup da lista suspensa — precisa ser SÓLIDO (o vidro é só na caixa fechada)
+    private static final Color COR_POPUP_FUNDO   = Color.decode("#FFFFFF");
+    private static final Color COR_POPUP_SELECAO = Color.decode("#FFE4BF");
+    private static final Color COR_POPUP_BORDA   = Color.decode("#C3CDDA");
+
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas, igual à V_VisualizarServicos
+    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
+
+    // Tabela de dados
+    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
 
     // Cor de ação primária (tema original preservado)
     private static final Color COR_ACAO         = Color.decode("#FF9900");
@@ -94,6 +117,7 @@ public class V_CadastrarOrcamento extends JPanel {
     private static final int LARGURA_BOTAO        = 260;
     private static final int ALTURA_BOTAO         = 52;
     private static final int TAMANHO_ICONE_BOTAO  = 24;
+    private static final int ALTURA_CABECALHO     = 26;
 
     public V_CadastrarOrcamento(OficinaController controller) {
         this.controller = controller;
@@ -725,11 +749,11 @@ public class V_CadastrarOrcamento extends JPanel {
             lbl.setForeground(COR_TEXTO_CAMPO);
         } else if (selecionado) {
             lbl.setOpaque(true);
-            lbl.setBackground(new Color(255, 173, 51, 60));
+            lbl.setBackground(COR_POPUP_SELECAO);
             lbl.setForeground(COR_TEXTO_CAMPO);
         } else {
             lbl.setOpaque(true);
-            lbl.setBackground(Color.WHITE);
+            lbl.setBackground(COR_POPUP_FUNDO);
             lbl.setForeground(COR_TEXTO_CAMPO);
         }
     }
@@ -750,55 +774,100 @@ public class V_CadastrarOrcamento extends JPanel {
     }
 
     private JTable criarTabela(DefaultTableModel model) {
-        JTable tbl = new JTable(model) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
-                if (!isRowSelected(row)) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(245, 247, 250));
-                } else {
-                    c.setBackground(new Color(255, 173, 51, 80));
-                }
-                return c;
-            }
-        };
+        JTable tbl = new JTable(model);
         tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tbl.setForeground(COR_TEXTO_CAMPO);
+        tbl.setBackground(COR_TABELA_FUNDO);
+        tbl.setOpaque(true);
         tbl.setRowHeight(26);
         tbl.setShowGrid(false);
         tbl.setIntercellSpacing(new Dimension(0, 0));
-        tbl.setSelectionBackground(new Color(255, 173, 51, 80));
-        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
-        JTableHeader header = tbl.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setForeground(COR_TITULO);
-        header.setBackground(COR_CARD_BASE);
-        header.setReorderingAllowed(false);
-        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 28));
         tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl.setSelectionBackground(COR_TABELA_SELECAO);
+        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
+        tbl.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
+
+        JTableHeader header = tbl.getTableHeader();
+        header.setDefaultRenderer(new CabecalhoVidroClaro());
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, ALTURA_CABECALHO));
+        header.setReorderingAllowed(false);
+        header.setOpaque(false);
         return tbl;
     }
 
     private JScrollPane scrollTabela(JTable tbl, int altura) {
         JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
-        scp.getViewport().setBackground(Color.WHITE);
+        scp.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+        scp.setOpaque(false);
+        scp.getViewport().setBackground(COR_TABELA_FUNDO);
+        scp.getViewport().setOpaque(true);
         scp.setPreferredSize(new Dimension(0, altura));
         ScrollBarPadrao.aplicar(scp);
         return scp;
     }
 
-    private static class RoundedBorder implements javax.swing.border.Border {
-        private final int raio; private final Color cor;
-        RoundedBorder(int r, Color c) { this.raio = r; this.cor = c; }
-        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
-        public boolean isBorderOpaque() { return false; }
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7), igual à V_VisualizarServicos. */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setForeground(COR_AERO_TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(cor);
-            g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 140));
+            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+
+            g2.setColor(COR_AERO_SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
             g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Células de dados sempre com fundo branco (e destaque âmbar quando selecionadas), igual à V_VisualizarServicos. */
+    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
+        CelulaBrancaRenderer() {
+            setOpaque(true);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+            setForeground(COR_TEXTO_CAMPO);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+            return this;
         }
     }
 
@@ -946,6 +1015,9 @@ public class V_CadastrarOrcamento extends JPanel {
             setOpaque(false);
             setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
             setForeground(COR_TEXTO_CAMPO);
+            // Não usar cor transparente: o BasicComboPopup copia este background
+            // para a lista suspensa, e um alpha 0 deixaria o popup transparente.
+            setBackground(COR_POPUP_FUNDO);
             setFocusable(true);
             setUI(new GlassComboBoxUI());
             setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 28));
@@ -996,24 +1068,138 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /** UI mínima que remove a pintura padrão do Swing e estiliza apenas o botão de seta. */
+    /**
+     * UI do GlassComboBox: impede que o Swing pinte fundo sólido (inclusive o
+     * azul de seleção quando em foco) por cima do vidro, troca a seta padrão
+     * por um triângulo vetorial e usa um popup arredondado — igual à
+     * V_VisualizarServicos, corrigindo o bug de pintura em estados de foco.
+     */
     private static class GlassComboBoxUI extends BasicComboBoxUI {
         @Override
         public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
-            // vazio de propósito: o próprio JComboBox já pinta o fundo em vidro
+            // Vazio de propósito — o fundo já é pintado em GlassComboBox.paintComponent().
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            ListCellRenderer renderer = comboBox.getRenderer();
+            Component c = renderer.getListCellRendererComponent(
+                    listBox, comboBox.getSelectedItem(), -1, false, false);
+            c.setFont(comboBox.getFont());
+            c.setForeground(comboBox.isEnabled() ? COR_TEXTO_CAMPO : Color.GRAY);
+
+            boolean opacoOriginal = false;
+            if (c instanceof JComponent) {
+                opacoOriginal = ((JComponent) c).isOpaque();
+                ((JComponent) c).setOpaque(false);
+            }
+
+            boolean shouldValidate = c instanceof JPanel;
+            currentValuePane.paintComponent(g, c, comboBox, bounds.x, bounds.y, bounds.width, bounds.height, shouldValidate);
+
+            if (c instanceof JComponent) {
+                ((JComponent) c).setOpaque(opacoOriginal);
+            }
+        }
+
+        @Override
+        protected ComboPopup createPopup() {
+            return new GlassComboPopup(comboBox);
         }
 
         @Override
         protected JButton createArrowButton() {
-            JButton seta = new JButton("\u25BE");
-            seta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            seta.setForeground(COR_LABEL);
+            JButton seta = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    int w = getWidth(), h = getHeight();
+                    int cx = w / 2, cy = h / 2;
+                    Path2D triangulo = new Path2D.Double();
+                    triangulo.moveTo(cx - 4, cy - 2);
+                    triangulo.lineTo(cx + 4, cy - 2);
+                    triangulo.lineTo(cx, cy + 3);
+                    triangulo.closePath();
+                    g2.setColor(COR_LABEL);
+                    g2.fill(triangulo);
+                    g2.dispose();
+                }
+            };
+            seta.setPreferredSize(new Dimension(20, 20));
             seta.setContentAreaFilled(false);
             seta.setBorderPainted(false);
             seta.setFocusPainted(false);
             seta.setOpaque(false);
             seta.setCursor(new Cursor(Cursor.HAND_CURSOR));
             return seta;
+        }
+    }
+
+    /** Popup do combo com cantos arredondados e conteúdo sólido/legível, igual à V_VisualizarServicos. */
+    private static class GlassComboPopup extends BasicComboPopup {
+
+        GlassComboPopup(JComboBox<Object> combo) {
+            super(combo);
+        }
+
+        @Override
+        protected void configurePopup() {
+            super.configurePopup();
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        }
+
+        @Override
+        protected void configureList() {
+            super.configureList();
+            list.setOpaque(true);
+            list.setBackground(COR_POPUP_FUNDO);
+            list.setForeground(COR_TEXTO_CAMPO);
+            list.setSelectionBackground(COR_POPUP_SELECAO);
+            list.setSelectionForeground(COR_TEXTO_CAMPO);
+            list.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+        }
+
+        @Override
+        protected JScrollPane createScroller() {
+            JScrollPane scroller = super.createScroller();
+            scroller.setOpaque(false);
+            scroller.getViewport().setOpaque(false);
+            scroller.setBorder(BorderFactory.createEmptyBorder());
+            ScrollBarPadrao.aplicar(scroller);
+            return scroller;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(COR_POPUP_FUNDO);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(COR_POPUP_BORDA);
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void show() {
+            super.show();
+            try {
+                Window janela = SwingUtilities.getWindowAncestor(this);
+                if (janela != null) {
+                    janela.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), RAIO_COMPONENTE, RAIO_COMPONENTE));
+                }
+            } catch (Exception | Error ignorado) {
+                // Sem suporte a formato de janela nesta plataforma.
+            }
         }
     }
 

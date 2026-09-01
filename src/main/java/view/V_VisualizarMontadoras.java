@@ -47,7 +47,7 @@ public class V_VisualizarMontadoras extends JPanel {
     private static final int TAMANHO_FONTE_BOTAO = 13;
     private static final int LARGURA_BOTAO       = 130;
     private static final int ALTURA_BOTAO        = 40;
-    private static final int ALTURA_CABECALHO    = 32;
+    private static final int ALTURA_CABECALHO    = 26;
     private static final int ALTURA_LINHA_TABELA = 28;
 
     private final OficinaController controller;
@@ -181,8 +181,8 @@ public class V_VisualizarMontadoras extends JPanel {
             g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
             g2.fillRect(0, meio, w, h - meio);
 
-            g2.setColor(new Color(255, 255, 255, 140));
-            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+            g2.setColor(new Color(255, 255, 255, 90));
+            g2.fillRect(0, 0, w, Math.max(1, h / 6));
 
             g2.setColor(COR_AERO_SEPARA);
             g2.drawLine(w - 1, 3, w - 1, h - 4);
@@ -290,7 +290,7 @@ public class V_VisualizarMontadoras extends JPanel {
             g2.setColor(corPreenchimento);
             g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
-            g2.setColor(new Color(255, 255, 255, 45));
+            g2.setColor(new Color(255, 255, 255, 30));
             g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
 
             g2.dispose();

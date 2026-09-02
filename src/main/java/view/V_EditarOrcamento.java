@@ -9,6 +9,9 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +68,16 @@ public class V_EditarOrcamento extends JPanel {
         card.setBackground(Color.WHITE);
         card.setPreferredSize(new Dimension(640, 680));
 
+        JPanel headerGlass = new CabecalhoVidro();
+        headerGlass.setLayout(new BorderLayout());
+        headerGlass.setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 14));
+        headerGlass.setPreferredSize(new Dimension(10, 42));
+        headerGlass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+
         JLabel titulo = new JLabel("Editar Orçamento");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        titulo.setForeground(Color.decode("#4D4D4D"));
+        titulo.setForeground(Color.decode("#3A4149"));
+        headerGlass.add(titulo, BorderLayout.WEST);
 
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
@@ -79,7 +89,7 @@ public class V_EditarOrcamento extends JPanel {
                 BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
                 BorderFactory.createEmptyBorder(10, 12, 10, 12)));
         pnl_InfoHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnl_InfoHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+        pnl_InfoHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
         form.add(pnl_InfoHeader);
         form.add(Box.createVerticalStrut(14));
@@ -87,21 +97,13 @@ public class V_EditarOrcamento extends JPanel {
         form.add(Box.createVerticalStrut(14));
         form.add(criarSecaoPecas());
 
-        btn_Salvar = new JButton("SALVAR ALTERAÇÕES");
+        btn_Salvar = new BotaoVidro("💾 SALVAR ALTERAÇÕES", Color.decode("#FF9900"));
         btn_Salvar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn_Salvar.setForeground(Color.WHITE);
-        btn_Salvar.setBackground(Color.decode("#FF9900"));
-        btn_Salvar.setPreferredSize(new Dimension(230, 45));
-        btn_Salvar.setFocusPainted(false);
-        btn_Salvar.setBorderPainted(false);
-        btn_Salvar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Salvar.setPreferredSize(new Dimension(250, 45));
 
-        JButton btn_Voltar = new JButton("← Cancelar");
+        BotaoVidro btn_Voltar = new BotaoVidro("← Cancelar", Color.decode("#8A94A3"));
         btn_Voltar.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Voltar.setForeground(Color.decode("#4D4D4D"));
-        btn_Voltar.setContentAreaFilled(false);
-        btn_Voltar.setBorderPainted(false);
-        btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Voltar.setPreferredSize(new Dimension(130, 40));
         btn_Voltar.addActionListener(e -> navegar(new V_VisualizarOrcamento(controller, controller.buscarOrcamentoModel(idOrcamento))));
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
@@ -109,7 +111,7 @@ public class V_EditarOrcamento extends JPanel {
         pnlBtn.add(btn_Voltar);
         pnlBtn.add(btn_Salvar);
 
-        card.add(titulo, BorderLayout.NORTH);
+        card.add(headerGlass, BorderLayout.NORTH);
         card.add(new JScrollPane(form) {{
             setBorder(null);
             setOpaque(false);
@@ -382,7 +384,6 @@ public class V_EditarOrcamento extends JPanel {
             addInfo("Cód. Orçamento:", dto.codigo() != null ? dto.codigo() : "#" + idOrcamento);
             addInfo("Status:", dto.status() != null ? dto.status() : "—");
             addInfo("Responsável:", dto.responsavel() != null ? dto.responsavel() : "—");
-            addInfo("Reclamação:", dto.reclamacao() != null ? dto.reclamacao() : "—");
             pnl_InfoHeader.revalidate();
 
             for (var entry : controller.listarItensOrcamentoComValor(idOrcamento).entrySet()) {
@@ -558,5 +559,137 @@ public class V_EditarOrcamento extends JPanel {
             g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2.dispose();
         }
+    }
+
+    /**
+     * Cabeçalho fino em vidro Aero, usado na faixa de título no topo do card
+     * (mesma linguagem visual usada nas demais telas do sistema).
+     */
+    private static class CabecalhoVidro extends JPanel {
+        private static final Color TOPO_A = Color.decode("#FBFBFC");
+        private static final Color TOPO_B = Color.decode("#ECEEF1");
+        private static final Color BASE_A = Color.decode("#DADDE2");
+        private static final Color BASE_B = Color.decode("#EFF1F3");
+        private static final Color BORDA  = Color.decode("#B6BCC4");
+
+        CabecalhoVidro() {
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            RoundRectangle2D corpo = new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14);
+            Shape clipAnterior = g2.getClip();
+            g2.clip(corpo);
+
+            g2.setPaint(new GradientPaint(0, 0, TOPO_A, 0, meio, TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+            g2.setPaint(new GradientPaint(0, meio, BASE_A, 0, h, BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 120));
+            g2.fillRect(0, 0, w, Math.max(1, h / 4));
+
+            g2.setClip(clipAnterior);
+
+            g2.setColor(BORDA);
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(corpo);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação em vidro: preenchimento translúcido em gradiente, brilho
+     * frosted no topo e reação a hover/clique — mesma linguagem visual usada
+     * nos demais botões de ação do sistema.
+     */
+    private static class BotaoVidro extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoVidro(String texto, Color corBase) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = clarear(corBase);
+            this.corEscura = escurecer(corBase);
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int raio = 12;
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, raio, raio));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            RoundRectangle2D corpo = new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio);
+
+            Shape clipAnterior = g2.getClip();
+            g2.clip(corpo);
+
+            GradientPaint gp = new GradientPaint(0, 0, comAlpha(clarear(corPreenchimento), 235),
+                    0, h, comAlpha(corPreenchimento, 215));
+            g2.setPaint(gp);
+            g2.fill(corpo);
+
+            g2.setColor(new Color(255, 255, 255, 60));
+            g2.fill(new Ellipse2D.Double(-w * 0.1, -h * 0.7, w * 1.2, h * 1.4));
+
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), raio - 5, raio - 5));
+
+            g2.setClip(clipAnterior);
+
+            g2.setColor(comAlpha(escurecer(corPreenchimento), 160));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(corpo);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // ===== utilitários de cor =====
+    private static Color clarear(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1] * 0.75f, Math.min(1f, hsb[2] * 1.18f));
+    }
+
+    private static Color escurecer(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2] * 0.82f);
+    }
+
+    private static Color comAlpha(Color c, int alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
     }
 }

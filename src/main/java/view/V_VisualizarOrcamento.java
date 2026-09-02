@@ -1,12 +1,10 @@
 package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
-import br.com.oficina.estoque.PecaEntity;
 import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
 import model.Cliente;
 import model.Orcamento;
-import model.OrdemDeServico;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -16,8 +14,8 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -112,13 +110,11 @@ public class V_VisualizarOrcamento extends JPanel {
         corpo.add(Box.createVerticalStrut(16));
         corpo.add(criarCardInfo());
         corpo.add(Box.createVerticalStrut(14));
-        corpo.add(criarCardReclamacao());
-        corpo.add(Box.createVerticalStrut(14));
         corpo.add(criarSecaoItens());
         corpo.add(Box.createVerticalStrut(14));
-        corpo.add(criarSecaoPecas());
-        corpo.add(Box.createVerticalStrut(14));
         corpo.add(criarRodapeTotal());
+        corpo.add(Box.createVerticalStrut(14));
+        corpo.add(criarBarraAcoes());
         corpo.add(Box.createVerticalStrut(8));
 
         JScrollPane scroll = new JScrollPane(corpo);
@@ -130,52 +126,16 @@ public class V_VisualizarOrcamento extends JPanel {
     }
 
     private JPanel criarTopo() {
-        JPanel pnl = new JPanel(new BorderLayout());
-        pnl.setOpaque(false);
+        JPanel pnl = new CabecalhoTopoVidro(new BorderLayout());
+        pnl.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
+        pnl.setPreferredSize(new Dimension(10, 42));
+        pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
         JLabel lbl = new JLabel("Orçamentos > Detalhes do Orçamento");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl.setForeground(COR_TITULO);
-
-        JPanel botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        botoes.setOpaque(false);
-
-        String status = orcamento.getStatus();
-        if ("PENDENTE".equalsIgnoreCase(status)) {
-            BotaoAcao btnAprovar = criarBotao("Aprovar", "#28A745");
-            BotaoAcao btnReprovar = criarBotao("Reprovar", "#DC3545");
-            btnAprovar.addActionListener(e -> mudarStatus(true));
-            btnReprovar.addActionListener(e -> mudarStatus(false));
-            botoes.add(btnReprovar);
-            botoes.add(btnAprovar);
-        } else if ("APROVADO".equalsIgnoreCase(status)) {
-            BotaoAcao btnGerar = criarBotao("Gerar Serviço", "#17A2B8");
-            btnGerar.addActionListener(e -> gerarServico());
-            botoes.add(btnGerar);
-        }
-
-        if (!"REPROVADO".equalsIgnoreCase(status)) {
-            BotaoAcao btnEditar = criarBotao("✎ Editar", "#2980B9");
-            btnEditar.addActionListener(e -> navegar(new V_EditarOrcamento(controller, orcamento.getIdOrcamento())));
-            botoes.add(btnEditar);
-        }
-
-        JButton btnVoltar = new JButton("← Voltar");
-        btnVoltar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnVoltar.setForeground(COR_LABEL);
-        btnVoltar.setFocusPainted(false);
-        btnVoltar.setBorderPainted(false);
-        btnVoltar.setContentAreaFilled(false);
-        btnVoltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnVoltar.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btnVoltar.setForeground(COR_TITULO); }
-            @Override public void mouseExited(MouseEvent e)  { btnVoltar.setForeground(COR_LABEL); }
-        });
-        btnVoltar.addActionListener(e -> navegar(new V_AprovarOrcamento(controller)));
-        botoes.add(btnVoltar);
+        lbl.setForeground(COR_AERO_TEXTO);
 
         pnl.add(lbl, BorderLayout.WEST);
-        pnl.add(botoes, BorderLayout.EAST);
         return pnl;
     }
 
@@ -223,25 +183,6 @@ public class V_VisualizarOrcamento extends JPanel {
         return card;
     }
 
-    private JPanel criarCardReclamacao() {
-        JPanel card = new PainelGradiente(new BorderLayout(0, 6), COR_CARD_TOPO, COR_CARD_BASE, COR_BORDA_CARD);
-        card.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
-
-        JLabel lbl = new JLabel("Reclamação / Descrição do Problema");
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(COR_LABEL);
-
-        JLabel val = new JLabel("<html>" + valorOuTracinho(orcamento.getReclamacao()).replace("\n", "<br>") + "</html>");
-        val.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        val.setForeground(COR_TEXTO_CAMPO);
-
-        card.add(lbl, BorderLayout.NORTH);
-        card.add(val, BorderLayout.CENTER);
-        return card;
-    }
-
     private JPanel criarSecaoItens() {
         JPanel sec = new JPanel(new BorderLayout(0, 6));
         sec.setOpaque(false);
@@ -276,48 +217,6 @@ public class V_VisualizarOrcamento extends JPanel {
         return sec;
     }
 
-    private JPanel criarSecaoPecas() {
-        JPanel sec = new JPanel(new BorderLayout(0, 6));
-        sec.setOpaque(false);
-        sec.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
-
-        JLabel lbl = new JLabel("Peças a Substituir");
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(COR_TITULO);
-
-        sec.add(lbl, BorderLayout.NORTH);
-
-        if (dadosPecas.isEmpty()) {
-            JLabel lblVazio = new JLabel("Nenhuma peça vinculada a este orçamento.");
-            lblVazio.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-            lblVazio.setForeground(COR_LABEL);
-            sec.add(lblVazio, BorderLayout.CENTER);
-        } else {
-            String[] cols = {"Peça (Popular)", "Nome Técnico", "Fabricante", "Valor (R$)"};
-            DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
-            for (Object[] triple : dadosPecas) {
-                PecaEntity peca = (PecaEntity) triple[0];
-                double valor = (Double) triple[1];
-                String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
-                String fabricante = triple.length > 3 ? (String) triple[3] : "";
-                mdl.addRow(new Object[]{peca.getNomeExibicao(), nomeTecnico,
-                        fabricante.isBlank() ? "—" : fabricante, String.format("R$ %.2f", valor)});
-            }
-            JTable tbl = criarTabela(mdl);
-            JScrollPane scroll = new JScrollPane(tbl);
-            scroll.getViewport().setBackground(COR_TABELA_FUNDO);
-            scroll.getViewport().setOpaque(true);
-            scroll.setOpaque(false);
-            scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-            ScrollBarPadrao.aplicar(scroll);
-            sec.add(scroll, BorderLayout.CENTER);
-        }
-        return sec;
-    }
-
     private JPanel criarRodapeTotal() {
         JPanel pnl = new PainelGradiente(new GridLayout(3, 2, 0, 4), COR_TOTAL_TOPO, COR_TOTAL_BASE, COR_TOTAL_BORDA);
         pnl.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
@@ -345,6 +244,42 @@ public class V_VisualizarOrcamento extends JPanel {
         pnl.add(val);
     }
 
+    /** Barra de ações inferior, em vidro, com os botões que antes ficavam no topo. */
+    private JPanel criarBarraAcoes() {
+        JPanel pnl = new PainelGradiente(new BorderLayout(0, 0), COR_CARD_TOPO, COR_CARD_BASE, COR_BORDA_CARD);
+        pnl.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+        pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
+
+        JPanel esquerda = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        esquerda.setOpaque(false);
+        BotaoAcao btnVoltar = criarBotao("← Voltar", "#8A94A3");
+        btnVoltar.addActionListener(e -> navegar(new V_AprovarOrcamento(controller)));
+        esquerda.add(btnVoltar);
+
+        JPanel direita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        direita.setOpaque(false);
+
+        String status = orcamento.getStatus();
+        if ("PENDENTE".equalsIgnoreCase(status)) {
+            BotaoAcao btnReprovar = criarBotao("✕ Reprovar", "#DC3545");
+            BotaoAcao btnAprovar = criarBotao("✓ Aprovar", "#28A745");
+            btnReprovar.addActionListener(e -> mudarStatus(false));
+            btnAprovar.addActionListener(e -> mudarStatus(true));
+            direita.add(btnReprovar);
+            direita.add(btnAprovar);
+        }
+        if (!"REPROVADO".equalsIgnoreCase(status)) {
+            BotaoAcao btnEditar = criarBotao("✎ Editar", "#2980B9");
+            btnEditar.addActionListener(e -> navegar(new V_EditarOrcamento(controller, orcamento.getIdOrcamento())));
+            direita.add(btnEditar);
+        }
+
+        pnl.add(esquerda, BorderLayout.WEST);
+        pnl.add(direita, BorderLayout.EAST);
+        return pnl;
+    }
+
     private void mudarStatus(boolean aprovar) {
         if (!confirmarComSenha(aprovar ? "aprovar este orçamento" : "reprovar este orçamento")) return;
         try {
@@ -357,56 +292,9 @@ public class V_VisualizarOrcamento extends JPanel {
         }
     }
 
-    private void gerarServico() {
-        JTextField txtTitulo = new JTextField();
-        JComboBox<String> cmbTipo = new JComboBox<>();
-        for (OrdemDeServico.TipoServicoOS t : OrdemDeServico.TipoServicoOS.values())
-            cmbTipo.addItem(t.getLabel());
-        JComboBox<String> cmbManutencao = new JComboBox<>();
-        for (OrdemDeServico.TipoManutencao m : OrdemDeServico.TipoManutencao.values())
-            cmbManutencao.addItem(m.getLabel());
-        JTextField txtData = new JTextField(LocalDate.now().toString());
-        JTextField txtKm = new JTextField();
-
-        JPanel form = new JPanel(new GridLayout(0, 1, 0, 4));
-        form.add(new JLabel("Título do Serviço:")); form.add(txtTitulo);
-        form.add(new JLabel("Tipo de Serviço:"));   form.add(cmbTipo);
-        form.add(new JLabel("Tipo de Manutenção:")); form.add(cmbManutencao);
-        form.add(new JLabel("Data (AAAA-MM-DD):")); form.add(txtData);
-        form.add(new JLabel("KM atual:"));           form.add(txtKm);
-
-        int r = JOptionPane.showConfirmDialog(this, form,
-                "Gerar Serviço do Orçamento " + orcamento.getCodigo(),
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return;
-
-        String titulo = txtTitulo.getText().trim();
-        if (titulo.length() < 3) { aviso("Título deve ter pelo menos 3 caracteres."); return; }
-        int km;
-        try { km = Integer.parseInt(txtKm.getText().trim()); if (km < 0) throw new NumberFormatException(); }
-        catch (NumberFormatException ex) { aviso("Informe um KM válido."); return; }
-
-        try {
-            OrdemDeServico.TipoServicoOS tipoEnum =
-                    OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
-            OrdemDeServico.TipoManutencao manutEnum =
-                    OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
-            controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
-                    txtData.getText().trim(), km, orcamento.getIdVeiculo(), orcamento.getIdOrcamento());
-            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada com sucesso!", "Sucesso");
-            navegar(new V_AprovarOrcamento(controller));
-        } catch (Exception ex) {
-            DialogoAlerta.erro(this, "Erro ao gerar serviço: " + ex.getMessage(), "Erro no Sistema");
-        }
-    }
-
     private void navegar(JPanel destino) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
-    }
-
-    private void aviso(String msg) {
-        DialogoAlerta.aviso(this, msg, "Atenção");
     }
 
     private boolean confirmarComSenha(String acao) {
@@ -477,6 +365,10 @@ public class V_VisualizarOrcamento extends JPanel {
     private static Color escurecer(Color c) {
         float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
         return Color.getHSBColor(hsb[0], hsb[1], hsb[2] * 0.82f);
+    }
+
+    private static Color comAlpha(Color c, int alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
     }
 
     // =========================================================================
@@ -551,6 +443,47 @@ public class V_VisualizarOrcamento extends JPanel {
     // =========================================================================
     // INNER CLASSES — COMPONENTES EM VIDRO
     // =========================================================================
+
+    /**
+     * Cabeçalho fino em vidro Aero (mesma linguagem visual do cabeçalho das
+     * tabelas), usado na faixa de título no topo da tela.
+     */
+    private static class CabecalhoTopoVidro extends JPanel {
+        CabecalhoTopoVidro(LayoutManager layout) {
+            super(layout);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            RoundRectangle2D corpo = new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14);
+            Shape clipAnterior = g2.getClip();
+            g2.clip(corpo);
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 120));
+            g2.fillRect(0, 0, w, Math.max(1, h / 4));
+
+            g2.setClip(clipAnterior);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(corpo);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
 
     /**
      * Painel com fundo em gradiente suave, opcionalmente com uma borda
@@ -676,11 +609,29 @@ public class V_VisualizarOrcamento extends JPanel {
             g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
             Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
-            g2.setColor(corPreenchimento);
-            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            RoundRectangle2D corpo = new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE);
+
+            Shape clipAnterior = g2.getClip();
+            g2.clip(corpo);
+
+            // preenchimento em gradiente translúcido — mesma linguagem de vidro do restante da tela
+            GradientPaint gp = new GradientPaint(0, 0, comAlpha(clarear(corPreenchimento), 235),
+                    0, h, comAlpha(corPreenchimento, 215));
+            g2.setPaint(gp);
+            g2.fill(corpo);
+
+            // brilho frosted (reflexo de vidro), como nos campos e cabeçalhos
+            g2.setColor(new Color(255, 255, 255, 60));
+            g2.fill(new Ellipse2D.Double(-w * 0.1, -h * 0.7, w * 1.2, h * 1.4));
 
             g2.setColor(new Color(255, 255, 255, 45));
             g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.setClip(clipAnterior);
+
+            g2.setColor(comAlpha(escurecer(corPreenchimento), 160));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(corpo);
 
             g2.dispose();
             super.paintComponent(g);

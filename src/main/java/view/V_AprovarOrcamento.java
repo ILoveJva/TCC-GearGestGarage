@@ -2,14 +2,16 @@ package view;
 
 import controller.OficinaController;
 import model.Orcamento;
-import model.OrdemDeServico;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.LocalDate;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.List;
 
 /**
@@ -55,16 +57,20 @@ public class V_AprovarOrcamento extends JPanel {
         topo.add(btnNovo, BorderLayout.EAST);
         add(topo, BorderLayout.NORTH);
 
-        String[] cols = {"Cód.", "Cliente", "Veículo", "Peças", "Responsável", "Valor (R$)", "Reclamação", "Status"};
+        String[] cols = {"Cód.", "Cliente", "Veículo", "Responsável", "Valor (R$)", "Status"};
         modelo = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tabela = new JTable(modelo);
         tabela.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabela.setRowHeight(26);
-        tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabela.getTableHeader().setReorderingAllowed(false);
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        JTableHeader cabecalhoTabela = tabela.getTableHeader();
+        cabecalhoTabela.setDefaultRenderer(new CabecalhoVidroClaro());
+        cabecalhoTabela.setPreferredSize(new Dimension(cabecalhoTabela.getPreferredSize().width, 28));
+        cabecalhoTabela.setReorderingAllowed(false);
+        cabecalhoTabela.setOpaque(false);
 
         tabela.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
@@ -82,15 +88,12 @@ public class V_AprovarOrcamento extends JPanel {
 
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         acoes.setOpaque(false);
-        JButton btnAprovar = criarBtn("Aprovar", "#28A745");
-        JButton btnReprovar = criarBtn("Reprovar", "#DC3545");
-        JButton btnGerar = criarBtn("Gerar Serviço", "#17A2B8");
-        btnAprovar.addActionListener(e -> mudarStatus(true));
+        JButton btnReprovar = criarBtn("✕ Reprovar", "#DC3545");
+        JButton btnAprovar = criarBtn("✓ Aprovar", "#28A745");
         btnReprovar.addActionListener(e -> mudarStatus(false));
-        btnGerar.addActionListener(e -> gerarServico());
-        acoes.add(btnAprovar);
+        btnAprovar.addActionListener(e -> mudarStatus(true));
         acoes.add(btnReprovar);
-        acoes.add(btnGerar);
+        acoes.add(btnAprovar);
         add(acoes, BorderLayout.SOUTH);
     }
 
@@ -99,11 +102,10 @@ public class V_AprovarOrcamento extends JPanel {
         modelo.setRowCount(0);
 
         for (Orcamento o : orcamentos) {
-            List<String> pecas = controller.listarPecasDoOrcamento(o.getIdOrcamento());
             modelo.addRow(new Object[]{
-                o.getCodigo().isEmpty() ? String.format("%04d", o.getIdOrcamento()) : o.getCodigo(),
-                controller.cliente_id(o.getIdCliente()).getNome(), o.getPlacaVeiculo(), String.join(", ", pecas), o.getResponsavel(),
-                String.format("%.2f", o.getValor()), o.getReclamacao(), o.getStatus()
+                    o.getCodigo().isEmpty() ? String.format("%04d", o.getIdOrcamento()) : o.getCodigo(),
+                    controller.cliente_id(o.getIdCliente()).getNome(), o.getPlacaVeiculo(), o.getResponsavel(),
+                    String.format("%.2f", o.getValor()), o.getStatus()
             });
         }
     }
@@ -130,57 +132,6 @@ public class V_AprovarOrcamento extends JPanel {
         }
     }
 
-    private void gerarServico() {
-        Orcamento o = selecionado();
-        if (o == null) { aviso("Selecione um orçamento na tabela."); return; }
-        if (!"APROVADO".equalsIgnoreCase(o.getStatus())) {
-            aviso("Só é possível gerar serviço de um orçamento APROVADO."); return;
-        }
-
-        JTextField txtTitulo = new JTextField();
-
-        JComboBox<String> cmbTipo = new JComboBox<>();
-        for (OrdemDeServico.TipoServicoOS t : OrdemDeServico.TipoServicoOS.values())
-            cmbTipo.addItem(t.getLabel());
-
-        JComboBox<String> cmbManutencao = new JComboBox<>();
-        for (OrdemDeServico.TipoManutencao m : OrdemDeServico.TipoManutencao.values())
-            cmbManutencao.addItem(m.getLabel());
-
-        JTextField txtData = new JTextField(LocalDate.now().toString());
-        JTextField txtKm = new JTextField();
-
-        JPanel form = new JPanel(new GridLayout(0, 1, 0, 4));
-        form.add(new JLabel("Título do Serviço:"));   form.add(txtTitulo);
-        form.add(new JLabel("Tipo de Serviço:"));      form.add(cmbTipo);
-        form.add(new JLabel("Tipo de Manutenção:"));   form.add(cmbManutencao);
-        form.add(new JLabel("Data (AAAA-MM-DD):"));    form.add(txtData);
-        form.add(new JLabel("KM atual:"));             form.add(txtKm);
-
-        int r = JOptionPane.showConfirmDialog(this, form,
-            "Gerar Serviço do Orçamento " + String.format("%04d", o.getIdOrcamento()),
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (r != JOptionPane.OK_OPTION) return;
-
-        String titulo = txtTitulo.getText().trim();
-        if (titulo.length() < 3) { aviso("Título deve ter pelo menos 3 caracteres."); return; }
-        int km;
-        try { km = Integer.parseInt(txtKm.getText().trim()); if (km < 0) throw new NumberFormatException(); }
-        catch (NumberFormatException ex) { aviso("Informe um KM válido."); return; }
-
-        try {
-            OrdemDeServico.TipoServicoOS tipoEnum =
-                OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
-            OrdemDeServico.TipoManutencao manutEnum =
-                OrdemDeServico.TipoManutencao.fromLabel((String) cmbManutencao.getSelectedItem());
-            controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
-                txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
-            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada a partir do orçamento!", "Sucesso");
-        } catch (Exception ex) {
-            DialogoAlerta.erro(this, "Erro ao gerar serviço: " + ex.getMessage(), "Erro no Sistema");
-        }
-    }
-
     private void navegar(JPanel destino) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
@@ -201,15 +152,9 @@ public class V_AprovarOrcamento extends JPanel {
         return true;
     }
 
-    private JButton criarBtn(String texto, String cor) {
-        JButton b = new JButton(texto);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        b.setForeground(Color.WHITE);
-        b.setBackground(Color.decode(cor));
+    private BotaoVidro criarBtn(String texto, String cor) {
+        BotaoVidro b = new BotaoVidro(texto, Color.decode(cor));
         b.setPreferredSize(new Dimension(140, 38));
-        b.setFocusPainted(false);
-        b.setBorderPainted(false);
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
 
@@ -224,5 +169,148 @@ public class V_AprovarOrcamento extends JPanel {
             return new ImageIcon(img);
         }
         return null;
+    }
+
+    /**
+     * Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7),
+     * fino em altura — mesma linguagem visual usada nas demais telas.
+     */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+        private static final Color TOPO_A  = Color.decode("#FBFBFC");
+        private static final Color TOPO_B  = Color.decode("#ECEEF1");
+        private static final Color BASE_A  = Color.decode("#DADDE2");
+        private static final Color BASE_B  = Color.decode("#EFF1F3");
+        private static final Color BORDA   = Color.decode("#B6BCC4");
+        private static final Color SEPARA  = Color.decode("#CCD1D8");
+        private static final Color TEXTO   = Color.decode("#3A4149");
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setForeground(TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, TOPO_A, 0, meio, TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, BASE_A, 0, h, BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 140));
+            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+
+            g2.setColor(SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação em vidro: preenchimento translúcido em gradiente, brilho
+     * frosted no topo e reação a hover/clique — mesma linguagem visual usada
+     * nos demais botões de ação do sistema.
+     */
+    private static class BotaoVidro extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoVidro(String texto, Color corBase) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = clarear(corBase);
+            this.corEscura = escurecer(corBase);
+            setFont(new Font("Segoe UI", Font.BOLD, 13));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int raio = 12;
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, raio, raio));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            RoundRectangle2D corpo = new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio);
+
+            Shape clipAnterior = g2.getClip();
+            g2.clip(corpo);
+
+            GradientPaint gp = new GradientPaint(0, 0, comAlpha(clarear(corPreenchimento), 235),
+                    0, h, comAlpha(corPreenchimento, 215));
+            g2.setPaint(gp);
+            g2.fill(corpo);
+
+            g2.setColor(new Color(255, 255, 255, 60));
+            g2.fill(new Ellipse2D.Double(-w * 0.1, -h * 0.7, w * 1.2, h * 1.4));
+
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), raio - 5, raio - 5));
+
+            g2.setClip(clipAnterior);
+
+            g2.setColor(comAlpha(escurecer(corPreenchimento), 160));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(corpo);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // ===== utilitários de cor =====
+    private static Color clarear(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1] * 0.75f, Math.min(1f, hsb[2] * 1.18f));
+    }
+
+    private static Color escurecer(Color c) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2] * 0.82f);
+    }
+
+    private static Color comAlpha(Color c, int alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
     }
 }

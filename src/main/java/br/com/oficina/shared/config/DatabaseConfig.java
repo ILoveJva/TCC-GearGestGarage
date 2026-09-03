@@ -91,7 +91,11 @@ public final class DatabaseConfig {
             "sistema_freios", "cor", "vin"));
 
         con.registrarTabela(new Tabela("peca", "id_peca",
-            "id_peca", "nome_popular", "sistema", "vida_util_tempo", "vida_util_km"));
+            "id_peca", "nome_popular", "sistema", "vida_util_tempo", "vida_util_km", "quantidade_estoque"));
+
+        con.registrarTabela(new Tabela("movimentacao_estoque", "id_movimentacao",
+            "id_movimentacao", "id_peca", "tipo", "quantidade", "data_movimentacao",
+            "origem", "id_servico", "observacao"));
 
         con.registrarTabela(new Tabela("orcamento", "id_orcamento",
             "id_orcamento", "valor", "codigo", "tipo", "responsavel", "reclamacao",
@@ -121,5 +125,9 @@ public final class DatabaseConfig {
 
         con.registrarTabela(new Tabela("orcamento_peca", "id_orcamento_peca",
             "id_orcamento_peca", "id_orcamento", "id_peca", "nome_tecnico", "fabricante", "valor"));
+
+        con.registrarTabela(new Tabela("despesa", "id_despesa",
+            "id_despesa", "descricao", "categoria", "valor", "data_despesa",
+            "forma_pagamento", "observacao", "id_oficina"));
     }
 }

@@ -14,8 +14,10 @@ public class PecaRepository {
     }
 
     private PecaEntity map(Registro r) {
-        return new PecaEntity(r.getLong("id_peca"), r.get("nome_popular"),
+        PecaEntity p = new PecaEntity(r.getLong("id_peca"), r.get("nome_popular"),
             r.get("vida_util_tempo"), r.get("vida_util_km"), r.get("sistema"));
+        p.setQuantidadeEstoque(r.getInt("quantidade_estoque"));
+        return p;
     }
 
     public PecaEntity salvar(PecaEntity p) {
@@ -47,6 +49,15 @@ public class PecaRepository {
         tPeca.atualizar(p.getIdPeca(), "vida_util_tempo", p.getVidaUtilTempo());
         tPeca.atualizar(p.getIdPeca(), "vida_util_km",    p.getVidaUtilKm());
         tPeca.atualizar(p.getIdPeca(), "sistema",         p.getSistema());
+    }
+
+    /** Ajusta o estoque da peça em delta (positivo entra, negativo sai). Retorna a nova quantidade. */
+    public int ajustarEstoque(long idPeca, int delta) {
+        Registro r = tPeca.buscarPorId(idPeca);
+        if (r == null) return 0;
+        int nova = r.getInt("quantidade_estoque") + delta;
+        tPeca.atualizar(idPeca, "quantidade_estoque", nova);
+        return nova;
     }
 
     public List<FabricantePecaEntity> listarFabricantes() {

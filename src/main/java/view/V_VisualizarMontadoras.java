@@ -69,6 +69,24 @@ public class V_VisualizarMontadoras extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(COR_TITULO);
 
+        JButton btn_Nova = new JButton("+ Nova Montadora");
+        btn_Nova.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn_Nova.setForeground(Color.WHITE);
+        btn_Nova.setBackground(Color.decode("#FF9900"));
+        btn_Nova.setFocusPainted(false);
+        btn_Nova.setBorderPainted(false);
+        btn_Nova.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Nova.setPreferredSize(new Dimension(160, 34));
+        btn_Nova.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_CadastrarMontadora(controller));
+        });
+
+        JPanel pnl_Cabecalho = new JPanel(new BorderLayout());
+        pnl_Cabecalho.setOpaque(false);
+        pnl_Cabecalho.add(titulo, BorderLayout.WEST);
+        pnl_Cabecalho.add(btn_Nova, BorderLayout.EAST);
+
         String[] cols = {"Cód.", "Montadora", "País de Origem", "Nº de Modelos"};
         mdl = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -115,7 +133,7 @@ public class V_VisualizarMontadoras extends JPanel {
         rodape.setOpaque(false);
         rodape.add(btn_Voltar);
 
-        card.add(titulo, BorderLayout.NORTH);
+        card.add(pnl_Cabecalho, BorderLayout.NORTH);
         card.add(scroll, BorderLayout.CENTER);
         card.add(rodape, BorderLayout.SOUTH);
 

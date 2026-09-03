@@ -50,7 +50,7 @@ public class V_Configuracoes extends JPanel {
 
         pnl_Corpo.add(criarSecaoDados());
         pnl_Corpo.add(Box.createVerticalStrut(16));
-        pnl_Corpo.add(criarSecaoCatalogo());
+        pnl_Corpo.add(criarSecaoFinanceiro());
         pnl_Corpo.add(Box.createVerticalStrut(16));
         pnl_Corpo.add(criarSecaoEquipe());
 
@@ -86,16 +86,16 @@ public class V_Configuracoes extends JPanel {
     }
 
     // =========================================================================
-    // SEÇÃO 2 — Catálogo de Veículos
+    // SEÇÃO — Financeiro
     // =========================================================================
-    private JPanel criarSecaoCatalogo() {
-        JPanel card = criarCard("Catálogo de Veículos",
-                obterIcone("/assets/icons/estoque.png", 18, IconeVetorial.Tipo.CATALOGO, Color.decode("#FF9900")));
+    private JPanel criarSecaoFinanceiro() {
+        JPanel card = criarCard("Financeiro",
+                obterIcone("/assets/icons/despesa.png", 18, IconeVetorial.Tipo.DOCUMENTO, Color.decode("#FF9900")));
 
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
 
-        JLabel lbl_Desc = new JLabel("Gerencie as montadoras, modelos e peças genéricas disponíveis no sistema.");
+        JLabel lbl_Desc = new JLabel("Registre e acompanhe as despesas da oficina.");
         lbl_Desc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lbl_Desc.setForeground(Color.decode("#666666"));
         lbl_Desc.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
@@ -105,17 +105,14 @@ public class V_Configuracoes extends JPanel {
         pnl_Linha.setOpaque(false);
         pnl_Linha.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btn_Montadora = criarBotaoQuadrado("Nova Montadora", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, "#FF9900");
-        JButton btn_Modelo    = criarBotaoQuadrado("Novo Modelo",    "/assets/icons/modelos.png",    IconeVetorial.Tipo.MODELO,    "#6C757D");
-        JButton btn_Peca      = criarBotaoQuadrado("Nova Peça",      "/assets/icons/pecas.png",      IconeVetorial.Tipo.PECA,       "#28A745");
+        JButton btn_Despesa = criarBotaoQuadrado("Registrar Despesa", "/assets/icons/despesa.png", IconeVetorial.Tipo.DOCUMENTO, "#DC3545");
+        btn_Despesa.addActionListener(e -> navegarPara(new V_CadastrarDespesa(controller)));
 
-        btn_Montadora.addActionListener(e -> navegarPara(new V_CadastrarMontadora(controller)));
-        btn_Modelo.addActionListener(e    -> navegarPara(new V_CadastrarModelo(controller)));
-        btn_Peca.addActionListener(e      -> navegarPara(new V_CadastrarPeca(controller)));
+        JButton btn_Relatorio = criarBotaoQuadrado("Relatório Financeiro", "/assets/icons/relatorio.png", IconeVetorial.Tipo.GRAFICO, "#2E86DE");
+        btn_Relatorio.addActionListener(e -> navegarPara(new V_RelatorioFinanceiro(controller)));
 
-        pnl_Linha.add(btn_Montadora);
-        pnl_Linha.add(btn_Modelo);
-        pnl_Linha.add(btn_Peca);
+        pnl_Linha.add(btn_Despesa);
+        pnl_Linha.add(btn_Relatorio);
 
         corpo.add(lbl_Desc);
         corpo.add(pnl_Linha);
@@ -144,15 +141,12 @@ public class V_Configuracoes extends JPanel {
 
         JButton btn_Funcionario   = criarBotaoQuadrado("Novo Funcionário", "/assets/icons/servicos.png",     IconeVetorial.Tipo.PESSOA,    "#6C757D");
         JButton btn_TipoServico   = criarBotaoQuadrado("Tipos de Serviço", "/assets/icons/add_servico.png",  IconeVetorial.Tipo.SERVICO,   "#FF9900");
-        JButton btn_ItemServico   = criarBotaoQuadrado("Itens de Serviço", "/assets/icons/vservicos.png",    IconeVetorial.Tipo.DOCUMENTO, "#17A2B8");
 
         btn_Funcionario.addActionListener(e -> navegarPara(new V_CadastrarFuncionario(controller)));
         btn_TipoServico.addActionListener(e -> navegarPara(new V_CadastrarTipoServico(controller)));
-        btn_ItemServico.addActionListener(e -> navegarPara(new V_CadastrarItemServico(controller)));
 
         pnl_Linha.add(btn_Funcionario);
         pnl_Linha.add(btn_TipoServico);
-        pnl_Linha.add(btn_ItemServico);
 
         corpo.add(lbl_Desc);
         corpo.add(pnl_Linha);
@@ -431,7 +425,7 @@ public class V_Configuracoes extends JPanel {
 
     /** Ícone desenhado por código (Graphics2D), sem depender de nenhum arquivo PNG. */
     private static class IconeVetorial implements Icon {
-        enum Tipo { GARAGEM, CATALOGO, PESSOA, MONTADORA, MODELO, PECA, SERVICO, DOCUMENTO, EDITAR, EXCLUIR }
+        enum Tipo { GARAGEM, CATALOGO, PESSOA, MONTADORA, MODELO, PECA, SERVICO, DOCUMENTO, EDITAR, EXCLUIR, GRAFICO }
 
         private final Tipo tipo;
         private final Color cor;
@@ -463,6 +457,13 @@ public class V_Configuracoes extends JPanel {
                     g2.drawPolyline(new int[]{pad, s / 2, s - pad}, new int[]{pad + area / 3, pad, pad + area / 3}, 3);
                     g2.drawRect(pad, pad + area / 3, area, area - area / 3);
                     break;
+                case GRAFICO: {
+                    int larguraBarra = Math.max(2, area / 4);
+                    g2.fillRoundRect(pad, s - pad - area / 3, larguraBarra, area / 3, 2, 2);
+                    g2.fillRoundRect(pad + larguraBarra + 3, s - pad - (int) (area * 0.62), larguraBarra, (int) (area * 0.62), 2, 2);
+                    g2.fillRoundRect(pad + (larguraBarra + 3) * 2, s - pad - area, larguraBarra, area, 2, 2);
+                    break;
+                }
                 case CATALOGO: {
                     int q = Math.max(3, area / 2 - 2);
                     g2.fillRoundRect(pad, pad, q, q, 3, 3);

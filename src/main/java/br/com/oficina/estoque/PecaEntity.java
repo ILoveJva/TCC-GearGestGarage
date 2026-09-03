@@ -6,6 +6,7 @@ public class PecaEntity {
     private String vidaUtilTempo;
     private String vidaUtilKm;
     private String sistema; // MOTOR | TRANSMISSAO | DIRECAO | SUSPENSAO | FREIOS | ARREFECIMENTO | ELETRICA | ALIMENTACAO | OUTROS
+    private int quantidadeEstoque;
 
     public PecaEntity() {}
     public PecaEntity(Long id, String nomePopular, String vidaUtilTempo, String vidaUtilKm, String sistema) {
@@ -25,6 +26,8 @@ public class PecaEntity {
     public void setVidaUtilKm(String v) { this.vidaUtilKm = v; }
     public String getSistema() { return sistema != null ? sistema : "OUTROS"; }
     public void setSistema(String s) { this.sistema = s != null ? s : "OUTROS"; }
+    public int getQuantidadeEstoque() { return quantidadeEstoque; }
+    public void setQuantidadeEstoque(int q) { this.quantidadeEstoque = q; }
 
     public String getSistemaLabel() {
         return switch (getSistema()) {

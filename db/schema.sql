@@ -109,6 +109,7 @@ CREATE TABLE peca (
     sistema VARCHAR(50) NOT NULL DEFAULT 'OUTROS',
     vida_util_tempo VARCHAR(50) NOT NULL DEFAULT 'Não informado',
     vida_util_km VARCHAR(50) NOT NULL DEFAULT 'Não informado',
+    quantidade_estoque INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id_peca)
 );
 
@@ -174,6 +175,21 @@ CREATE TABLE item_servico (
     CONSTRAINT fk_itemservico_funcionario FOREIGN KEY (id_funcionario) REFERENCES funcionario (id_funcionario)
 );
 
+-- Movimentações de estoque das peças: ENTRADA (cadastro manual) e SAIDA (automática pelas OS)
+CREATE TABLE movimentacao_estoque (
+    id_movimentacao INT NOT NULL AUTO_INCREMENT,
+    id_peca INT NOT NULL,
+    tipo VARCHAR(10) NOT NULL,                    -- ENTRADA | SAIDA
+    quantidade INT NOT NULL,
+    data_movimentacao DATE NOT NULL,
+    origem VARCHAR(20) NOT NULL DEFAULT 'MANUAL', -- MANUAL | OS
+    id_servico INT NULL,
+    observacao VARCHAR(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (id_movimentacao),
+    CONSTRAINT fk_mov_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca),
+    CONSTRAINT fk_mov_servico FOREIGN KEY (id_servico) REFERENCES servico (id_servico)
+);
+
 -- Catálogo de serviços pré-definidos pelo mecânico
 CREATE TABLE catalogo_servico (
     id_catalogo_servico INT NOT NULL AUTO_INCREMENT,
@@ -207,6 +223,22 @@ CREATE TABLE orcamento_servico (
     PRIMARY KEY (id_orcamento_servico),
     CONSTRAINT fk_orcservico_orcamento FOREIGN KEY (id_orcamento) REFERENCES orcamento (id_orcamento),
     CONSTRAINT fk_orcservico_catalogo FOREIGN KEY (id_catalogo_servico) REFERENCES catalogo_servico (id_catalogo_servico)
+);
+
+-- Despesas da oficina (financeiro)
+CREATE TABLE despesa (
+    id_despesa INT NOT NULL AUTO_INCREMENT,
+    descricao VARCHAR(150) NOT NULL,
+    -- PECAS | SALARIO | ALUGUEL | FERRAMENTAS | IMPOSTOS | CONTAS | OUTROS
+    categoria VARCHAR(30) NOT NULL DEFAULT 'OUTROS',
+    valor DECIMAL(10,2) NOT NULL,
+    data_despesa DATE NOT NULL,
+    -- DINHEIRO | PIX | CARTAO_CREDITO | CARTAO_DEBITO | BOLETO | TRANSFERENCIA | OUTROS
+    forma_pagamento VARCHAR(30) NOT NULL DEFAULT 'OUTROS',
+    observacao VARCHAR(255) NOT NULL DEFAULT '',
+    id_oficina INT NOT NULL,
+    PRIMARY KEY (id_despesa),
+    CONSTRAINT fk_despesa_oficina FOREIGN KEY (id_oficina) REFERENCES oficina (id_oficina)
 );
 
 -- Peças a substituir vinculadas a um orçamento

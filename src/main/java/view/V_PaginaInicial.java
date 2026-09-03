@@ -66,6 +66,7 @@ public class V_PaginaInicial extends JPanel {
     private JButton btn_VisOrcamentos;
     private JButton btn_VisClientes;
     private JButton btn_VisVeiculos;
+    private JButton btn_Estoque;
 
     // Referência do Controller do Sistema
     private OficinaController controller;
@@ -190,10 +191,15 @@ public class V_PaginaInicial extends JPanel {
         configurarEstiloBotaoCard(btn_VisVeiculos, obterIcone("/assets/icons/vveiculos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.MODELO, Color.DARK_GRAY), DIM_BOTAO_CARD);
         btn_VisVeiculos.setToolTipText("Ver veículos cadastrados");
 
+        btn_Estoque = new JButton("Estoque");
+        configurarEstiloBotaoCard(btn_Estoque, obterIcone("/assets/icons/estoque.png", TAM_ICONE_CARD, IconeVetorial.Tipo.PECA, Color.DARK_GRAY), DIM_BOTAO_CARD);
+        btn_Estoque.setToolTipText("Controlar estoque de peças");
+
         corpoConsultas.add(btn_VisServicos);
         corpoConsultas.add(btn_VisOrcamentos);
         corpoConsultas.add(btn_VisClientes);
         corpoConsultas.add(btn_VisVeiculos);
+        corpoConsultas.add(btn_Estoque);
     }
 
     /**
@@ -215,6 +221,8 @@ public class V_PaginaInicial extends JPanel {
         pnl_Centro.setOpaque(false);
         pnl_BotoesVisualizar.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_Centro.add(pnl_BotoesVisualizar);
+        pnl_Centro.add(Box.createVerticalStrut(16));
+        pnl_Centro.add(criarSecaoCalendario());
         pnl_Centro.add(Box.createVerticalStrut(16));
         pnl_Centro.add(criarSecaoEstatisticas());
 
@@ -240,6 +248,7 @@ public class V_PaginaInicial extends JPanel {
         btn_VisOrcamentos.addActionListener(e -> navegarPara(new V_AprovarOrcamento(this.controller)));
         btn_VisClientes.addActionListener(e -> navegarPara(new V_VisualizarClientes(this.controller)));
         btn_VisVeiculos.addActionListener(e -> navegarPara(new V_VisualizarVeiculos(this.controller)));
+        btn_Estoque.addActionListener(e -> navegarPara(new V_Estoque(this.controller)));
     }
 
     /**
@@ -253,6 +262,24 @@ public class V_PaginaInicial extends JPanel {
         } else {
             System.err.println("Erro: V_Main não encontrado como ancestral.");
         }
+    }
+
+    // ==========================================
+    // SEÇÃO DE AGENDA / CALENDÁRIO
+    // ==========================================
+
+    /**
+     * Segunda seção da Página Inicial: um calendário simples com as OS já
+     * cadastradas (por data do serviço) e espaço reservado para os prazos de
+     * orçamentos (recurso ainda não implementado — ver {@link PainelCalendario}).
+     */
+    private JPanel criarSecaoCalendario() {
+        JPanel card = criarCard("Agenda de Serviços e Prazos",
+                obterIcone("/assets/icons/calendario.png", 18, IconeVetorial.Tipo.CALENDARIO, Color.decode("#FF9900")));
+        JPanel corpo = (JPanel) card.getComponent(1);
+        corpo.setLayout(new BorderLayout());
+        corpo.add(new PainelCalendario(controller), BorderLayout.CENTER);
+        return card;
     }
 
     // ==========================================
@@ -515,7 +542,7 @@ public class V_PaginaInicial extends JPanel {
      * própria mesmo antes de a pasta /assets/icons ter os arquivos finais.
      */
     private static class IconeVetorial implements Icon {
-        enum Tipo { GARAGEM, LUPA, GRAFICO, MONTADORA, MODELO, PECA, SERVICO, CATALOGO, DOCUMENTO, PESSOA, ABERTA, ANDAMENTO, CONCLUIDA }
+        enum Tipo { GARAGEM, LUPA, GRAFICO, MONTADORA, MODELO, PECA, SERVICO, CATALOGO, DOCUMENTO, PESSOA, ABERTA, ANDAMENTO, CONCLUIDA, CALENDARIO }
 
         private final Tipo tipo;
         private final Color cor;
@@ -629,6 +656,12 @@ public class V_PaginaInicial extends JPanel {
                         new int[]{s / 2, s - pad - area / 3, pad + area / 3},
                         3
                     );
+                    break;
+                case CALENDARIO:
+                    g2.drawRoundRect(pad, pad + area / 6, area, area - area / 6, 4, 4);
+                    g2.drawLine(pad, pad + area / 6 + area / 4, s - pad, pad + area / 6 + area / 4);
+                    g2.drawLine(pad + area / 4, pad, pad + area / 4, pad + area / 3);
+                    g2.drawLine(pad + area * 3 / 4, pad, pad + area * 3 / 4, pad + area / 3);
                     break;
             }
             g2.dispose();

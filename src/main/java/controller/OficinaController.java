@@ -401,6 +401,8 @@ public class OficinaController {
     /** Finaliza a OS (EM_ANDAMENTO -> CONCLUIDA), registrando o comentário do mecânico sobre o estado do veículo na saída. */
     public void finalizarOS(long idOS, String observacaoSaida, Long idFuncionario) {
         bridge.servicoController.finalizar(idOS, observacaoSaida, idFuncionario);
+        // Saída automática do estoque das peças do orçamento vinculado à OS concluída.
+        baixarEstoquePorOS(idOS);
     }
 
     /** Cria um orçamento interno (REVISAO) vinculado a este serviço. */
@@ -451,6 +453,104 @@ public class OficinaController {
 
     public List<TipoServicoEntity> listarTiposServico() {
         return bridge.tipoServicoController.todos();
+    }
+
+    // ============== DESPESAS (FINANCEIRO) ==============
+    public br.com.oficina.financeiro.DespesaEntity salvarDespesa(String descricao, String categoria,
+            double valor, String dataDespesa, String formaPagamento, String observacao) {
+        return bridge.despesaController.cadastrar(descricao, categoria, valor, dataDespesa,
+            formaPagamento, observacao, idOficinaAtual());
+    }
+
+    /** Despesas da oficina ativa, mais recentes primeiro (por data e id). */
+    public List<br.com.oficina.financeiro.DespesaEntity> listarDespesas() {
+        long idOf = idOficinaAtual();
+        List<br.com.oficina.financeiro.DespesaEntity> out = new ArrayList<>();
+        for (br.com.oficina.financeiro.DespesaEntity d : bridge.despesaController.todas())
+            if (d.getIdOficina() != null && d.getIdOficina() == idOf) out.add(d);
+        out.sort((a, b) -> {
+            String da = a.getDataDespesa() == null ? "" : a.getDataDespesa();
+            String db = b.getDataDespesa() == null ? "" : b.getDataDespesa();
+            int cmp = db.compareTo(da);
+            if (cmp != 0) return cmp;
+            long ia = a.getIdDespesa() != null ? a.getIdDespesa() : 0L;
+            long ib = b.getIdDespesa() != null ? b.getIdDespesa() : 0L;
+            return Long.compare(ib, ia);
+        });
+        return out;
+    }
+
+    public void excluirDespesa(long idDespesa) {
+        bridge.despesaController.remover(idDespesa);
+    }
+
+    // ============== RELATÓRIO FINANCEIRO ==============
+    /** Um ganho da oficina (receita de uma OS concluída). {@code data} em ISO (yyyy-MM-dd). */
+    public record Ganho(String data, String descricao, double valor) {}
+
+    /**
+     * Ganhos das OS concluídas da oficina ativa. O valor de cada OS é o total do
+     * orçamento vinculado (itens + peças); OS sem orçamento contam como R$ 0,00.
+     */
+    public List<Ganho> listarGanhosConcluidos() {
+        long idOf = idOficinaAtual();
+        java.util.Map<Long, Double> valorOrc = new java.util.HashMap<>();
+        for (OrcamentoResponseDTO o : bridge.orcamentoController.todos())
+            if (o.idOrcamento() != null) valorOrc.put(o.idOrcamento(), o.valor());
+
+        List<Ganho> out = new ArrayList<>();
+        for (ServicoResponseDTO dto : bridge.servicoController.todas()) {
+            if (dto.idOficina() == null || dto.idOficina() != idOf) continue;
+            if (!"CONCLUIDA".equalsIgnoreCase(dto.status())) continue;
+            double valor = dto.idOrcamento() != null ? valorOrc.getOrDefault(dto.idOrcamento(), 0.0) : 0.0;
+            String titulo = (dto.titulo() != null && !dto.titulo().isBlank())
+                ? dto.titulo() : ("OS #" + dto.idServico());
+            out.add(new Ganho(dto.dataServico(), titulo, valor));
+        }
+        return out;
+    }
+
+    public double totalGanhosConcluidos() {
+        double t = 0;
+        for (Ganho g : listarGanhosConcluidos()) t += g.valor();
+        return t;
+    }
+
+    public double totalDespesas() {
+        double t = 0;
+        for (br.com.oficina.financeiro.DespesaEntity d : listarDespesas()) t += d.getValor();
+        return t;
+    }
+
+    // ============== ESTOQUE ==============
+    /** Peças com a quantidade atual em estoque (todas as peças cadastradas). */
+    public List<PecaEntity> listarEstoque() {
+        return bridge.pecaController.listarTodasEntidades();
+    }
+
+    /** Entrada manual de estoque (cadastro): incrementa a peça e registra a movimentação. */
+    public void registrarEntradaEstoque(long idPeca, int quantidade, String observacao) {
+        bridge.estoqueController.registrarEntrada(idPeca, quantidade, observacao);
+    }
+
+    /** Histórico de movimentações (entradas manuais e saídas automáticas por OS), mais recentes primeiro. */
+    public List<br.com.oficina.estoque.MovimentacaoEstoqueEntity> listarMovimentacoesEstoque() {
+        List<br.com.oficina.estoque.MovimentacaoEstoqueEntity> out =
+            new ArrayList<>(bridge.estoqueController.movimentacoes());
+        out.sort((a, b) -> {
+            long ia = a.getIdMovimentacao() != null ? a.getIdMovimentacao() : 0L;
+            long ib = b.getIdMovimentacao() != null ? b.getIdMovimentacao() : 0L;
+            return Long.compare(ib, ia);
+        });
+        return out;
+    }
+
+    /** Baixa automática do estoque ao concluir uma OS: uma saída por peça do orçamento vinculado. */
+    private void baixarEstoquePorOS(long idOS) {
+        ServicoResponseDTO dto = bridge.servicoController.porId(idOS);
+        if (dto == null || dto.idOrcamento() == null || dto.idOrcamento() <= 0) return;
+        for (Long idPeca : bridge.orcamentoPecaRepository.listarIdsPecaPorOrcamento(dto.idOrcamento()))
+            bridge.estoqueController.registrarSaidaOS(idPeca, 1, idOS, "Baixa automática pela OS #" + idOS);
     }
 
     // ============== ORÇAMENTOS APROVADOS SEM OS ==============

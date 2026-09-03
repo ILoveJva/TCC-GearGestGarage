@@ -53,7 +53,25 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         JLabel titulo = new JLabel("Página Inicial > Serviços Cadastrados");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
-        titulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+        JButton btn_Novo = new JButton("+ Novo Item de Serviço");
+        btn_Novo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn_Novo.setForeground(Color.WHITE);
+        btn_Novo.setBackground(Color.decode("#17A2B8"));
+        btn_Novo.setFocusPainted(false);
+        btn_Novo.setBorderPainted(false);
+        btn_Novo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Novo.setPreferredSize(new Dimension(190, 34));
+        btn_Novo.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_CadastrarItemServico(controller));
+        });
+
+        JPanel pnl_TituloBtn = new JPanel(new BorderLayout());
+        pnl_TituloBtn.setOpaque(false);
+        pnl_TituloBtn.add(titulo, BorderLayout.WEST);
+        pnl_TituloBtn.add(btn_Novo, BorderLayout.EAST);
+        pnl_TituloBtn.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         // Barra de busca — mesmo estilo "vidro" (glassmorphism) das páginas de cadastro
         txt_Busca = new GlassTextField();
@@ -75,7 +93,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
 
         JPanel pnl_Norte = new JPanel(new BorderLayout(0, 6));
         pnl_Norte.setOpaque(false);
-        pnl_Norte.add(titulo, BorderLayout.NORTH);
+        pnl_Norte.add(pnl_TituloBtn, BorderLayout.NORTH);
         pnl_Norte.add(pnl_Filtros, BorderLayout.CENTER);
         add(pnl_Norte, BorderLayout.NORTH);
 
@@ -119,7 +137,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
 
         if (filtrados.isEmpty()) {
             JLabel vazio = new JLabel(todos.isEmpty()
-                ? "Nenhum serviço cadastrado. Acesse 'Itens de Serviço' para adicionar."
+                ? "Nenhum serviço cadastrado. Use '+ Novo Item de Serviço' para adicionar."
                 : "Nenhum serviço corresponde ao filtro.");
             vazio.setFont(new Font("Segoe UI", Font.ITALIC, 13));
             vazio.setForeground(Color.decode("#888888"));

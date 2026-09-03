@@ -13,6 +13,7 @@ public class MovimentacaoEstoqueRepository {
 
     private MovimentacaoEstoqueEntity map(Registro r) {
         String idServ = r.get("id_servico");
+        String valorStr = r.get("valor");
         return new MovimentacaoEstoqueEntity(
             r.getLong("id_movimentacao"),
             r.getLong("id_peca"),
@@ -21,7 +22,8 @@ public class MovimentacaoEstoqueRepository {
             r.get("data_movimentacao"),
             r.get("origem"),
             (idServ == null || idServ.isEmpty()) ? null : Long.parseLong(idServ),
-            r.get("observacao"));
+            r.get("observacao"),
+            (valorStr == null || valorStr.isEmpty()) ? null : Double.parseDouble(valorStr));
     }
 
     public MovimentacaoEstoqueEntity salvar(MovimentacaoEstoqueEntity m) {
@@ -32,7 +34,8 @@ public class MovimentacaoEstoqueRepository {
             .set("data_movimentacao", m.getDataMovimentacao())
             .set("origem", m.getOrigem())
             .set("id_servico", m.getIdServico())
-            .set("observacao", m.getObservacao()));
+            .set("observacao", m.getObservacao())
+            .set("valor", m.getValor()));
         m.setIdMovimentacao(id);
         return m;
     }

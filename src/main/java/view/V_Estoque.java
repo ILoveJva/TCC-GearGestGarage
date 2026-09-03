@@ -36,7 +36,7 @@ public class V_Estoque extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
 
-        JButton btn_Entrada = new JButton("+ Registrar Entrada");
+        JButton btn_Entrada = new JButton("+ Comprar Peça");
         btn_Entrada.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn_Entrada.setForeground(Color.WHITE);
         btn_Entrada.setBackground(Color.decode("#28A745"));
@@ -170,7 +170,7 @@ public class V_Estoque extends JPanel {
         Map<Long, String> nomePeca = new HashMap<>();
         for (PecaEntity p : controller.listarEstoque()) nomePeca.put(p.getIdPeca(), p.getNomePopular());
 
-        String[] cols = {"Data", "Peça", "Tipo", "Qtd.", "Origem", "Observação"};
+        String[] cols = {"Data", "Peça", "Tipo", "Qtd.", "Origem", "Valor", "Observação"};
         DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -183,6 +183,7 @@ public class V_Estoque extends JPanel {
                 m.getTipoLabel(),
                 (m.isEntrada() ? "+" : "−") + m.getQuantidade(),
                 m.getOrigemLabel(),
+                m.getValorFormatado(),
                 m.getObservacao()
             });
         }
@@ -197,6 +198,7 @@ public class V_Estoque extends JPanel {
         tabela.getColumnModel().getColumn(2).setMaxWidth(80);
         tabela.getColumnModel().getColumn(3).setMaxWidth(60);
         tabela.getColumnModel().getColumn(4).setMaxWidth(80);
+        tabela.getColumnModel().getColumn(5).setMaxWidth(90);
 
         // Tipo colorido (Entrada verde / Saída vermelho)
         tabela.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {

@@ -16,13 +16,13 @@ public class EstoqueService {
         this.movimentacaoRepository = movimentacaoRepository;
     }
 
-    /** Entrada manual (cadastro) de estoque. Incrementa a peça e registra a movimentação. */
-    public MovimentacaoEstoqueEntity registrarEntrada(long idPeca, int quantidade, String observacao) {
+    /** Entrada manual (compra para o estoque geral). Incrementa a peça e registra a movimentação. */
+    public MovimentacaoEstoqueEntity registrarEntrada(long idPeca, int quantidade, Double valorUnitario, String observacao) {
         if (quantidade <= 0) throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
         pecaRepository.ajustarEstoque(idPeca, quantidade);
         return movimentacaoRepository.salvar(new MovimentacaoEstoqueEntity(
             null, idPeca, "ENTRADA", quantidade, LocalDate.now().toString(),
-            "MANUAL", null, observacao));
+            "MANUAL", null, observacao, valorUnitario));
     }
 
     /** Saída automática disparada pela conclusão de uma OS. Decrementa a peça e registra a movimentação. */
@@ -31,7 +31,7 @@ public class EstoqueService {
         pecaRepository.ajustarEstoque(idPeca, -quantidade);
         return movimentacaoRepository.salvar(new MovimentacaoEstoqueEntity(
             null, idPeca, "SAIDA", quantidade, LocalDate.now().toString(),
-            "OS", idServico, observacao));
+            "OS", idServico, observacao, null));
     }
 
     public List<MovimentacaoEstoqueEntity> listarMovimentacoes() {

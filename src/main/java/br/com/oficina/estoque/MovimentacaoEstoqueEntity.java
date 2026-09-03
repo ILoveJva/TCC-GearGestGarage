@@ -10,11 +10,13 @@ public class MovimentacaoEstoqueEntity {
     private String origem;      // MANUAL | OS
     private Long idServico;     // preenchido quando origem = OS
     private String observacao;
+    private Double valor;       // custo de compra (apenas ENTRADA manual); null quando desconhecido
 
     public MovimentacaoEstoqueEntity() {}
 
     public MovimentacaoEstoqueEntity(Long idMovimentacao, Long idPeca, String tipo, int quantidade,
-                                     String dataMovimentacao, String origem, Long idServico, String observacao) {
+                                     String dataMovimentacao, String origem, Long idServico, String observacao,
+                                     Double valor) {
         this.idMovimentacao = idMovimentacao;
         this.idPeca = idPeca;
         this.tipo = tipo != null ? tipo : "ENTRADA";
@@ -23,6 +25,7 @@ public class MovimentacaoEstoqueEntity {
         this.origem = origem != null ? origem : "MANUAL";
         this.idServico = idServico;
         this.observacao = observacao != null ? observacao : "";
+        this.valor = valor;
     }
 
     public Long getIdMovimentacao()          { return idMovimentacao; }
@@ -41,9 +44,12 @@ public class MovimentacaoEstoqueEntity {
     public void setIdServico(Long id)        { this.idServico = id; }
     public String getObservacao()            { return observacao != null ? observacao : ""; }
     public void setObservacao(String o)      { this.observacao = o; }
+    public Double getValor()                 { return valor; }
+    public void setValor(Double v)           { this.valor = v; }
 
     public boolean isEntrada() { return "ENTRADA".equalsIgnoreCase(getTipo()); }
 
     public String getTipoLabel()   { return isEntrada() ? "Entrada" : "Saída"; }
     public String getOrigemLabel() { return "OS".equalsIgnoreCase(getOrigem()) ? "OS" : "Manual"; }
+    public String getValorFormatado() { return valor != null ? String.format("R$ %.2f", valor) : "—"; }
 }

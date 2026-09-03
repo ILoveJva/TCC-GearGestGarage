@@ -528,9 +528,32 @@ public class OficinaController {
         return bridge.pecaController.listarTodasEntidades();
     }
 
-    /** Entrada manual de estoque (cadastro): incrementa a peça e registra a movimentação. */
-    public void registrarEntradaEstoque(long idPeca, int quantidade, String observacao) {
-        bridge.estoqueController.registrarEntrada(idPeca, quantidade, observacao);
+    /** Compra de peça para o estoque geral: incrementa a peça e registra a movimentação. */
+    public void registrarEntradaEstoque(long idPeca, int quantidade, Double valorUnitario, String observacao) {
+        bridge.estoqueController.registrarEntrada(idPeca, quantidade, valorUnitario, observacao);
+    }
+
+    /** OS em andamento (não concluídas) com orçamento vinculado — usado para compra direta de peça fora do estoque. */
+    public List<ServicoResponseDTO> listarServicosEmAberto() {
+        List<ServicoResponseDTO> out = new ArrayList<>();
+        for (ServicoResponseDTO dto : listarTodosServicos())
+            if (!"CONCLUIDA".equalsIgnoreCase(dto.status()) && dto.idOrcamento() != null && dto.idOrcamento() > 0)
+                out.add(dto);
+        return out;
+    }
+
+    /**
+     * Compra direta de uma peça que não está no estoque, para uso imediato numa OS específica.
+     * Não mexe no estoque geral (não gera movimentação) — só soma o custo ao orçamento da OS.
+     */
+    public void adicionarPecaDiretoOS(long idOrcamento, long idPeca, int quantidade,
+                                       String nomeTecnico, String fabricante, double valorUnitario) {
+        if (quantidade <= 0) throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
+        for (int i = 0; i < quantidade; i++)
+            bridge.orcamentoPecaRepository.vincular(idOrcamento, idPeca, nomeTecnico, fabricante, valorUnitario);
+        OrcamentoResponseDTO dto = bridge.orcamentoController.porId(idOrcamento);
+        double totalAtual = dto != null ? dto.valor() : 0.0;
+        bridge.orcamentoController.atualizarValor(idOrcamento, totalAtual + valorUnitario * quantidade);
     }
 
     /** Histórico de movimentações (entradas manuais e saídas automáticas por OS), mais recentes primeiro. */

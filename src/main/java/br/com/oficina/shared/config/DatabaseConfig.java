@@ -95,7 +95,7 @@ public final class DatabaseConfig {
 
         con.registrarTabela(new Tabela("movimentacao_estoque", "id_movimentacao",
             "id_movimentacao", "id_peca", "tipo", "quantidade", "data_movimentacao",
-            "origem", "id_servico", "observacao"));
+            "origem", "id_servico", "observacao", "valor"));
 
         con.registrarTabela(new Tabela("orcamento", "id_orcamento",
             "id_orcamento", "valor", "codigo", "tipo", "responsavel", "reclamacao",

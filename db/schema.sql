@@ -185,6 +185,7 @@ CREATE TABLE movimentacao_estoque (
     origem VARCHAR(20) NOT NULL DEFAULT 'MANUAL', -- MANUAL | OS
     id_servico INT NULL,
     observacao VARCHAR(255) NOT NULL DEFAULT '',
+    valor DECIMAL(10,2) NULL,                     -- custo de compra (apenas ENTRADA manual)
     PRIMARY KEY (id_movimentacao),
     CONSTRAINT fk_mov_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca),
     CONSTRAINT fk_mov_servico FOREIGN KEY (id_servico) REFERENCES servico (id_servico)

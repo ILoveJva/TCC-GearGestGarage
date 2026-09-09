@@ -7,7 +7,12 @@ import controller.OficinaController;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -17,14 +22,56 @@ import java.util.Map;
 /**
  * Página do Estoque: mostra a quantidade atual de cada peça e o histórico de
  * movimentações (entradas manuais e saídas automáticas geradas pelas OS).
+ *
+ * Estilo de vidro (cards, cabeçalho Aero das tabelas e botões) unificado com o
+ * resto do sistema: mesmas classes e mesma paleta usadas em V_VisualizarServicos
+ * (PainelGradiente, BotaoAcao, CabecalhoVidroClaro, CelulaBrancaRenderer).
  */
 public class V_Estoque extends JPanel {
+
+    // =========================================================================
+    // PALETA E MEDIDAS — mesmos valores usados nas demais telas (vidro Aero)
+    // =========================================================================
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F5F5");
+    private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
+    private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
+    private static final Color COR_TITULO       = Color.decode("#4D4D4D");
+    private static final Color COR_ACAO         = Color.decode("#FF9900");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
+    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
+
+    // Tabela de dados
+    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
+
+    // Botão "+ Comprar Peça" (ação positiva — verde)
+    private static final Color COR_ENTRADA        = Color.decode("#28A745");
+    private static final Color COR_ENTRADA_CLARA  = Color.decode("#3FC464");
+    private static final Color COR_ENTRADA_ESCURA = Color.decode("#1E7E34");
+
+    // Botão "Voltar" (neutro — cinza)
+    private static final Color COR_VOLTAR         = Color.decode("#6C757D");
+    private static final Color COR_VOLTAR_CLARA   = Color.decode("#868E96");
+    private static final Color COR_VOLTAR_ESCURA  = Color.decode("#545B62");
+
+    private static final int RAIO_COMPONENTE     = 12;
+    private static final int TAMANHO_FONTE_BOTAO = 12;
+    private static final int ALTURA_BOTAO        = 34;
+    private static final int ALTURA_CABECALHO    = 26;
 
     private final OficinaController controller;
 
     public V_Estoque(OficinaController controller) {
         this.controller = controller;
-        setBackground(Color.decode("#F5F5F5"));
+        setBackground(COR_FUNDO_PAGINA);
         setLayout(new BorderLayout(0, 0));
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         construir();
@@ -34,16 +81,10 @@ public class V_Estoque extends JPanel {
         // ---- Cabeçalho: título + botão de entrada ----
         JLabel titulo = new JLabel("Página Inicial > Estoque de Peças");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        titulo.setForeground(Color.decode("#4D4D4D"));
+        titulo.setForeground(COR_TITULO);
 
-        JButton btn_Entrada = new JButton("+ Comprar Peça");
-        btn_Entrada.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Entrada.setForeground(Color.WHITE);
-        btn_Entrada.setBackground(Color.decode("#28A745"));
-        btn_Entrada.setFocusPainted(false);
-        btn_Entrada.setBorderPainted(false);
-        btn_Entrada.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Entrada.setPreferredSize(new Dimension(180, 34));
+        BotaoAcao btn_Entrada = new BotaoAcao("+ Comprar Peça", COR_ENTRADA, COR_ENTRADA_CLARA, COR_ENTRADA_ESCURA);
+        btn_Entrada.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
         btn_Entrada.addActionListener(e -> navegar(new V_EntradaEstoque(controller)));
 
         JPanel pnl_TituloBtn = new JPanel(new BorderLayout());
@@ -63,14 +104,8 @@ public class V_Estoque extends JPanel {
         corpo.add(criarCardMovimentacoes());
         corpo.add(Box.createVerticalStrut(16));
 
-        JButton btn_Voltar = new JButton("← Voltar");
-        btn_Voltar.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Voltar.setForeground(Color.WHITE);
-        btn_Voltar.setBackground(Color.decode("#6C757D"));
+        BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
         btn_Voltar.setPreferredSize(new Dimension(120, 38));
-        btn_Voltar.setFocusPainted(false);
-        btn_Voltar.setBorderPainted(false);
-        btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn_Voltar.addActionListener(e -> navegar(new V_PaginaInicial(controller)));
         JPanel pnl_Voltar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         pnl_Voltar.setOpaque(false);
@@ -102,27 +137,24 @@ public class V_Estoque extends JPanel {
         List<PecaEntity> pecas = controller.listarEstoque();
         for (PecaEntity p : pecas) {
             mdl.addRow(new Object[]{
-                String.format("%04d", p.getIdPeca()),
-                p.getNomePopular(),
-                p.getSistemaLabel(),
-                p.getQuantidadeEstoque(),
-                situacao(p.getQuantidadeEstoque())
+                    String.format("%04d", p.getIdPeca()),
+                    p.getNomePopular(),
+                    p.getSistemaLabel(),
+                    p.getQuantidadeEstoque(),
+                    situacao(p.getQuantidadeEstoque())
             });
         }
 
         JTable tabela = new JTable(mdl);
-        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        estilizarTabela(tabela);
         tabela.setRowHeight(28);
-        tabela.setGridColor(Color.decode("#EEEEEE"));
-        tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabela.getTableHeader().setReorderingAllowed(false);
         tabela.getColumnModel().getColumn(0).setMaxWidth(60);
         tabela.getColumnModel().getColumn(3).setMaxWidth(70);
         DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
         centro.setHorizontalAlignment(SwingConstants.CENTER);
         tabela.getColumnModel().getColumn(3).setCellRenderer(centro);
 
-        // Situação colorida
+        // Situação colorida — sobrepõe o CelulaBrancaRenderer padrão só nessa coluna
         tabela.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
@@ -147,7 +179,10 @@ public class V_Estoque extends JPanel {
 
         JScrollPane sc = new JScrollPane(tabela);
         sc.setPreferredSize(new Dimension(0, 220));
-        sc.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        sc.getViewport().setBackground(COR_TABELA_FUNDO);
+        sc.getViewport().setOpaque(true);
+        sc.setOpaque(false);
+        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
         ScrollBarPadrao.aplicar(sc);
         corpo.add(sc, BorderLayout.CENTER);
         return card;
@@ -178,22 +213,19 @@ public class V_Estoque extends JPanel {
         List<MovimentacaoEstoqueEntity> movs = controller.listarMovimentacoesEstoque();
         for (MovimentacaoEstoqueEntity m : movs) {
             mdl.addRow(new Object[]{
-                formatarData(m.getDataMovimentacao()),
-                nomePeca.getOrDefault(m.getIdPeca(), "Peça #" + m.getIdPeca()),
-                m.getTipoLabel(),
-                (m.isEntrada() ? "+" : "−") + m.getQuantidade(),
-                m.getOrigemLabel(),
-                m.getValorFormatado(),
-                m.getObservacao()
+                    formatarData(m.getDataMovimentacao()),
+                    nomePeca.getOrDefault(m.getIdPeca(), "Peça #" + m.getIdPeca()),
+                    m.getTipoLabel(),
+                    (m.isEntrada() ? "+" : "−") + m.getQuantidade(),
+                    m.getOrigemLabel(),
+                    m.getValorFormatado(),
+                    m.getObservacao()
             });
         }
 
         JTable tabela = new JTable(mdl);
-        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        estilizarTabela(tabela);
         tabela.setRowHeight(26);
-        tabela.setGridColor(Color.decode("#EEEEEE"));
-        tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabela.getTableHeader().setReorderingAllowed(false);
         tabela.getColumnModel().getColumn(0).setMaxWidth(90);
         tabela.getColumnModel().getColumn(2).setMaxWidth(80);
         tabela.getColumnModel().getColumn(3).setMaxWidth(60);
@@ -206,6 +238,8 @@ public class V_Estoque extends JPanel {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
                 c.setHorizontalAlignment(SwingConstants.CENTER);
                 c.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                c.setOpaque(true);
+                c.setBackground(COR_TABELA_FUNDO);
                 if (!s) c.setForeground("Entrada".equals(String.valueOf(v)) ? Color.decode("#1E8449") : Color.decode("#C0392B"));
                 return c;
             }
@@ -221,7 +255,10 @@ public class V_Estoque extends JPanel {
 
         JScrollPane sc = new JScrollPane(tabela);
         sc.setPreferredSize(new Dimension(0, 220));
-        sc.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        sc.getViewport().setBackground(COR_TABELA_FUNDO);
+        sc.getViewport().setOpaque(true);
+        sc.setOpaque(false);
+        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
         ScrollBarPadrao.aplicar(sc);
         corpo.add(sc, BorderLayout.CENTER);
         return card;
@@ -231,18 +268,15 @@ public class V_Estoque extends JPanel {
     // Helpers
     // =========================================================================
     private JPanel criarCard(String tituloTxt) {
-        JPanel card = new JPanel(new BorderLayout(0, 12));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+        JPanel card = new PainelGradiente(new BorderLayout(0, 12), COR_CARD_TOPO, COR_CARD_BASE);
+        card.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         JLabel lbl = new JLabel(tituloTxt);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lbl.setForeground(Color.decode("#FF9900"));
-        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
+        lbl.setForeground(COR_ACAO);
+        lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COR_CARD_BASE));
         lbl.setPreferredSize(new Dimension(0, 28));
 
         JPanel corpo = new JPanel();
@@ -251,6 +285,26 @@ public class V_Estoque extends JPanel {
         card.add(lbl, BorderLayout.NORTH);
         card.add(corpo, BorderLayout.CENTER);
         return card;
+    }
+
+    /** Aplica o vidro Aero cinza no cabeçalho e fundo branco nas células, igual às demais telas. */
+    private void estilizarTabela(JTable tabela) {
+        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabela.setBackground(COR_TABELA_FUNDO);
+        tabela.setForeground(COR_TEXTO_CAMPO);
+        tabela.setOpaque(true);
+        tabela.setShowGrid(false);
+        tabela.setIntercellSpacing(new Dimension(0, 0));
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabela.setSelectionBackground(COR_TABELA_SELECAO);
+        tabela.setSelectionForeground(COR_TEXTO_CAMPO);
+        tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
+
+        JTableHeader cabecalho = tabela.getTableHeader();
+        cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
+        cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
+        cabecalho.setReorderingAllowed(false);
+        cabecalho.setOpaque(false);
     }
 
     private JComponent rotuloVazio(String texto) {
@@ -270,5 +324,153 @@ public class V_Estoque extends JPanel {
     private void navegar(JPanel destino) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
+    }
+
+    // =========================================================================
+    // INNER CLASSES — mesmas classes de vidro usadas em V_VisualizarServicos
+    // =========================================================================
+
+    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7). */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setForeground(COR_AERO_TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 90));
+            g2.fillRect(0, 0, w, Math.max(1, h / 6));
+
+            g2.setColor(COR_AERO_SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Células de dados sempre com fundo branco (e destaque no tom do tema quando selecionadas). */
+    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
+        CelulaBrancaRenderer() {
+            setOpaque(true);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+            setForeground(COR_TEXTO_CAMPO);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+            return this;
+        }
+    }
+
+    /** Painel com fundo em gradiente translúcido e cantos arredondados — o "card de vidro". */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, getHeight(), corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação com a mesma linguagem visual dos campos em vidro: cantos
+     * arredondados, sombra suave, reflexo no topo e reação a hover/clique.
+     * Cor configurável — mesma classe usada em todas as outras telas.
+     */
+    private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(6, 16, 6, 16));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 30));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }

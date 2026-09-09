@@ -74,6 +74,7 @@ public class PainelCalendario extends JPanel {
     private final Map<Modo, JButton> botoesModo = new EnumMap<>(Modo.class);
     private JLabel lbl_Periodo;
     private JPanel pnl_View;
+    private JPanel pnl_Modos;
 
     public PainelCalendario(OficinaController controller) {
         this.controller = controller;
@@ -100,13 +101,16 @@ public class PainelCalendario extends JPanel {
         JPanel barra = new JPanel(new BorderLayout(8, 0));
         barra.setOpaque(false);
 
-        JPanel modos = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        modos.setOpaque(false);
+        // Os botões de modo (Dia/Semana/Mês/3 Meses/Ano) NÃO ficam mais aqui: agora
+        // vivem na mesma linha do título do card "Agenda de Serviços e Prazos"
+        // (ver getPainelModos(), usado por V_PaginaInicial.criarSecaoCalendario()).
+        pnl_Modos = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        pnl_Modos.setOpaque(false);
         for (Modo m : Modo.values()) {
             JButton b = botaoBarra(m.rotulo);
             b.addActionListener(e -> { modoAtual = m; renderizar(); });
             botoesModo.put(m, b);
-            modos.add(b);
+            pnl_Modos.add(b);
         }
 
         lbl_Periodo = new JLabel("", SwingConstants.CENTER);
@@ -126,10 +130,25 @@ public class PainelCalendario extends JPanel {
         nav.add(btnHoje);
         nav.add(btnProx);
 
-        barra.add(modos, BorderLayout.WEST);
+        // Espaçador invisível do mesmo tamanho de "nav": sem os botões de modo aqui
+        // para equilibrar o lado esquerdo, o rótulo do período ficaria puxado para a
+        // esquerda. Este espelho garante que "lbl_Periodo" fique realmente centralizado.
+        JPanel espacadorEsquerda = new JPanel();
+        espacadorEsquerda.setOpaque(false);
+        espacadorEsquerda.setPreferredSize(nav.getPreferredSize());
+
+        barra.add(espacadorEsquerda, BorderLayout.WEST);
         barra.add(lbl_Periodo, BorderLayout.CENTER);
         barra.add(nav, BorderLayout.EAST);
         return barra;
+    }
+
+    /**
+     * Painel com os botões de modo (Dia/Semana/Mês/3 Meses/Ano), para ser embutido
+     * na mesma linha do título do card pelo chamador (V_PaginaInicial).
+     */
+    JComponent getPainelModos() {
+        return pnl_Modos;
     }
 
     private JButton botaoBarra(String texto) {

@@ -134,27 +134,24 @@ public class V_PaginaInicial extends JPanel {
         pnl_Identidade.add(lbl_AvatarGaragem, BorderLayout.WEST);
         pnl_Identidade.add(pnl_TextoHeader, BorderLayout.CENTER);
 
-        btn_PesquisarHeader = new JButton("");
+        // Os dois botões do topo (Pesquisar e Configurações) usam o novo botão de
+        // "vidro 3D" (BotaoVidro3D) em vez do fundo amarelado (COR_CARTAO_OPACA).
+        btn_PesquisarHeader = new BotaoVidro3D();
         ImageIcon icoBusca = carregarERedimensionarIcone("/assets/icons/pesquisar.png", 50, 50);
         if (icoBusca != null) btn_PesquisarHeader.setIcon(icoBusca);
-        btn_PesquisarHeader.setFocusPainted(false);
-        btn_PesquisarHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn_PesquisarHeader.setPreferredSize(new Dimension(80, 80));
-        btn_PesquisarHeader.setBackground(COR_CARTAO_OPACA);
         btn_PesquisarHeader.setToolTipText("Pesquisar");
 
-        btn_Configuracoes = new JButton("");
+        btn_Configuracoes = new BotaoVidro3D();
         ImageIcon icoConfig = carregarERedimensionarIcone("/assets/icons/config.png", 50, 50);
         if (icoConfig != null) {
             btn_Configuracoes.setIcon(icoConfig);
         } else {
             btn_Configuracoes.setText("⚙");
             btn_Configuracoes.setFont(new Font("Segoe UI", Font.PLAIN, 26));
+            btn_Configuracoes.setForeground(Color.decode("#555555"));
         }
-        btn_Configuracoes.setFocusPainted(false);
-        btn_Configuracoes.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn_Configuracoes.setPreferredSize(new Dimension(80, 80));
-        btn_Configuracoes.setBackground(COR_CARTAO_OPACA);
         btn_Configuracoes.setToolTipText("Configurações da Oficina");
 
         JPanel pnl_ContainerBusca = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
@@ -276,9 +273,26 @@ public class V_PaginaInicial extends JPanel {
     private JPanel criarSecaoCalendario() {
         JPanel card = criarCard("Agenda de Serviços e Prazos",
                 obterIcone("/assets/icons/calendario.png", 18, IconeVetorial.Tipo.CALENDARIO, Color.decode("#FF9900")));
+
+        PainelCalendario painelCalendario = new PainelCalendario(controller);
+
+        // Os botões de modo (Dia/Semana/Mês/3 Meses/Ano) saem de dentro do calendário
+        // e passam a viver na mesma linha do título do card, alinhados à direita —
+        // o texto do título permanece à esquerda, sem alterar o padrão dos outros cards.
+        JPanel pnl_TituloCard = (JPanel) card.getComponent(0);
+        JPanel pnl_TituloTexto = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        pnl_TituloTexto.setOpaque(false);
+        while (pnl_TituloCard.getComponentCount() > 0) {
+            pnl_TituloTexto.add(pnl_TituloCard.getComponent(0));
+        }
+        pnl_TituloCard.setLayout(new BorderLayout());
+        pnl_TituloCard.add(pnl_TituloTexto, BorderLayout.WEST);
+        pnl_TituloCard.add(painelCalendario.getPainelModos(), BorderLayout.EAST);
+        pnl_TituloCard.setPreferredSize(new Dimension(0, 38));
+
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BorderLayout());
-        corpo.add(new PainelCalendario(controller), BorderLayout.CENTER);
+        corpo.add(painelCalendario, BorderLayout.CENTER);
         return card;
     }
 
@@ -356,8 +370,8 @@ public class V_PaginaInicial extends JPanel {
         int raioCard = 14;
         PainelCartao card = new PainelCartao(new BorderLayout(0, 12), raioCard, COR_CARTAO);
         card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(raioCard, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)
+                new RoundedBorder(raioCard, Color.decode("#E0E0E0")),
+                BorderFactory.createEmptyBorder(16, 20, 16, 20)
         ));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -412,6 +426,64 @@ public class V_PaginaInicial extends JPanel {
         btn.setIconTextGap(6);
         btn.addActionListener(e -> aoClicar.run());
         return btn;
+    }
+
+    /**
+     * Botão de "vidro 3D": substitui o fundo amarelado (COR_CARTAO_OPACA) dos dois
+     * botões do topo (Pesquisar e Configurações) por um vidro translúcido azulado,
+     * com gradiente vertical de profundidade, reflexo superior e sombra suave.
+     * Estados de hover e clique têm brilho/elevação distintos (a "animação" pedida).
+     */
+    private static class BotaoVidro3D extends JButton {
+        private boolean hover = false;
+        private boolean pressionado = false;
+
+        BotaoVidro3D() {
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { hover = true;  repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { hover = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true;  repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            int w = getWidth(), h = getHeight();
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int raio = 20;
+            int elevacao = pressionado ? 1 : (hover ? 3 : 2);
+            int topo = pressionado ? 2 : 0; // "afunda" levemente ao clicar
+
+            // Sombra suave: dá a sensação de profundidade/elevação do vidro
+            g2.setColor(new Color(0, 0, 0, hover ? 45 : 28));
+            g2.fillRoundRect(2, 2 + elevacao, w - 4, h - 4, raio, raio);
+
+            // Corpo do vidro: gradiente vertical translúcido (claro em cima, azulado embaixo)
+            Color corTopo = hover ? new Color(255, 255, 255, 235) : new Color(255, 255, 255, 215);
+            Color corBase = hover ? new Color(206, 221, 236, 215) : new Color(198, 212, 228, 195);
+            g2.setPaint(new GradientPaint(0, topo, corTopo, 0, h - 4, corBase));
+            g2.fillRoundRect(1, topo, w - 4, h - 4 - topo, raio, raio);
+
+            // Reflexo superior: faixa de brilho característica do efeito de vidro
+            g2.setColor(new Color(255, 255, 255, hover ? 165 : 130));
+            g2.fillRoundRect(4, topo + 2, w - 10, Math.max(4, (h - 4) / 3), raio - 6, raio - 6);
+
+            // Borda sutil, como uma quina de vidro pegando luz
+            g2.setColor(new Color(255, 255, 255, 170));
+            g2.setStroke(new BasicStroke(1.2f));
+            g2.drawRoundRect(1, topo, w - 5, h - 5 - topo, raio, raio);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private static class RoundedBorder implements javax.swing.border.Border {
@@ -652,9 +724,9 @@ public class V_PaginaInicial extends JPanel {
                 case CONCLUIDA:
                     g2.drawOval(pad, pad, area, area);
                     g2.drawPolyline(
-                        new int[]{pad + area / 4, s / 2 - 1, s - pad - area / 6},
-                        new int[]{s / 2, s - pad - area / 3, pad + area / 3},
-                        3
+                            new int[]{pad + area / 4, s / 2 - 1, s - pad - area / 6},
+                            new int[]{s / 2, s - pad - area / 3, pad + area / 3},
+                            3
                     );
                     break;
                 case CALENDARIO:

@@ -41,7 +41,7 @@ public class V_EntradaEstoque extends JPanel {
     private GlassComboBox<ItemOS> cmb_OS;
     private GlassTextField txt_NomeTecnico;
     private GlassTextField txt_Fabricante;
-    private GlassTextField txt_Observacao;
+    private GlassTextArea txt_Observacao;
     private JPanel pnl_OS;
     private JPanel pnl_TecFab;
 
@@ -108,7 +108,7 @@ public class V_EntradaEstoque extends JPanel {
         txt_Valor.setToolTipText("Ex: 45.90 (valor unitário pago pela peça)");
         ((AbstractDocument) txt_Valor.getDocument()).setDocumentFilter(new FiltroDecimal());
 
-        txt_Observacao = criarTextField();
+        txt_Observacao = new GlassTextArea();
         txt_Observacao.setToolTipText("Ex: Compra no fornecedor X (opcional)");
 
         JPanel pnl_L1 = linha(62);
@@ -210,7 +210,8 @@ public class V_EntradaEstoque extends JPanel {
     private void atualizarVisibilidadeDestino() {
         boolean direto = rad_OSDireto.isSelected();
         pnl_OS.setVisible(direto);
-        pnl_TecFab.setVisible(direto);
+        // Nome Técnico e Fabricante agora ficam visíveis nos dois destinos
+        // (antes só apareciam em "Usar direto numa OS").
         revalidate();
         repaint();
     }
@@ -473,6 +474,72 @@ public class V_EntradaEstoque extends JPanel {
 
             g2.setColor(new Color(255, 255, 255, 110));
             g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            Color corBorda = focado ? new Color(255, 153, 0, 210) : COR_BORDA_SUAVE;
+            float espessura = focado ? 1.6f : 1f;
+
+            g2.setStroke(new BasicStroke(espessura));
+            g2.setColor(corBorda);
+            g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.75, h - 2.25, RAIO_COMPONENTE, RAIO_COMPONENTE));
+            g2.dispose();
+        }
+    }
+
+    /**
+     * Área de texto multilinha com o mesmo vidro do GlassTextField, usada em
+     * "Observação": ao contrário do campo de uma linha, o texto começa no topo
+     * e quebra linha sozinho, preenchendo a caixa inteira corretamente.
+     */
+    private static class GlassTextArea extends JTextArea {
+        private boolean focado = false;
+
+        GlassTextArea() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e) { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(70, 90, 110, 28));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 210),
+                    0, h, new Color(255, 255, 255, 145)
+            );
+            g2.setPaint(vidro);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Reflexo mais fino que o do campo de uma linha — numa caixa alta,
+            // uma faixa de brilho ocupando 40% da altura ficaria pesada demais.
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.15), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
 
             g2.dispose();
             super.paintComponent(g);

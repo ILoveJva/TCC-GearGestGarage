@@ -8,7 +8,7 @@ rm -rf out dist
 mkdir -p out dist/libs
 
 echo "[2/4] Compilando..."
-javac -d out $(find src -name "*.java")
+javac -encoding UTF-8 -d out $(find src -name "*.java")
 
 echo "[3/4] Copiando recursos (assets, se houver)..."
 if [ -d src/main/resources ]; then

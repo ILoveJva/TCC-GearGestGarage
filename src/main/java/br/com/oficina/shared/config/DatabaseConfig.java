@@ -21,7 +21,7 @@ public final class DatabaseConfig {
     public static final String DIRETORIO_PADRAO = "mysql";
 
     private static final String URL_PADRAO =
-        "jdbc:mysql://localhost:3307/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+        "jdbc:mysql://localhost:3307/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8";
     private static final String USER_PADRAO = "root";
     private static final String PASS_PADRAO = "root";
 
@@ -129,5 +129,8 @@ public final class DatabaseConfig {
         con.registrarTabela(new Tabela("despesa", "id_despesa",
             "id_despesa", "descricao", "categoria", "valor", "data_despesa",
             "forma_pagamento", "observacao", "id_oficina"));
+
+        con.registrarTabela(new Tabela("midias_ordemservico", "id_midia",
+            "id_midia", "id_servico", "tipo", "nome_arquivo", "caminho", "descricao", "data_upload"));
     }
 }

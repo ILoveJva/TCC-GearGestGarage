@@ -77,6 +77,38 @@ public class OficinaController {
         return oficinaLogada;
     }
 
+    /**
+     * Abre uma nova oficina: cria o registro da oficina e o usuário administrador
+     * (cargo "Gerente") que ficará responsável pelo login, e já efetua o login
+     * automaticamente nela. Usado pela tela de abertura de oficina, acessível a
+     * partir do login para quem ainda não tem conta.
+     */
+    public void abrirOficina(String nomeOficina, String enderecoOficina, String telefoneOficina, String cnpj,
+                             String nomeAdmin, String cpfAdmin, String emailAdmin,
+                             String senhaAdmin, String telefoneAdmin) {
+        String cnpjDigitos = cnpj.replaceAll("[^0-9]", "");
+        for (OficinaEntity o : bridge.oficinaController.todas())
+            if (o.getCnpj().replaceAll("[^0-9]", "").equals(cnpjDigitos))
+                throw new br.com.oficina.shared.exception.RegraNegocioException(
+                    "Já existe uma oficina cadastrada com este CNPJ.");
+
+        String cpfDigitos = cpfAdmin.replaceAll("[^0-9]", "");
+        for (UsuarioEntity u : bridge.usuarioController.todos()) {
+            if (u.getCpf().replaceAll("[^0-9]", "").equals(cpfDigitos))
+                throw new br.com.oficina.shared.exception.RegraNegocioException(
+                    "Já existe um usuário cadastrado com este CPF.");
+            if (u.getEmail().equalsIgnoreCase(emailAdmin))
+                throw new br.com.oficina.shared.exception.RegraNegocioException(
+                    "Já existe um usuário cadastrado com este e-mail.");
+        }
+
+        OficinaEntity of = bridge.oficinaController.criar(nomeOficina, enderecoOficina, telefoneOficina, cnpj);
+        bridge.funcionarioController.cadastrar(nomeAdmin, "Gerente", "", cpfAdmin,
+            emailAdmin, senhaAdmin, telefoneAdmin, of.getIdOficina());
+
+        autenticar(emailAdmin, senhaAdmin);
+    }
+
     // ============== ESCOPO POR OFICINA ==============
     // O login define a oficina ativa; todas as listagens de clientes, veículos,
     // funcionários, orçamentos e ordens de serviço são restritas a ela. O catálogo
@@ -403,6 +435,24 @@ public class OficinaController {
         bridge.servicoController.finalizar(idOS, observacaoSaida, idFuncionario);
         // Saída automática do estoque das peças do orçamento vinculado à OS concluída.
         baixarEstoquePorOS(idOS);
+    }
+
+    // ============== MÍDIAS DA OS (fotos/vídeos para o cliente acompanhar) ==============
+    /** Fotos e vídeos anexados à OS, disponíveis durante o serviço e após a conclusão. */
+    public List<br.com.oficina.atendimento.MidiaServicoEntity> listarMidiasOS(long idOS) {
+        return bridge.midiaServicoController.listar(idOS);
+    }
+
+    /** Copia o arquivo para a pasta de mídias da OS e registra o vínculo. */
+    public br.com.oficina.atendimento.MidiaServicoEntity adicionarMidiaOS(long idOS,
+                                                                          java.io.File arquivo,
+                                                                          String descricao) {
+        return bridge.midiaServicoController.adicionar(idOS, arquivo, descricao);
+    }
+
+    /** Remove a mídia (registro e arquivo em disco). */
+    public void removerMidiaOS(long idMidia) {
+        bridge.midiaServicoController.remover(idMidia);
     }
 
     /** Cria um orçamento interno (REVISAO) vinculado a este serviço. */

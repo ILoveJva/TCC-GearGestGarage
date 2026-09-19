@@ -13,6 +13,9 @@ db.properties
 
 # ===== Dados locais do engine antigo (se existirem) =====
 dados_oficina/
+
+# ===== Fotos/videos anexados as OS (arquivos enviados pelo usuario) =====
+midias_os/
 *.tbl
 
 # ===== Backups de banco =====

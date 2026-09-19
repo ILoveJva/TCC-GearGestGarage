@@ -40,7 +40,7 @@ services:
         condition: service_healthy   # so inicia quando o banco estiver pronto
     environment:
       # Dentro da rede do compose, o banco é acessível pelo nome do serviço "mysql"
-      DB_URL: "jdbc:mysql://mysql:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      DB_URL: "jdbc:mysql://mysql:3306/GearGestGarage?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"
       DB_USER: "root"
       DB_PASSWORD: "root"
       # Display da interface gráfica (ajuste conforme seu SO - ver README)

@@ -17,6 +17,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -190,6 +191,12 @@ public class V_OrdemServico extends JPanel {
                 }
             }
         }
+
+        // Galeria de fotos/vídeos: disponível durante o serviço e mantida na OS
+        // depois de concluída, para o cliente acompanhar. Edição só enquanto a OS
+        // não estiver concluída (nem congelada).
+        pnl_Corpo.add(Box.createVerticalStrut(14));
+        pnl_Corpo.add(construirPainelMidias(aberta || emAndamento));
 
         pnl_Corpo.add(Box.createVerticalGlue());
         pnl_Corpo.revalidate();
@@ -608,6 +615,191 @@ public class V_OrdemServico extends JPanel {
         pnl.add(lbl, BorderLayout.NORTH);
         pnl.add(scp, BorderLayout.CENTER);
         return pnl;
+    }
+
+    // -----------------------------------------------------------------------
+    // Galeria de fotos/vídeos da OS (acompanhamento do cliente)
+    // -----------------------------------------------------------------------
+    private JPanel construirPainelMidias(boolean editavel) {
+        JLabel lblEtapa = criarLabelEtapa("FOTOS E VÍDEOS DO SERVIÇO", COR_INFO);
+
+        JPanel pnl = new PainelCartao(new BorderLayout(0, 10));
+        pnl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
+
+        JLabel lblAjuda = new JLabel("Registros visíveis para o cliente acompanhar o andamento do serviço.");
+        lblAjuda.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblAjuda.setForeground(COR_LABEL);
+
+        JPanel pnl_Topo = new JPanel(new BorderLayout());
+        pnl_Topo.setOpaque(false);
+        pnl_Topo.add(lblAjuda, BorderLayout.WEST);
+        if (editavel) {
+            JButton btnAdd = botaoAcao("+ Adicionar foto/vídeo", COR_INFO);
+            btnAdd.addActionListener(e -> adicionarMidia());
+            JPanel wrapBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            wrapBtn.setOpaque(false);
+            wrapBtn.add(btnAdd);
+            pnl_Topo.add(wrapBtn, BorderLayout.EAST);
+        }
+
+        List<br.com.oficina.atendimento.MidiaServicoEntity> midias;
+        try { midias = controller.listarMidiasOS(idOS); }
+        catch (Exception e) { midias = new ArrayList<>(); }
+
+        JPanel pnl_Grade = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 12));
+        pnl_Grade.setOpaque(false);
+
+        if (midias.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhuma foto ou vídeo anexado ainda.");
+            vazio.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            vazio.setForeground(COR_LABEL);
+            pnl_Grade.add(vazio);
+        } else {
+            for (br.com.oficina.atendimento.MidiaServicoEntity m : midias)
+                pnl_Grade.add(construirCartaoMidia(m, editavel));
+        }
+
+        pnl.add(pnl_Topo, BorderLayout.NORTH);
+        pnl.add(pnl_Grade, BorderLayout.CENTER);
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+        wrapper.add(lblEtapa, BorderLayout.NORTH);
+        wrapper.add(pnl, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    /** Miniatura clicável (foto) ou cartão de vídeo, com botão de remover no modo edição. */
+    private JPanel construirCartaoMidia(br.com.oficina.atendimento.MidiaServicoEntity m, boolean editavel) {
+        final int LARGURA = 150, ALTURA_THUMB = 110;
+        File arquivo = new File(m.getCaminho());
+
+        JPanel card = new JPanel(new BorderLayout(0, 4));
+        card.setOpaque(false);
+        card.setPreferredSize(new Dimension(LARGURA, ALTURA_THUMB + 46));
+
+        JLabel thumb = new JLabel();
+        thumb.setHorizontalAlignment(SwingConstants.CENTER);
+        thumb.setVerticalAlignment(SwingConstants.CENTER);
+        thumb.setPreferredSize(new Dimension(LARGURA, ALTURA_THUMB));
+        thumb.setOpaque(true);
+        thumb.setBackground(new Color(0, 0, 0, 12));
+        thumb.setBorder(new RoundedBorder(RAIO_COMPONENTE, COR_BORDA_SUAVE));
+        thumb.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        if (m.isVideo()) {
+            thumb.setText("<html><div style='text-align:center;'>▶<br>VÍDEO</div></html>");
+            thumb.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            thumb.setForeground(COR_INFO);
+        } else {
+            ImageIcon icon = carregarMiniatura(arquivo, LARGURA - 6, ALTURA_THUMB - 6);
+            if (icon != null) thumb.setIcon(icon);
+            else { thumb.setText("imagem indisponível"); thumb.setForeground(COR_LABEL); }
+        }
+        thumb.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { abrirMidia(m); }
+        });
+
+        JLabel nome = new JLabel(m.getNomeArquivo());
+        nome.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        nome.setForeground(COR_TEXTO_CAMPO);
+        nome.setToolTipText(m.getNomeArquivo()
+            + (m.getDescricao().isBlank() ? "" : " — " + m.getDescricao()));
+        nome.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JPanel rodape = new JPanel(new BorderLayout());
+        rodape.setOpaque(false);
+        rodape.add(nome, BorderLayout.CENTER);
+        if (editavel) {
+            JButton btnRem = botaoLink("remover", COR_LARANJA);
+            btnRem.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btnRem.addActionListener(e -> removerMidia(m));
+            rodape.add(btnRem, BorderLayout.EAST);
+        }
+
+        card.add(thumb, BorderLayout.CENTER);
+        card.add(rodape, BorderLayout.SOUTH);
+        return card;
+    }
+
+    private ImageIcon carregarMiniatura(File arquivo, int largura, int altura) {
+        try {
+            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(arquivo);
+            if (img == null) return null;
+            double escala = Math.min((double) largura / img.getWidth(), (double) altura / img.getHeight());
+            int w = Math.max(1, (int) (img.getWidth() * escala));
+            int h = Math.max(1, (int) (img.getHeight() * escala));
+            Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaled);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Fotos abrem em diálogo ampliado; vídeos abrem no player padrão do sistema. */
+    private void abrirMidia(br.com.oficina.atendimento.MidiaServicoEntity m) {
+        File arquivo = new File(m.getCaminho());
+        if (!arquivo.isFile()) {
+            DialogoAlerta.erro(this, "Arquivo não encontrado: " + m.getCaminho(), "Erro");
+            return;
+        }
+        if (m.isVideo()) {
+            try {
+                if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(arquivo);
+                else DialogoAlerta.aviso(this, "Não foi possível abrir o vídeo neste sistema.", "Atenção");
+            } catch (Exception ex) {
+                DialogoAlerta.erro(this, "Erro ao abrir o vídeo: " + ex.getMessage(), "Erro");
+            }
+            return;
+        }
+        ImageIcon icon = carregarMiniatura(arquivo, 900, 640);
+        if (icon == null) {
+            DialogoAlerta.erro(this, "Não foi possível carregar a imagem.", "Erro");
+            return;
+        }
+        JLabel lbl = new JLabel(icon);
+        JScrollPane scp = new JScrollPane(lbl);
+        scp.setPreferredSize(new Dimension(Math.min(icon.getIconWidth() + 30, 940),
+                                           Math.min(icon.getIconHeight() + 30, 680)));
+        String titulo = m.getNomeArquivo() + (m.getDescricao().isBlank() ? "" : " — " + m.getDescricao());
+        JOptionPane.showMessageDialog(this, scp, titulo, JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private void adicionarMidia() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Selecionar foto ou vídeo");
+        fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+            "Fotos e vídeos (jpg, png, gif, mp4, mov, avi, mkv, webm)",
+            "jpg", "jpeg", "png", "gif", "bmp", "mp4", "mov", "avi", "mkv", "webm", "wmv"));
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File arquivo = fc.getSelectedFile();
+
+        String descricao = JOptionPane.showInputDialog(this,
+            "Descrição (opcional) para o cliente:", "Descrever mídia",
+            JOptionPane.PLAIN_MESSAGE);
+        if (descricao == null) descricao = ""; // cancelou o campo de descrição, mas mantém o upload
+
+        try {
+            controller.adicionarMidiaOS(idOS, arquivo, descricao);
+            DialogoAlerta.sucesso(this, "Mídia anexada à O.S.", "Sucesso");
+            carregarServico();
+        } catch (Exception ex) {
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
+        }
+    }
+
+    private void removerMidia(br.com.oficina.atendimento.MidiaServicoEntity m) {
+        boolean ok = DialogoConfirmacao.confirmar(this,
+            "Remover \"" + m.getNomeArquivo() + "\" desta O.S.?", "Confirmar remoção");
+        if (!ok) return;
+        try {
+            controller.removerMidiaOS(m.getIdMidia());
+            carregarServico();
+        } catch (Exception ex) {
+            DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
+        }
     }
 
     // -----------------------------------------------------------------------

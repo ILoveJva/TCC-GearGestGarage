@@ -22,6 +22,7 @@ class OficinaController_backendBridge {
     final br.com.oficina.atendimento.TipoServicoController tipoServicoController;
     final br.com.oficina.atendimento.CatalogoServicoController catalogoServicoController;
     final br.com.oficina.atendimento.OrcamentoPecaRepository orcamentoPecaRepository;
+    final br.com.oficina.atendimento.MidiaServicoController midiaServicoController;
     final DespesaController despesaController;
     final EstoqueController estoqueController;
 
@@ -44,6 +45,9 @@ class OficinaController_backendBridge {
             new br.com.oficina.atendimento.CatalogoServicoService(
                 new br.com.oficina.atendimento.CatalogoServicoRepository(con)));
         this.orcamentoPecaRepository = new br.com.oficina.atendimento.OrcamentoPecaRepository(con);
+        this.midiaServicoController = new br.com.oficina.atendimento.MidiaServicoController(
+            new br.com.oficina.atendimento.MidiaServicoService(
+                new br.com.oficina.atendimento.MidiaServicoRepository(con)));
         this.despesaController = new DespesaController(new DespesaService(new DespesaRepository(con)));
         this.estoqueController = new EstoqueController(
             new EstoqueService(pecaRepo, new MovimentacaoEstoqueRepository(con)));

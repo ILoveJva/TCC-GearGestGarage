@@ -242,6 +242,20 @@ CREATE TABLE despesa (
     CONSTRAINT fk_despesa_oficina FOREIGN KEY (id_oficina) REFERENCES oficina (id_oficina)
 );
 
+-- Fotos e vídeos de uma OS, para o cliente acompanhar o andamento.
+-- O arquivo fica no disco (pasta midias_os); aqui guardamos só os metadados.
+CREATE TABLE midias_ordemservico (
+    id_midia INT NOT NULL AUTO_INCREMENT,
+    id_servico INT NOT NULL,
+    tipo VARCHAR(10) NOT NULL DEFAULT 'FOTO',   -- FOTO | VIDEO
+    nome_arquivo VARCHAR(255) NOT NULL,
+    caminho VARCHAR(500) NOT NULL,
+    descricao VARCHAR(255) NOT NULL DEFAULT '',
+    data_upload DATE NOT NULL,
+    PRIMARY KEY (id_midia),
+    CONSTRAINT fk_midia_servico FOREIGN KEY (id_servico) REFERENCES servico (id_servico) ON DELETE CASCADE
+);
+
 -- Peças a substituir vinculadas a um orçamento
 CREATE TABLE orcamento_peca (
     id_orcamento_peca INT NOT NULL AUTO_INCREMENT,

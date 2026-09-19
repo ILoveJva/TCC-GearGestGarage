@@ -174,9 +174,7 @@ public class V_Login extends JFrame {
     }
 
     private void irParaCadastro() {
-        // Método para abrir a tela de cadastro
         this.dispose();
-        // Descomente e altere para o nome da sua View de Cadastro:
-        // SwingUtilities.invokeLater(() -> new V_Cadastro(controller).setVisible(true));
+        SwingUtilities.invokeLater(() -> new V_AberturaOficina(controller).setVisible(true));
     }
 }

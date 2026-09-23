@@ -5,7 +5,6 @@ import br.com.oficina.estoque.PecaEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -13,8 +12,8 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
 import java.awt.geom.RoundRectangle2D;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,20 +34,19 @@ public class V_EditarItemServico extends JPanel {
 
     // Peças associadas
     private JComboBox<ItemPeca> cmb_NovaPeca;
-    private DefaultTableModel mdl_Pecas;
-    private JTable tbl_Pecas;
+    private JPanel pnl_ListaPecas;
     private JLabel lbl_StatusOrcamentos;
 
     // Links {idLink → idPeca} para remoção
     private final java.util.Map<Long, Long> linksAtuais = new java.util.LinkedHashMap<>();
 
     private static final String[] SISTEMAS = {
-        "MOTOR", "TRANSMISSAO", "DIRECAO", "SUSPENSAO", "FREIOS",
-        "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
+            "MOTOR", "TRANSMISSAO", "DIRECAO", "SUSPENSAO", "FREIOS",
+            "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
     };
     private static final String[] SISTEMAS_LABEL = {
-        "Motor", "Transmissão", "Direção", "Suspensão", "Freios",
-        "Arrefecimento", "Elétrica", "Alimentação", "Outros"
+            "Motor", "Transmissão", "Direção", "Suspensão", "Freios",
+            "Arrefecimento", "Elétrica", "Alimentação", "Outros"
     };
 
     public V_EditarItemServico(OficinaController controller, CatalogoServicoEntity item) {
@@ -134,24 +132,14 @@ public class V_EditarItemServico extends JPanel {
         form.add(Box.createVerticalStrut(14));
         form.add(criarSecaoPecas());
 
-        // Botões
-        JButton btn_Salvar = new JButton("SALVAR ALTERAÇÕES");
-        btn_Salvar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn_Salvar.setForeground(Color.WHITE);
-        btn_Salvar.setBackground(Color.decode("#FF9900"));
+        // Botões — glassmorphism: vidro translúcido, brilho no topo e
+        // reação animada a hover/clique (BotaoGlass); "Voltar" como botão
+        // fantasma que ganha um preenchimento de vidro suave só no hover
+        BotaoGlass btn_Salvar = new BotaoGlass("SALVAR ALTERAÇÕES", Color.decode("#FF9900"));
         btn_Salvar.setPreferredSize(new Dimension(220, 42));
-        btn_Salvar.setFocusPainted(false);
-        btn_Salvar.setBorderPainted(false);
-        btn_Salvar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn_Salvar.addActionListener(e -> salvar());
 
-        JButton btn_Voltar = new JButton("Voltar");
-        btn_Voltar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btn_Voltar.setForeground(Color.decode("#6C757D"));
-        btn_Voltar.setContentAreaFilled(false);
-        btn_Voltar.setBorderPainted(false);
-        btn_Voltar.setFocusPainted(false);
-        btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        BotaoFantasma btn_Voltar = new BotaoFantasma("Voltar");
         btn_Voltar.addActionListener(e -> navegar(new V_CadastrarItemServico(controller)));
 
         JPanel pnl_Btn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
@@ -196,7 +184,8 @@ public class V_EditarItemServico extends JPanel {
         cmb_NovaPeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmb_NovaPeca.setBackground(Color.WHITE);
 
-        JButton btn_Add = botaoAcao("+ Adicionar", "#17A2B8");
+        BotaoGlass btn_Add = new BotaoGlass("+ Adicionar", Color.decode("#17A2B8"));
+        btn_Add.setPreferredSize(new Dimension(140, 34));
         btn_Add.addActionListener(e -> adicionarPeca());
 
         JPanel pnl_Row = new JPanel(new BorderLayout(8, 0));
@@ -208,48 +197,48 @@ public class V_EditarItemServico extends JPanel {
         lbl_Hint.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         lbl_Hint.setForeground(Color.decode("#FF9900"));
 
-        String[] cols = {"Peça", "Ação"};
-        mdl_Pecas = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) { return false; }
-            public int getColumnCount() { return 1; } // só mostra "Peça"
-        };
-        tbl_Pecas = new JTable(mdl_Pecas);
-        tbl_Pecas.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl_Pecas.setRowHeight(26);
-        tbl_Pecas.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl_Pecas.getTableHeader().setReorderingAllowed(false);
-        tbl_Pecas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // Lista simples (sem JTable) das peças associadas — cada linha
+        // tem um botão de remover em vidro embutido, sem depender de
+        // seleção de linha de tabela
+        pnl_ListaPecas = new JPanel();
+        pnl_ListaPecas.setLayout(new BoxLayout(pnl_ListaPecas, BoxLayout.Y_AXIS));
+        pnl_ListaPecas.setOpaque(false);
 
-        JButton btn_Rem = new JButton("Remover peça selecionada");
-        btn_Rem.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn_Rem.setForeground(Color.decode("#DC3545"));
-        btn_Rem.setContentAreaFilled(false);
-        btn_Rem.setBorderPainted(false);
-        btn_Rem.setFocusPainted(false);
-        btn_Rem.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Rem.addActionListener(e -> removerPecaSelecionada());
-
-        tbl_Pecas.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) removerPecaSelecionada();
-            }
-        });
-
-        JScrollPane scrollPecas = new JScrollPane(tbl_Pecas);
-        scrollPecas.setPreferredSize(new Dimension(0, 100));
+        JScrollPane scrollPecas = new JScrollPane(pnl_ListaPecas);
+        scrollPecas.setPreferredSize(new Dimension(0, 110));
         scrollPecas.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
+        scrollPecas.setOpaque(false);
+        scrollPecas.getViewport().setOpaque(false);
         ScrollBarPadrao.aplicar(scrollPecas);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);
         corpo.add(pnl_Row, BorderLayout.NORTH);
         corpo.add(scrollPecas, BorderLayout.CENTER);
-        corpo.add(btn_Rem, BorderLayout.SOUTH);
 
         sec.add(pnl_Header, BorderLayout.NORTH);
         sec.add(lbl_Hint, BorderLayout.CENTER);
         sec.add(corpo, BorderLayout.SOUTH);
         return sec;
+    }
+
+    private JPanel criarLinhaPeca(String nome, long idLink) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        row.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+
+        JLabel lblNome = new JLabel(nome);
+        lblNome.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblNome.setForeground(Color.decode("#333333"));
+
+        BotaoRemoverGlass btn_Rem = new BotaoRemoverGlass();
+        btn_Rem.setToolTipText("Remover peça");
+        btn_Rem.addActionListener(e -> removerPeca(idLink));
+
+        row.add(lblNome, BorderLayout.CENTER);
+        row.add(btn_Rem, BorderLayout.EAST);
+        return row;
     }
 
     // =========================================================================
@@ -280,14 +269,27 @@ public class V_EditarItemServico extends JPanel {
 
     private void carregarPecasAssociadas() {
         linksAtuais.clear();
-        mdl_Pecas.setRowCount(0);
+        pnl_ListaPecas.removeAll();
         Map<Long, Long> links = controller.listarLinksPecasDoItemCatalogo(item.getIdCatalogoServico());
         linksAtuais.putAll(links);
-        for (Map.Entry<Long, Long> entry : links.entrySet()) {
-            PecaEntity p = controller.listarTodasPecas().stream()
-                .filter(x -> x.getIdPeca().equals(entry.getValue())).findFirst().orElse(null);
-            mdl_Pecas.addRow(new Object[]{p != null ? p.getNomePopular() : "(id " + entry.getValue() + ")"});
+
+        if (links.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhuma peça associada.");
+            vazio.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+            vazio.setForeground(Color.decode("#999999"));
+            vazio.setBorder(BorderFactory.createEmptyBorder(6, 4, 6, 4));
+            pnl_ListaPecas.add(vazio);
+        } else {
+            for (Map.Entry<Long, Long> entry : links.entrySet()) {
+                long idLink = entry.getKey();
+                PecaEntity p = controller.listarTodasPecas().stream()
+                        .filter(x -> x.getIdPeca().equals(entry.getValue())).findFirst().orElse(null);
+                String nome = p != null ? p.getNomePopular() : "(id " + entry.getValue() + ")";
+                pnl_ListaPecas.add(criarLinhaPeca(nome, idLink));
+            }
         }
+        pnl_ListaPecas.revalidate();
+        pnl_ListaPecas.repaint();
         atualizarStatusOrcamentos();
     }
 
@@ -305,23 +307,18 @@ public class V_EditarItemServico extends JPanel {
             carregarPecasAssociadas();
             int qtdOrc = controller.contarOrcamentosComItemCatalogo(item.getIdCatalogoServico());
             String msg = "Peça adicionada!" + (qtdOrc > 0
-                ? "\n" + qtdOrc + " orçamento(s) com este serviço foram atualizados automaticamente."
-                : "");
+                    ? "\n" + qtdOrc + " orçamento(s) com este serviço foram atualizados automaticamente."
+                    : "");
             DialogoAlerta.sucesso(this, msg, "Sucesso");
         } catch (Exception ex) {
             DialogoAlerta.erro(this, "Erro: " + ex.getMessage(), "Erro");
         }
     }
 
-    private void removerPecaSelecionada() {
-        int row = tbl_Pecas.getSelectedRow();
-        if (row < 0) return;
-        List<Long> linkIds = new ArrayList<>(linksAtuais.keySet());
-        if (row >= linkIds.size()) return;
-        long idLink = linkIds.get(row);
+    private void removerPeca(long idLink) {
         boolean confirmado = DialogoConfirmacao.confirmar(this,
-            "Remover esta peça do item de serviço?\n(Orçamentos existentes não serão alterados.)",
-            "Confirmar remoção");
+                "Remover esta peça do item de serviço?\n(Orçamentos existentes não serão alterados.)",
+                "Confirmar remoção");
         if (!confirmado) return;
         try {
             controller.removerPecaDeItemCatalogo(idLink);
@@ -358,7 +355,7 @@ public class V_EditarItemServico extends JPanel {
 
         try {
             controller.atualizarItemServico(item.getIdCatalogoServico(), nome, "", valor,
-                tipo, sistema, validadeKm, validadeMeses);
+                    tipo, sistema, validadeKm, validadeMeses);
             DialogoAlerta.sucesso(this, "Item \"" + nome + "\" atualizado com sucesso!", "Sucesso");
             navegar(new V_CadastrarItemServico(controller));
         } catch (Exception ex) {
@@ -412,21 +409,21 @@ public class V_EditarItemServico extends JPanel {
         f.setForeground(Color.BLACK);
         f.setCaretColor(Color.BLACK);
         f.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)));
+                new RoundedBorder(6, Color.decode("#CCCCCC")),
+                BorderFactory.createEmptyBorder(2, 10, 2, 10)));
         return f;
     }
 
-    private JButton botaoAcao(String texto, String corHex) {
-        JButton btn = new JButton(texto);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(Color.decode(corHex));
-        btn.setPreferredSize(new Dimension(150, 34));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    private static Color clarear(Color c, float fator) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        hsb[2] = Math.min(1f, hsb[2] + fator);
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
+    }
+
+    private static Color escurecer(Color c, float fator) {
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        hsb[2] = Math.max(0f, hsb[2] - fator);
+        return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
     }
 
     // ========= inner classes =========
@@ -462,6 +459,156 @@ public class V_EditarItemServico extends JPanel {
             g2.setColor(cor);
             g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2.dispose();
+        }
+    }
+
+    /**
+     * Botão de ação com glassmorphism: preenchimento translúcido na cor
+     * base recebida, sombra suave, reflexo no topo e reação ANIMADA a
+     * hover/clique (clareia/escurece + repaint). Usado tanto no botão
+     * principal (laranja) quanto no secundário de "+ Adicionar" (azul).
+     */
+    private static class BotaoGlass extends JButton {
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+        private final Color corBase, corClara, corEscura;
+
+        BotaoGlass(String texto, Color corBase) {
+            super(texto);
+            this.corBase   = corBase;
+            this.corClara  = clarear(corBase, 0.16f);
+            this.corEscura = escurecer(corBase, 0.14f);
+            setFont(new Font("Segoe UI", Font.BOLD, 13));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int raio = 10;
+
+            // Sombra fina e neutra
+            g2.setColor(new Color(0, 0, 0, 32));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, raio, raio));
+
+            Color preenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            // Preenchimento levemente translúcido, para manter a leitura de "vidro colorido"
+            g2.setColor(new Color(preenchimento.getRed(), preenchimento.getGreen(), preenchimento.getBlue(), 225));
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio));
+
+            // Reflexo suave no topo — mesma linguagem visual dos campos em vidro
+            Shape clipOriginal = g2.getClip();
+            g2.clip(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio));
+            g2.setColor(new Color(255, 255, 255, 55));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.45), raio - 4, raio - 4));
+            g2.setClip(clipOriginal);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão "fantasma" (texto simples, sem preenchimento em repouso) que
+     * ganha um fundo de vidro fosco suave, animado por hover, reforçando a
+     * hierarquia visual em relação ao botão de ação principal.
+     */
+    private static class BotaoFantasma extends JButton {
+        private boolean sobreMouse = false;
+
+        BotaoFantasma(String texto) {
+            super(texto);
+            setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            setForeground(Color.decode("#6C757D"));
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)  { sobreMouse = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (sobreMouse) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth();
+                int h = getHeight();
+                RoundRectangle2D forma = new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, 10, 10);
+                g2.setColor(new Color(255, 255, 255, 190));
+                g2.fill(forma);
+                g2.setColor(new Color(160, 175, 195, 120));
+                g2.draw(forma);
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão circular pequeno em vidro para remover uma peça da lista —
+     * substitui a antiga tabela + "Remover peça selecionada": cada linha
+     * carrega seu próprio botão de remoção, com destaque vermelho animado
+     * no hover.
+     */
+    private static class BotaoRemoverGlass extends JButton {
+        private boolean sobreMouse = false;
+        private static final Color COR_ERRO = Color.decode("#DC3545");
+
+        BotaoRemoverGlass() {
+            setPreferredSize(new Dimension(26, 26));
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)  { sobreMouse = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int d = Math.min(w, h) - 4;
+            int x = (w - d) / 2;
+            int y = (h - d) / 2;
+
+            g2.setColor(sobreMouse ? new Color(220, 53, 69, 45) : new Color(160, 175, 195, 35));
+            g2.fill(new java.awt.geom.Ellipse2D.Double(x, y, d, d));
+
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.setColor(sobreMouse ? COR_ERRO : Color.decode("#9AA5B1"));
+            double m = d * 0.28;
+            g2.draw(new Line2D.Double(x + m, y + m, x + d - m, y + d - m));
+            g2.draw(new Line2D.Double(x + d - m, y + m, x + m, y + d - m));
+
+            g2.dispose();
+            super.paintComponent(g);
         }
     }
 }

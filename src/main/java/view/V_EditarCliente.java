@@ -11,25 +11,60 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
 
 public class V_EditarCliente extends JPanel {
 
     private JPanel pnl_CardCentral;
+    private PainelQuadro pnl_Quadro;
     private JPanel pnl_Formulario;
     private JLabel lbl_TituloPaginacao;
 
-    private JTextField txt_Nome, txt_CPF, txt_Celular, txt_Email;
-    private JButton btn_Salvar;
+    private CampoTexto txt_Nome, txt_CPF, txt_Celular, txt_Email;
+    private BotaoAcao btn_Salvar;
 
     private final OficinaController controller;
     private final Cliente cliente;
+
+    // Paleta harmonizada com o efeito de vidro das caixas de texto
+    // (mesma linguagem visual usada em V_CadastrarCliente)
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F7FA");
+    private static final Color COR_CARD_TOPO    = Color.decode("#FFFFFF");
+    private static final Color COR_CARD_BASE    = Color.decode("#EEF2F7");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+
+    // Cor de ação (tema original preservado) e variações de hover/pressionado
+    private static final Color COR_ACAO         = Color.decode("#FF9900");
+    private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
+    private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
+
+    // Campo de texto padrão (vidro translúcido, sem relevo/sombra 3D)
+    private static final Color COR_BORDA_PADRAO  = Color.decode("#D7DEE7");
+    private static final Color COR_ERRO          = Color.decode("#D63A44");
+
+    // Ajustes rápidos de tipografia/tamanho
+    private static final int RAIO_COMPONENTE     = 12;
+    private static final int RAIO_CAMPO          = 8;
+    private static final int RAIO_QUADRO         = 16;
+    private static final int TAMANHO_FONTE_LABEL = 16;
+    private static final int TAMANHO_FONTE_CAMPO = 15;
+    private static final int ALTURA_CAMPO        = 23;
+    private static final int TAMANHO_FONTE_BOTAO = 16;
+    private static final int LARGURA_BOTAO       = 260;
+    private static final int ALTURA_BOTAO        = 46;
+    private static final int TAMANHO_ICONE_BOTAO = 20;
 
     public V_EditarCliente(OficinaController controller, Cliente cliente) {
         this.controller = controller;
         this.cliente = cliente;
         setLayout(new GridBagLayout());
-        setBackground(Color.WHITE);
+        setBackground(COR_FUNDO_PAGINA);
         initComponents();
         layoutComponents();
         aplicarFiltros();
@@ -38,16 +73,22 @@ public class V_EditarCliente extends JPanel {
     }
 
     private void initComponents() {
-        pnl_CardCentral = new JPanel(new BorderLayout(0, 20));
-        pnl_CardCentral.setBackground(Color.WHITE);
-        pnl_CardCentral.setPreferredSize(new Dimension(520, 380));
+        pnl_CardCentral = new PainelGradiente(new BorderLayout(0, 20), COR_CARD_TOPO, COR_CARD_BASE);
+        pnl_CardCentral.setPreferredSize(new Dimension(560, 440));
+        pnl_CardCentral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         lbl_TituloPaginacao = new JLabel("Consultar Clientes > Editar Cliente");
         lbl_TituloPaginacao.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl_TituloPaginacao.setForeground(Color.decode("#4D4D4D"));
+        lbl_TituloPaginacao.setForeground(COR_TITULO);
 
-        pnl_Formulario = new JPanel(new GridLayout(4, 1, 0, 12));
-        pnl_Formulario.setBackground(Color.WHITE);
+        // "Quadro" fosco por trás do formulário — dá volume/profundidade,
+        // como se as informações estivessem emolduradas dentro do card
+        pnl_Quadro = new PainelQuadro();
+        pnl_Quadro.setLayout(new BorderLayout());
+        pnl_Quadro.setBorder(BorderFactory.createEmptyBorder(18, 20, 18, 20));
+
+        pnl_Formulario = new JPanel(new GridLayout(4, 1, 0, 14));
+        pnl_Formulario.setOpaque(false);
 
         txt_Nome    = criarTextField();
         txt_CPF     = criarTextField();
@@ -59,19 +100,15 @@ public class V_EditarCliente extends JPanel {
         pnl_Formulario.add(criarContainerVertical(criarLabel("Celular * (ex: (00) 00000-0000)"), txt_Celular));
         pnl_Formulario.add(criarContainerVertical(criarLabel("E-mail *"), txt_Email));
 
-        btn_Salvar = new JButton("SALVAR ALTERAÇÕES");
-        btn_Salvar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn_Salvar.setForeground(Color.WHITE);
-        btn_Salvar.setBackground(Color.decode("#FF9900"));
-        btn_Salvar.setPreferredSize(new Dimension(220, 45));
-        btn_Salvar.setFocusPainted(false);
-        btn_Salvar.setBorderPainted(false);
-        btn_Salvar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        pnl_Quadro.add(pnl_Formulario, BorderLayout.CENTER);
+
+        btn_Salvar = new BotaoAcao("SALVAR ALTERAÇÕES", new IconeSalvar(TAMANHO_ICONE_BOTAO, Color.WHITE));
+        btn_Salvar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
     }
 
     private void layoutComponents() {
         pnl_CardCentral.add(lbl_TituloPaginacao, BorderLayout.NORTH);
-        pnl_CardCentral.add(pnl_Formulario, BorderLayout.CENTER);
+        pnl_CardCentral.add(pnl_Quadro, BorderLayout.CENTER);
 
         JPanel pnl_ContainerBotao = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 10));
         pnl_ContainerBotao.setOpaque(false);
@@ -98,6 +135,9 @@ public class V_EditarCliente extends JPanel {
         ((AbstractDocument) txt_Celular.getDocument()).setDocumentFilter(new FiltroCelular());
     }
 
+    // =========================================================================
+    // VALIDAÇÃO E TRATAMENTO DE ERROS
+    // =========================================================================
     private boolean validarFormulario() {
         limparTodosErros();
         boolean ok = true;
@@ -137,11 +177,8 @@ public class V_EditarCliente extends JPanel {
         return ok;
     }
 
-    private void marcarErro(JTextField field) {
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.RED),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private void marcarErro(CampoTexto field) {
+        field.setEstadoErro(true);
         field.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -151,15 +188,12 @@ public class V_EditarCliente extends JPanel {
         });
     }
 
-    private void limparErro(JTextField field) {
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private void limparErro(CampoTexto field) {
+        field.setEstadoErro(false);
     }
 
     private void limparTodosErros() {
-        for (JTextField f : new JTextField[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email })
+        for (CampoTexto f : new CampoTexto[]{ txt_Nome, txt_CPF, txt_Celular, txt_Email })
             limparErro(f);
     }
 
@@ -200,27 +234,19 @@ public class V_EditarCliente extends JPanel {
 
     private JLabel criarLabel(String texto) {
         JLabel l = new JLabel(texto);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(Color.decode("#333333"));
+        l.setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_LABEL));
+        l.setForeground(COR_LABEL);
         return l;
     }
 
-    private JTextField criarTextField() {
-        JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        f.setPreferredSize(new Dimension(100, 36));
-        f.setBackground(Color.WHITE);
-        f.setForeground(Color.BLACK);
-        f.setCaretColor(Color.BLACK);
-        f.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(6, Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(2, 10, 2, 10)
-        ));
+    private CampoTexto criarTextField() {
+        CampoTexto f = new CampoTexto();
+        f.setPreferredSize(new Dimension(100, ALTURA_CAMPO + 16));
         return f;
     }
 
     // =========================================================================
-    // INNER CLASSES — DocumentFilter
+    // INNER CLASSES — DocumentFilter (regras de negócio inalteradas)
     // =========================================================================
     private static class FiltroLetras extends DocumentFilter {
         @Override
@@ -296,18 +322,292 @@ public class V_EditarCliente extends JPanel {
         }
     }
 
-    private static class RoundedBorder implements javax.swing.border.Border {
-        private final int raio;
+    // =========================================================================
+    // INNER CLASSES — Glassmorphism / animações
+    // (mesma linguagem visual de V_CadastrarCliente — não alterar lá)
+    // =========================================================================
+
+    /**
+     * Campo de texto com efeito de glassmorphism: vidro fosco translúcido,
+     * brilho difuso no topo (camadas translúcidas sobrepostas) e um
+     * indicador de foco ANIMADO — linha de destaque que cresce suavemente a
+     * partir do centro ao receber foco e recolhe ao perdê-lo. Sem sombra ou
+     * relevo 3D. Apenas pintura do componente — nenhuma regra de negócio.
+     */
+    private static class CampoTexto extends JTextField {
+        private boolean erro = false;
+        private boolean focado = false;
+        private float progressoFoco = 0f; // 0 = sem linha de destaque, 1 = linha completa
+        private Timer timerFoco;
+
+        CampoTexto() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
+            setForeground(COR_TEXTO_CAMPO);
+            setCaretColor(COR_TEXTO_CAMPO);
+            setSelectionColor(new Color(255, 153, 0, 90));
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+
+            // Anima a transição do indicador de foco em ~12 passos (~180ms)
+            timerFoco = new Timer(15, e -> {
+                float alvo = focado ? 1f : 0f;
+                float passo = 0.16f;
+                if (Math.abs(progressoFoco - alvo) <= passo) {
+                    progressoFoco = alvo;
+                    timerFoco.stop();
+                } else {
+                    progressoFoco += (alvo > progressoFoco) ? passo : -passo;
+                }
+                repaint();
+            });
+
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; timerFoco.start(); }
+                @Override public void focusLost(FocusEvent e)   { focado = false; timerFoco.start(); }
+            });
+        }
+
+        void setEstadoErro(boolean valor) {
+            this.erro = valor;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            RoundRectangle2D forma = new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, RAIO_CAMPO, RAIO_CAMPO);
+
+            // Preenchimento translúcido — o vidro propriamente dito
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, erro ? 195 : 175),
+                    0, h, new Color(255, 255, 255, erro ? 140 : 115)
+            );
+            g2.setPaint(vidro);
+            g2.fill(forma);
+
+            // Brilho difuso no topo — camadas com alfa decrescente,
+            // simulando o desfoque de um vidro fosco
+            Shape clipOriginal = g2.getClip();
+            g2.clip(forma);
+            for (int i = 0; i < 4; i++) {
+                int alpha = 22 - i * 5;
+                if (alpha <= 0) break;
+                double raio = h * (1.1 - i * 0.18);
+                g2.setColor(new Color(255, 255, 255, alpha));
+                g2.fill(new Ellipse2D.Double(-raio * 0.25, -raio * 0.85, w + raio * 0.5, raio * 1.3));
+            }
+            g2.setClip(clipOriginal);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            // Contorno base, fino e neutro (vermelho em erro)
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(erro ? COR_ERRO : COR_BORDA_PADRAO);
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 2, RAIO_CAMPO, RAIO_CAMPO));
+
+            // Realce claro só na borda superior — luz "pegando" a borda do vidro
+            if (!erro) {
+                g2.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(new Color(255, 255, 255, 170));
+                g2.draw(new Line2D.Double(RAIO_CAMPO * 0.7, 1.1, w - RAIO_CAMPO * 0.7, 1.1));
+            }
+
+            // Indicador de foco ANIMADO: linha de destaque crescendo do centro.
+            // Em erro, fica sempre totalmente visível até o campo ser corrigido.
+            float progresso = erro ? 1f : progressoFoco;
+            float larguraMax = Math.max(0, w - 16);
+            float largura = larguraMax * progresso;
+            if (largura > 0.5f) {
+                float x = (w - largura) / 2f;
+                float y = h - 2f;
+                g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(erro ? COR_ERRO : COR_ACAO);
+                g2.draw(new Line2D.Double(x, y, x + largura, y));
+            }
+
+            g2.dispose();
+        }
+    }
+
+    /**
+     * Painel com fundo em gradiente suave (branco levemente esfriado em
+     * direção a um cinza-azulado), usado no cartão externo.
+     */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, getHeight(), corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 20, 20));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * "Quadro" fosco por trás das informações do formulário: um painel de
+     * vidro leitoso, mais opaco que os campos, com uma sombra suave por
+     * baixo e um leve realce no topo — como se o formulário estivesse
+     * emoldurado dentro do card, dando volume/profundidade em vez de ficar
+     * "flutuando" direto sobre o gradiente do card.
+     */
+    private static class PainelQuadro extends JPanel {
+        PainelQuadro() {
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            RoundRectangle2D forma = new RoundRectangle2D.Double(1, 1, w - 2, h - 3, RAIO_QUADRO, RAIO_QUADRO);
+
+            // Sombra suave por baixo, dando a sensação de que o quadro está
+            // levemente "elevado/recuado" em relação ao fundo do card
+            g2.setColor(new Color(70, 90, 120, 28));
+            g2.fill(new RoundRectangle2D.Double(1, 3, w - 2, h - 3, RAIO_QUADRO, RAIO_QUADRO));
+
+            // Vidro fosco — mais opaco que os campos de texto, para servir
+            // de "moldura" sólida por trás deles
+            GradientPaint vidro = new GradientPaint(
+                    0, 0, new Color(255, 255, 255, 165),
+                    0, h, new Color(255, 255, 255, 205)
+            );
+            g2.setPaint(vidro);
+            g2.fill(forma);
+
+            // Realce difuso no topo, mesma linguagem dos campos em vidro
+            Shape clipOriginal = g2.getClip();
+            g2.clip(forma);
+            g2.setColor(new Color(255, 255, 255, 60));
+            g2.fill(new RoundRectangle2D.Double(0, -h * 0.6, w, h * 0.9, RAIO_QUADRO, RAIO_QUADRO));
+            g2.setClip(clipOriginal);
+
+            // Contorno fino
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(new Color(160, 175, 195, 130));
+            g2.draw(forma);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Botão de ação com a mesma linguagem visual dos campos em vidro:
+     * cantos arredondados, sombra suave, reflexo no topo e reação animada
+     * a hover/clique (troca de cor + repaint). A cor de ação original é
+     * mantida.
+     */
+    private static class BotaoAcao extends JButton {
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Icon icone) {
+            super(texto, icone);
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setIconTextGap(10);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 22, 8, 22));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            // Sombra fina e neutra, mesma linguagem visual usada nos campos em vidro
+            g2.setColor(new Color(0, 0, 0, 35));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? COR_ACAO_ESCURA : (sobreMouse ? COR_ACAO_CLARA : COR_ACAO);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            // Reflexo suave no topo, reforçando a sensação de vidro dos campos
+            g2.setColor(new Color(255, 255, 255, 25));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /**
+     * Ícone vetorial de "salvar" (disquete estilizado), desenhado com
+     * Java2D — sem depender de arquivo externo, escala com o botão.
+     */
+    private static class IconeSalvar implements Icon {
+        private final int tamanho;
         private final Color cor;
-        RoundedBorder(int raio, Color cor) { this.raio = raio; this.cor = cor; }
-        public Insets getBorderInsets(Component c) { return new Insets(raio/2, raio/2, raio/2, raio/2); }
-        public boolean isBorderOpaque() { return false; }
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(cor);
-            g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
-            g2d.dispose();
+
+        IconeSalvar(int tamanho, Color cor) {
+            this.tamanho = tamanho;
+            this.cor = cor;
+        }
+
+        @Override public int getIconWidth()  { return tamanho; }
+        @Override public int getIconHeight() { return tamanho; }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.translate(x, y);
+            double escala = tamanho / 24.0;
+            g2.scale(escala, escala);
+            g2.setColor(cor);
+            g2.setStroke(new BasicStroke(2.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Corpo do disquete
+            g2.draw(new RoundRectangle2D.Double(2, 2, 20, 20, 3, 3));
+            // Aba superior direita (dobra do disquete)
+            g2.draw(new Line2D.Double(15, 2, 15, 8));
+            g2.draw(new Line2D.Double(15, 8, 6, 8));
+            g2.draw(new Line2D.Double(6, 8, 6, 2));
+            // "Etiqueta" inferior
+            g2.draw(new RoundRectangle2D.Double(6.5, 13.5, 11, 8, 2, 2));
+
+            g2.dispose();
         }
     }
 }

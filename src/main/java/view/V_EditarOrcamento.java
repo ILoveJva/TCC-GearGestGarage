@@ -2,6 +2,7 @@ package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
 import br.com.oficina.atendimento.dto.OrcamentoResponseDTO;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import br.com.oficina.estoque.PecaEntity;
 import controller.OficinaController;
 
@@ -400,7 +401,7 @@ public class V_EditarOrcamento extends JPanel {
                 double valor = (Double) triple[1];
                 String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
                 String fabricante = triple.length > 3 ? (String) triple[3] : "";
-                pecasSelecionadas.add(peca.getIdPeca());
+                pecasSelecionadas.add(peca.getIdCatalogoPeca());
                 valoresPecasSelecionadas.add(valor);
                 nomesTecnicosPecas.add(nomeTecnico);
                 fabricantesPecas.add(fabricante);
@@ -441,9 +442,9 @@ public class V_EditarOrcamento extends JPanel {
 
     private void carregarPecas() {
         cmb_Peca.removeAllItems();
-        List<PecaEntity> pecas = controller.listarTodasPecas();
+        List<CatalogoPecaEntity> pecas = controller.listarTodasPecas();
         if (pecas.isEmpty()) cmb_Peca.addItem(new ItemPeca(null));
-        else for (PecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
+        else for (CatalogoPecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
     }
 
     private void adicionarItem() {
@@ -461,7 +462,7 @@ public class V_EditarOrcamento extends JPanel {
         if (sel == null || sel.peca == null) return;
         String nomeTecnico = txt_NomeTecnicoPeca.getText().trim();
         String fabricante = txt_FabricantePeca.getText().trim();
-        pecasSelecionadas.add(sel.peca.getIdPeca());
+        pecasSelecionadas.add(sel.peca.getIdCatalogoPeca());
         valoresPecasSelecionadas.add(0.0);
         nomesTecnicosPecas.add(nomeTecnico);
         fabricantesPecas.add(fabricante);
@@ -503,8 +504,8 @@ public class V_EditarOrcamento extends JPanel {
 
     // ===== inner classes =====
     private static class ItemPeca {
-        final PecaEntity peca;
-        ItemPeca(PecaEntity p) { this.peca = p; }
+        final CatalogoPecaEntity peca;
+        ItemPeca(CatalogoPecaEntity p) { this.peca = p; }
         @Override public String toString() {
             return peca != null ? peca.getNomeExibicao() : "(nenhuma peça cadastrada)";
         }

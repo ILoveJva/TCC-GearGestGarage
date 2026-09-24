@@ -1,7 +1,7 @@
 package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -291,7 +291,7 @@ public class V_CadastrarItemServico extends JPanel {
     private void adicionarPeca() {
         ItemPeca sel = (ItemPeca) cmb_Peca.getSelectedItem();
         if (sel == null || sel.peca == null) return;
-        idPecasSelecionadas.add(sel.peca.getIdPeca());
+        idPecasSelecionadas.add(sel.peca.getIdCatalogoPeca());
         mdl_Pecas.addRow(new Object[]{sel.peca.getNomePopular()});
     }
 
@@ -339,7 +339,7 @@ public class V_CadastrarItemServico extends JPanel {
 
     private void carregarPecas() {
         cmb_Peca.removeAllItems();
-        for (PecaEntity p : controller.listarTodasPecas())
+        for (CatalogoPecaEntity p : controller.listarTodasPecas())
             cmb_Peca.addItem(new ItemPeca(p));
     }
 
@@ -412,8 +412,8 @@ public class V_CadastrarItemServico extends JPanel {
 
     // ===== inner classes =====
     private static class ItemPeca {
-        final PecaEntity peca;
-        ItemPeca(PecaEntity p) { this.peca = p; }
+        final CatalogoPecaEntity peca;
+        ItemPeca(CatalogoPecaEntity p) { this.peca = p; }
         @Override public String toString() { return peca != null ? peca.getNomePopular() : "(sem peça)"; }
     }
 

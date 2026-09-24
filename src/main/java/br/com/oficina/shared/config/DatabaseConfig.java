@@ -80,9 +80,6 @@ public final class DatabaseConfig {
         con.registrarTabela(new Tabela("modelo", "id_modelo",
             "id_modelo", "nome", "ano", "tipo", "id_montadora"));
 
-        con.registrarTabela(new Tabela("fabricante_peca", "id_fabricante_peca",
-            "id_fabricante_peca", "nome", "pais"));
-
         con.registrarTabela(new Tabela("veiculo", "id_veiculo",
             "id_veiculo", "placa", "codigo", "id_cliente", "id_modelo"));
 
@@ -90,8 +87,11 @@ public final class DatabaseConfig {
             "id_detalhes", "id_veiculo", "motor", "cambio", "direcao",
             "sistema_freios", "cor", "vin"));
 
+        con.registrarTabela(new Tabela("catalogo_peca", "id_catalogo_peca",
+            "id_catalogo_peca", "nome_popular", "sistema", "vida_util_tempo", "vida_util_km"));
+
         con.registrarTabela(new Tabela("peca", "id_peca",
-            "id_peca", "nome_popular", "sistema", "vida_util_tempo", "vida_util_km", "quantidade_estoque"));
+            "id_peca", "id_catalogo_peca", "nome_tecnico", "fabricante", "valor", "quantidade_estoque"));
 
         con.registrarTabela(new Tabela("movimentacao_estoque", "id_movimentacao",
             "id_movimentacao", "id_peca", "tipo", "quantidade", "data_movimentacao",
@@ -118,13 +118,13 @@ public final class DatabaseConfig {
             "sistema", "validade_km", "validade_meses"));
 
         con.registrarTabela(new Tabela("catalogo_servico_peca", "id_catalogo_servico_peca",
-            "id_catalogo_servico_peca", "id_catalogo_servico", "id_peca"));
+            "id_catalogo_servico_peca", "id_catalogo_servico", "id_catalogo_peca"));
 
         con.registrarTabela(new Tabela("orcamento_servico", "id_orcamento_servico",
             "id_orcamento_servico", "id_orcamento", "id_catalogo_servico", "valor_cobrado"));
 
         con.registrarTabela(new Tabela("orcamento_peca", "id_orcamento_peca",
-            "id_orcamento_peca", "id_orcamento", "id_peca", "nome_tecnico", "fabricante", "valor"));
+            "id_orcamento_peca", "id_orcamento", "id_peca"));
 
         con.registrarTabela(new Tabela("despesa", "id_despesa",
             "id_despesa", "descricao", "categoria", "valor", "data_despesa",

@@ -1,6 +1,6 @@
 package view;
 
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
@@ -23,8 +23,8 @@ public class V_VisualizarPecas extends JPanel {
     private final OficinaController controller;
     private DefaultTableModel mdl;
     private JTable tabela;
-    private final List<PecaEntity> todasPecas = new ArrayList<>();
-    private final List<PecaEntity> pecasFiltradas = new ArrayList<>();
+    private final List<CatalogoPecaEntity> todasPecas = new ArrayList<>();
+    private final List<CatalogoPecaEntity> pecasFiltradas = new ArrayList<>();
 
     private JTextField txt_Busca;
     private JComboBox<String> cmb_Sistema;
@@ -174,18 +174,18 @@ public class V_VisualizarPecas extends JPanel {
         String sistemaCode = SISTEMAS_CODE[cmb_Sistema.getSelectedIndex()];
 
         pecasFiltradas.clear();
-        for (PecaEntity p : todasPecas) {
+        for (CatalogoPecaEntity p : todasPecas) {
             if (!busca.isEmpty() && !p.getNomePopular().toLowerCase().contains(busca)) continue;
             if (sistemaCode != null && !sistemaCode.equals(p.getSistema())) continue;
             pecasFiltradas.add(p);
         }
 
         mdl.setRowCount(0);
-        for (PecaEntity p : pecasFiltradas) {
+        for (CatalogoPecaEntity p : pecasFiltradas) {
             String tempo = "Não informado".equals(p.getVidaUtilTempo()) ? "—" : (p.getVidaUtilTempo() != null ? p.getVidaUtilTempo() : "—");
             String km    = "Não informado".equals(p.getVidaUtilKm())    ? "—" : (p.getVidaUtilKm()    != null ? p.getVidaUtilKm()    : "—");
             mdl.addRow(new Object[]{
-                String.format("%04d", p.getIdPeca()),
+                String.format("%04d", p.getIdCatalogoPeca()),
                 p.getNomePopular(),
                 p.getSistemaLabel(),
                 tempo,

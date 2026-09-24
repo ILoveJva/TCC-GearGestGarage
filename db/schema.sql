@@ -102,15 +102,26 @@ CREATE TABLE detalhes_veiculo (
     CONSTRAINT fk_detalhes_veiculo FOREIGN KEY (id_veiculo) REFERENCES veiculo (id_veiculo) ON DELETE CASCADE
 );
 
--- Peças genéricas: independentes de modelo/veículo; aplicação específica fica no orçamento.
-CREATE TABLE peca (
-    id_peca INT NOT NULL AUTO_INCREMENT,
+-- Catálogo de peças: tipo genérico, independente de fabricante/preço (ex.: "Pastilha de freio dianteira").
+CREATE TABLE catalogo_peca (
+    id_catalogo_peca INT NOT NULL AUTO_INCREMENT,
     nome_popular VARCHAR(150) NOT NULL,
     sistema VARCHAR(50) NOT NULL DEFAULT 'OUTROS',
     vida_util_tempo VARCHAR(50) NOT NULL DEFAULT 'Não informado',
     vida_util_km VARCHAR(50) NOT NULL DEFAULT 'Não informado',
+    PRIMARY KEY (id_catalogo_peca)
+);
+
+-- Peças reais: SKU comprado de um item do catálogo, com fabricante, nome técnico, valor e estoque próprios.
+CREATE TABLE peca (
+    id_peca INT NOT NULL AUTO_INCREMENT,
+    id_catalogo_peca INT NOT NULL,
+    nome_tecnico VARCHAR(150) NOT NULL DEFAULT '',
+    fabricante VARCHAR(150) NOT NULL DEFAULT '',
+    valor DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     quantidade_estoque INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id_peca)
+    PRIMARY KEY (id_peca),
+    CONSTRAINT fk_peca_catalogo FOREIGN KEY (id_catalogo_peca) REFERENCES catalogo_peca (id_catalogo_peca)
 );
 
 CREATE TABLE orcamento (
@@ -205,14 +216,14 @@ CREATE TABLE catalogo_servico (
     PRIMARY KEY (id_catalogo_servico)
 );
 
--- Peças padrão associadas a um item do catálogo (auto-atribuídas ao orçamento)
+-- Itens de catálogo de peça associados a um item do catálogo de serviço (auto-atribuídos ao orçamento)
 CREATE TABLE catalogo_servico_peca (
     id_catalogo_servico_peca INT NOT NULL AUTO_INCREMENT,
     id_catalogo_servico INT NOT NULL,
-    id_peca INT NOT NULL,
+    id_catalogo_peca INT NOT NULL,
     PRIMARY KEY (id_catalogo_servico_peca),
     CONSTRAINT fk_catpeca_catalogo FOREIGN KEY (id_catalogo_servico) REFERENCES catalogo_servico (id_catalogo_servico),
-    CONSTRAINT fk_catpeca_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca)
+    CONSTRAINT fk_catpeca_peca FOREIGN KEY (id_catalogo_peca) REFERENCES catalogo_peca (id_catalogo_peca)
 );
 
 -- Itens de serviço vinculados a um orçamento
@@ -256,14 +267,11 @@ CREATE TABLE midias_ordemservico (
     CONSTRAINT fk_midia_servico FOREIGN KEY (id_servico) REFERENCES servico (id_servico) ON DELETE CASCADE
 );
 
--- Peças a substituir vinculadas a um orçamento
+-- Peças a substituir vinculadas a um orçamento (nome_tecnico/fabricante/valor vêm da peça real referenciada)
 CREATE TABLE orcamento_peca (
     id_orcamento_peca INT NOT NULL AUTO_INCREMENT,
     id_orcamento INT NOT NULL,
     id_peca INT NOT NULL,
-    nome_tecnico VARCHAR(150) NOT NULL DEFAULT '',
-    fabricante VARCHAR(150) NOT NULL DEFAULT '',
-    valor DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     PRIMARY KEY (id_orcamento_peca),
     CONSTRAINT fk_orcpeca_orcamento FOREIGN KEY (id_orcamento) REFERENCES orcamento (id_orcamento),
     CONSTRAINT fk_orcpeca_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca)

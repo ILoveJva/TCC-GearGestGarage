@@ -16,6 +16,7 @@ class OficinaController_backendBridge {
     final ClienteController clienteController;
     final FuncionarioController funcionarioController;
     final VeiculoController veiculoController;
+    final CatalogoPecaController catalogoPecaController;
     final PecaController pecaController;
     final OrcamentoController orcamentoController;
     final ServicoController servicoController;
@@ -34,6 +35,8 @@ class OficinaController_backendBridge {
         this.clienteController = new ClienteController(new ClienteService(usuarioRepo));
         this.funcionarioController = new FuncionarioController(new FuncionarioService(usuarioRepo));
         this.veiculoController = new VeiculoController(new VeiculoService(new VeiculoRepository(con), usuarioRepo));
+        CatalogoPecaRepository catalogoPecaRepo = new CatalogoPecaRepository(con);
+        this.catalogoPecaController = new CatalogoPecaController(new CatalogoPecaService(catalogoPecaRepo));
         PecaRepository pecaRepo = new PecaRepository(con);
         this.pecaController = new PecaController(new PecaService(pecaRepo));
         this.orcamentoController = new OrcamentoController(new OrcamentoService(new OrcamentoRepository(con)));

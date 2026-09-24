@@ -1,7 +1,7 @@
 package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
@@ -263,7 +263,7 @@ public class V_EditarItemServico extends JPanel {
 
     private void carregarPecasDisponiveis() {
         cmb_NovaPeca.removeAllItems();
-        for (PecaEntity p : controller.listarTodasPecas())
+        for (CatalogoPecaEntity p : controller.listarTodasPecas())
             cmb_NovaPeca.addItem(new ItemPeca(p));
     }
 
@@ -282,8 +282,8 @@ public class V_EditarItemServico extends JPanel {
         } else {
             for (Map.Entry<Long, Long> entry : links.entrySet()) {
                 long idLink = entry.getKey();
-                PecaEntity p = controller.listarTodasPecas().stream()
-                        .filter(x -> x.getIdPeca().equals(entry.getValue())).findFirst().orElse(null);
+                CatalogoPecaEntity p = controller.listarTodasPecas().stream()
+                        .filter(x -> x.getIdCatalogoPeca().equals(entry.getValue())).findFirst().orElse(null);
                 String nome = p != null ? p.getNomePopular() : "(id " + entry.getValue() + ")";
                 pnl_ListaPecas.add(criarLinhaPeca(nome, idLink));
             }
@@ -299,11 +299,11 @@ public class V_EditarItemServico extends JPanel {
             DialogoAlerta.aviso(this, "Cadastre peças antes de associá-las.", "Sem peças"); return;
         }
         // evitar duplicata na UI
-        if (linksAtuais.containsValue(sel.peca.getIdPeca())) {
+        if (linksAtuais.containsValue(sel.peca.getIdCatalogoPeca())) {
             DialogoAlerta.aviso(this, "Esta peça já está associada ao item.", "Duplicata"); return;
         }
         try {
-            controller.adicionarPecaAItemCatalogo(item.getIdCatalogoServico(), sel.peca.getIdPeca());
+            controller.adicionarPecaAItemCatalogo(item.getIdCatalogoServico(), sel.peca.getIdCatalogoPeca());
             carregarPecasAssociadas();
             int qtdOrc = controller.contarOrcamentosComItemCatalogo(item.getIdCatalogoServico());
             String msg = "Peça adicionada!" + (qtdOrc > 0
@@ -429,8 +429,8 @@ public class V_EditarItemServico extends JPanel {
     // ========= inner classes =========
 
     private static class ItemPeca {
-        final PecaEntity peca;
-        ItemPeca(PecaEntity p) { this.peca = p; }
+        final CatalogoPecaEntity peca;
+        ItemPeca(CatalogoPecaEntity p) { this.peca = p; }
         @Override public String toString() { return peca != null ? peca.getNomePopular() : ""; }
     }
 

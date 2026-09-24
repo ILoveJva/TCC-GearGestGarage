@@ -105,24 +105,24 @@ public class CatalogoServicoRepository {
     }
 
     // ---- Peças padrão do catálogo ----
-    public void vincularPecaAoCatalogo(long idCatalogoServico, long idPeca) {
+    public void vincularPecaAoCatalogo(long idCatalogoServico, long idCatalogoPeca) {
         tCatalogoPeca.inserir(new Registro()
             .set("id_catalogo_servico", idCatalogoServico)
-            .set("id_peca", idPeca));
+            .set("id_catalogo_peca", idCatalogoPeca));
     }
 
     public List<Long> listarIdsPecasDoCatalogo(long idCatalogoServico) {
         List<Long> out = new ArrayList<>();
         for (Registro r : tCatalogoPeca.filtrar(x -> x.getLong("id_catalogo_servico") == idCatalogoServico))
-            out.add(r.getLong("id_peca"));
+            out.add(r.getLong("id_catalogo_peca"));
         return out;
     }
 
-    /** Retorna os pares {id_catalogo_servico_peca, id_peca} para uso na remoção individual. */
+    /** Retorna os pares {id_catalogo_servico_peca, id_catalogo_peca} para uso na remoção individual. */
     public java.util.Map<Long, Long> listarLinksPecasDoCatalogo(long idCatalogoServico) {
         java.util.Map<Long, Long> out = new java.util.LinkedHashMap<>();
         for (Registro r : tCatalogoPeca.filtrar(x -> x.getLong("id_catalogo_servico") == idCatalogoServico))
-            out.put(r.getLong("id_catalogo_servico_peca"), r.getLong("id_peca"));
+            out.put(r.getLong("id_catalogo_servico_peca"), r.getLong("id_catalogo_peca"));
         return out;
     }
 

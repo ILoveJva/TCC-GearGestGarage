@@ -1,7 +1,7 @@
 package view;
 
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
@@ -216,11 +216,11 @@ public class V_EntradaEstoque extends JPanel {
         repaint();
     }
 
-    /** Sugere o destino conforme o estoque atual da peça selecionada, sem travar a escolha do usuário. */
+    /** Sugere o destino conforme o estoque atual (agregado) da peça selecionada, sem travar a escolha do usuário. */
     private void sugerirDestinoPelaPeca() {
         ItemPeca sel = (ItemPeca) cmb_Peca.getSelectedItem();
         if (sel == null || sel.peca == null) return;
-        if (sel.peca.getQuantidadeEstoque() <= 0 && cmb_OS.getItemCount() > 0) {
+        if (sel.quantidadeEstoque <= 0 && cmb_OS.getItemCount() > 0) {
             rad_OSDireto.setSelected(true);
         } else {
             rad_Estoque.setSelected(true);
@@ -268,7 +268,7 @@ public class V_EntradaEstoque extends JPanel {
                 return;
             }
             try {
-                controller.adicionarPecaDiretoOS(osSel.dto.idOrcamento(), sel.peca.getIdPeca(), qtd,
+                controller.adicionarPecaDiretoOS(osSel.dto.idOrcamento(), sel.peca.getIdCatalogoPeca(), qtd,
                         txt_NomeTecnico.getText().trim(), txt_Fabricante.getText().trim(), valorUnitario);
                 DialogoAlerta.sucesso(this, qtd + " unidade(s) de \"" + sel.peca.getNomePopular()
                         + "\" adicionada(s) direto à " + osSel + " (sem passar pelo estoque).", "Sucesso");
@@ -280,7 +280,8 @@ public class V_EntradaEstoque extends JPanel {
             }
         } else {
             try {
-                controller.registrarEntradaEstoque(sel.peca.getIdPeca(), qtd, valorUnitario, observacao);
+                controller.registrarEntradaEstoque(sel.peca.getIdCatalogoPeca(), qtd, valorUnitario, observacao,
+                        txt_NomeTecnico.getText().trim(), txt_Fabricante.getText().trim());
                 DialogoAlerta.sucesso(this, "Entrada de " + qtd + " unidade(s) de \"" + sel.peca.getNomePopular()
                         + "\" registrada no estoque com sucesso!", "Sucesso");
                 limparCampos();
@@ -303,11 +304,12 @@ public class V_EntradaEstoque extends JPanel {
     private void carregarPecas() {
         Object selecionado = cmb_Peca.getSelectedItem();
         cmb_Peca.removeAllItems();
-        for (PecaEntity p : controller.listarEstoque()) cmb_Peca.addItem(new ItemPeca(p));
+        for (CatalogoPecaEntity p : controller.listarEstoque())
+            cmb_Peca.addItem(new ItemPeca(p, controller.quantidadeEstoqueCatalogo(p.getIdCatalogoPeca())));
         if (selecionado instanceof ItemPeca ip && ip.peca != null) {
             for (int i = 0; i < cmb_Peca.getItemCount(); i++) {
                 ItemPeca it = cmb_Peca.getItemAt(i);
-                if (it.peca != null && it.peca.getIdPeca().equals(ip.peca.getIdPeca())) {
+                if (it.peca != null && it.peca.getIdCatalogoPeca().equals(ip.peca.getIdCatalogoPeca())) {
                     cmb_Peca.setSelectedIndex(i);
                     break;
                 }
@@ -402,11 +404,12 @@ public class V_EntradaEstoque extends JPanel {
 
     // ===== inner classes (modelo de dados — lógica não alterada) =====
     private static class ItemPeca {
-        final PecaEntity peca;
-        ItemPeca(PecaEntity p) { this.peca = p; }
+        final CatalogoPecaEntity peca;
+        final int quantidadeEstoque;
+        ItemPeca(CatalogoPecaEntity p, int quantidadeEstoque) { this.peca = p; this.quantidadeEstoque = quantidadeEstoque; }
         @Override public String toString() {
             if (peca == null) return "(sem peça)";
-            return peca.getNomePopular() + "  (estoque: " + peca.getQuantidadeEstoque() + ")";
+            return peca.getNomePopular() + "  (estoque: " + quantidadeEstoque + ")";
         }
     }
 

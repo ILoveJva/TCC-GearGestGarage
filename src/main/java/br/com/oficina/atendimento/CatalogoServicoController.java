@@ -47,8 +47,8 @@ public class CatalogoServicoController {
         return service.listarIdOrcamentosComItem(idCatalogoServico);
     }
 
-    public void vincularPecaAoCatalogo(long idCatalogoServico, long idPeca) {
-        service.vincularPecaAoCatalogo(idCatalogoServico, idPeca);
+    public void vincularPecaAoCatalogo(long idCatalogoServico, long idCatalogoPeca) {
+        service.vincularPecaAoCatalogo(idCatalogoServico, idCatalogoPeca);
     }
 
     public List<Long> listarIdsPecasDoCatalogo(long idCatalogoServico) {

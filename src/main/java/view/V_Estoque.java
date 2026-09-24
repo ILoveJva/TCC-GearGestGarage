@@ -1,5 +1,6 @@
 package view;
 
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import br.com.oficina.estoque.MovimentacaoEstoqueEntity;
 import br.com.oficina.estoque.PecaEntity;
 import controller.OficinaController;
@@ -15,9 +16,12 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Página do Estoque: mostra a quantidade atual de cada peça e o histórico de
@@ -68,6 +72,12 @@ public class V_Estoque extends JPanel {
     private static final int ALTURA_CABECALHO    = 26;
 
     private final OficinaController controller;
+
+    // Estoque atual: mestre-detalhe (catálogo ▸ peças reais). Estado de expansão por id_catalogo_peca.
+    private final Set<Long> catalogosExpandidos = new HashSet<>();
+    private final List<LinhaEstoque> linhasEstoque = new ArrayList<>();
+    private DefaultTableModel mdlEstoque;
+    private JTable tabelaEstoque;
 
     public V_Estoque(OficinaController controller) {
         this.controller = controller;
@@ -129,55 +139,98 @@ public class V_Estoque extends JPanel {
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BorderLayout());
 
-        String[] cols = {"Cód.", "Peça", "Sistema", "Qtd.", "Situação"};
-        DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-
-        List<PecaEntity> pecas = controller.listarEstoque();
-        for (PecaEntity p : pecas) {
-            mdl.addRow(new Object[]{
-                    String.format("%04d", p.getIdPeca()),
-                    p.getNomePopular(),
-                    p.getSistemaLabel(),
-                    p.getQuantidadeEstoque(),
-                    situacao(p.getQuantidadeEstoque())
-            });
+        if (controller.listarEstoque().isEmpty()) {
+            corpo.add(rotuloVazio("Nenhuma peça cadastrada. Cadastre peças no catálogo para controlar o estoque."), BorderLayout.CENTER);
+            return card;
         }
 
-        JTable tabela = new JTable(mdl);
-        estilizarTabela(tabela);
-        tabela.setRowHeight(28);
-        tabela.getColumnModel().getColumn(0).setMaxWidth(60);
-        tabela.getColumnModel().getColumn(3).setMaxWidth(70);
-        DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
-        centro.setHorizontalAlignment(SwingConstants.CENTER);
-        tabela.getColumnModel().getColumn(3).setCellRenderer(centro);
+        String[] cols = {"", "Peça", "Sistema / Fabricante", "Qtd.", "Situação"};
+        mdlEstoque = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        construirLinhasEstoque();
 
-        // Situação colorida — sobrepõe o CelulaBrancaRenderer padrão só nessa coluna
-        tabela.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
+        tabelaEstoque = new JTable(mdlEstoque);
+        estilizarTabela(tabelaEstoque);
+        tabelaEstoque.setRowHeight(28);
+        tabelaEstoque.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        tabelaEstoque.getColumnModel().getColumn(0).setMaxWidth(24);
+        tabelaEstoque.getColumnModel().getColumn(3).setMaxWidth(70);
+
+        tabelaEstoque.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
+                JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
+                c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+                c.setHorizontalAlignment(SwingConstants.CENTER);
+                c.setForeground(COR_ACAO);
+                c.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                c.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+                return c;
+            }
+        });
+
+        DefaultTableCellRenderer centro = new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
+                JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
+                c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+                c.setForeground(COR_TEXTO_CAMPO);
+                c.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+                c.setHorizontalAlignment(SwingConstants.CENTER);
+                estilizarLinha(c, row);
+                return c;
+            }
+        };
+        tabelaEstoque.getColumnModel().getColumn(3).setCellRenderer(centro);
+
+        // Colunas "Peça" e "Sistema/Fabricante" — linhas de peça real vêm indentadas/mais claras
+        DefaultTableCellRenderer texto = new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
+                JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
+                c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+                c.setForeground(COR_TEXTO_CAMPO);
+                c.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+                estilizarLinha(c, row);
+                return c;
+            }
+        };
+        tabelaEstoque.getColumnModel().getColumn(1).setCellRenderer(texto);
+        tabelaEstoque.getColumnModel().getColumn(2).setCellRenderer(texto);
+
+        // Situação colorida — só preenchida nas linhas-catálogo
+        tabelaEstoque.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
                 c.setHorizontalAlignment(SwingConstants.CENTER);
                 c.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                c.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
                 c.setOpaque(true);
                 if (!s) {
                     switch (String.valueOf(v)) {
                         case "Sem estoque" -> { c.setForeground(Color.decode("#C0392B")); c.setBackground(Color.decode("#FDECEA")); }
                         case "Baixo"       -> { c.setForeground(Color.decode("#9A6700")); c.setBackground(Color.decode("#FEF6E4")); }
-                        default            -> { c.setForeground(Color.decode("#1E8449")); c.setBackground(Color.decode("#E9F7EF")); }
+                        case "OK"          -> { c.setForeground(Color.decode("#1E8449")); c.setBackground(Color.decode("#E9F7EF")); }
+                        default            -> { c.setForeground(COR_TEXTO_CAMPO); c.setBackground(COR_TABELA_FUNDO); }
                     }
+                } else {
+                    c.setBackground(COR_TABELA_SELECAO);
                 }
                 return c;
             }
         });
 
-        if (mdl.getRowCount() == 0) {
-            corpo.add(rotuloVazio("Nenhuma peça cadastrada. Cadastre peças no catálogo para controlar o estoque."), BorderLayout.CENTER);
-            return card;
-        }
+        tabelaEstoque.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                int row = tabelaEstoque.rowAtPoint(e.getPoint());
+                if (row < 0 || row >= linhasEstoque.size()) return;
+                LinhaEstoque linha = linhasEstoque.get(row);
+                if (!linha.isCatalogo) return;
+                if (catalogosExpandidos.contains(linha.id)) catalogosExpandidos.remove(linha.id);
+                else catalogosExpandidos.add(linha.id);
+                construirLinhasEstoque();
+            }
+        });
 
-        JScrollPane sc = new JScrollPane(tabela);
+        JScrollPane sc = new JScrollPane(tabelaEstoque);
         sc.setPreferredSize(new Dimension(0, 220));
         sc.getViewport().setBackground(COR_TABELA_FUNDO);
         sc.getViewport().setOpaque(true);
@@ -188,11 +241,46 @@ public class V_Estoque extends JPanel {
         return card;
     }
 
+    /** Reconstrói as linhas da tabela de estoque (catálogo + peças reais expandidas), preservando o estado de expansão. */
+    private void construirLinhasEstoque() {
+        mdlEstoque.setRowCount(0);
+        linhasEstoque.clear();
+        for (CatalogoPecaEntity cat : controller.listarEstoque()) {
+            long idCat = cat.getIdCatalogoPeca();
+            List<PecaEntity> reais = controller.listarPecasReaisDoCatalogo(idCat);
+            int qtdTotal = 0;
+            for (PecaEntity r : reais) qtdTotal += r.getQuantidadeEstoque();
+            boolean expandido = catalogosExpandidos.contains(idCat);
+            String seta = reais.isEmpty() ? "" : (expandido ? "v" : ">");
+
+            mdlEstoque.addRow(new Object[]{ seta, cat.getNomePopular(), cat.getSistemaLabel(), qtdTotal, situacao(qtdTotal) });
+            linhasEstoque.add(new LinhaEstoque(true, idCat));
+
+            if (expandido) {
+                for (PecaEntity r : reais) {
+                    String fabricante = r.getFabricante() == null || r.getFabricante().isBlank() ? "—" : r.getFabricante();
+                    mdlEstoque.addRow(new Object[]{ "", "     " + r.getNomeExibicao(), fabricante, r.getQuantidadeEstoque(), "" });
+                    linhasEstoque.add(new LinhaEstoque(false, r.getIdPeca()));
+                }
+            }
+        }
+    }
+
+    /** Linhas de peça real vêm em itálico/tom mais claro, reforçando a hierarquia catálogo → peça real. */
+    private void estilizarLinha(JLabel c, int row) {
+        boolean isCatalogo = row >= 0 && row < linhasEstoque.size() && linhasEstoque.get(row).isCatalogo;
+        c.setFont(new Font("Segoe UI", isCatalogo ? Font.BOLD : Font.ITALIC, 12));
+        if (!isCatalogo) c.setForeground(Color.decode("#6B7280"));
+    }
+
     private String situacao(int qtd) {
         if (qtd <= 0) return "Sem estoque";
         if (qtd <= 2) return "Baixo";
         return "OK";
     }
+
+    /** Uma linha da tabela de Estoque: catálogo (id_catalogo_peca) ou peça real (id_peca). */
+    private record LinhaEstoque(boolean isCatalogo, long id) {}
 
     // =========================================================================
     // Movimentações
@@ -203,7 +291,14 @@ public class V_Estoque extends JPanel {
         corpo.setLayout(new BorderLayout());
 
         Map<Long, String> nomePeca = new HashMap<>();
-        for (PecaEntity p : controller.listarEstoque()) nomePeca.put(p.getIdPeca(), p.getNomePopular());
+        for (CatalogoPecaEntity cat : controller.listarEstoque()) {
+            for (PecaEntity real : controller.listarPecasReaisDoCatalogo(cat.getIdCatalogoPeca())) {
+                String tecnico = real.getNomeTecnico();
+                String nome = (tecnico != null && !tecnico.isBlank())
+                        ? cat.getNomePopular() + " — " + tecnico : cat.getNomePopular();
+                nomePeca.put(real.getIdPeca(), nome);
+            }
+        }
 
         String[] cols = {"Data", "Peça", "Tipo", "Qtd.", "Origem", "Valor", "Observação"};
         DefaultTableModel mdl = new DefaultTableModel(cols, 0) {

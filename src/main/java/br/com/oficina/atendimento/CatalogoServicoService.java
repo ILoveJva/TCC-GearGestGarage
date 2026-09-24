@@ -54,8 +54,8 @@ public class CatalogoServicoService {
         return repository.listarIdOrcamentosComItem(idCatalogoServico);
     }
 
-    public void vincularPecaAoCatalogo(long idCatalogoServico, long idPeca) {
-        repository.vincularPecaAoCatalogo(idCatalogoServico, idPeca);
+    public void vincularPecaAoCatalogo(long idCatalogoServico, long idCatalogoPeca) {
+        repository.vincularPecaAoCatalogo(idCatalogoServico, idCatalogoPeca);
     }
 
     public List<Long> listarIdsPecasDoCatalogo(long idCatalogoServico) {

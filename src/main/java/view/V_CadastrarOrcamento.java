@@ -1,7 +1,7 @@
 package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
 import model.Cliente;
@@ -525,11 +525,11 @@ public class V_CadastrarOrcamento extends JPanel {
     /** Peças são genéricas (não dependem de veículo/modelo) — o valor é definido no próprio orçamento. */
     private void carregarPecas() {
         cmb_Peca.removeAllItems();
-        List<PecaEntity> pecas = controller.listarTodasPecas();
+        List<CatalogoPecaEntity> pecas = controller.listarTodasPecas();
         if (pecas.isEmpty()) {
             cmb_Peca.addItem(new ItemPeca(null));
         } else {
-            for (PecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
+            for (CatalogoPecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
         }
     }
 
@@ -542,9 +542,9 @@ public class V_CadastrarOrcamento extends JPanel {
         mdl_ItensSelecionados.addRow(new Object[]{item.getNome(), tipo, String.format("%.2f", item.getValor())});
 
         // Auto-adicionar peças associadas a este item do catálogo
-        List<PecaEntity> pecasDoItem = controller.listarPecasDoCatalogoItem(item.getIdCatalogoServico());
-        for (PecaEntity p : pecasDoItem) {
-            pecasSelecionadas.add(p.getIdPeca());
+        List<CatalogoPecaEntity> pecasDoItem = controller.listarPecasDoCatalogoItem(item.getIdCatalogoServico());
+        for (CatalogoPecaEntity p : pecasDoItem) {
+            pecasSelecionadas.add(p.getIdCatalogoPeca());
             valoresPecasSelecionadas.add(0.0);
             nomesTecnicosPecas.add("");
             fabricantesPecas.add("");
@@ -561,7 +561,7 @@ public class V_CadastrarOrcamento extends JPanel {
         if (sel == null || sel.peca == null) return;
         String nomeTecnico = txt_NomeTecnicoPeca.getText().trim();
         String fabricante = txt_FabricantePeca.getText().trim();
-        pecasSelecionadas.add(sel.peca.getIdPeca());
+        pecasSelecionadas.add(sel.peca.getIdCatalogoPeca());
         valoresPecasSelecionadas.add(0.0);
         nomesTecnicosPecas.add(nomeTecnico);
         fabricantesPecas.add(fabricante);
@@ -649,8 +649,8 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
     private static class ItemPeca {
-        final PecaEntity peca;
-        ItemPeca(PecaEntity p) { this.peca = p; }
+        final CatalogoPecaEntity peca;
+        ItemPeca(CatalogoPecaEntity p) { this.peca = p; }
         @Override public String toString() {
             return peca != null ? peca.getNomeExibicao() : "(nenhuma peça cadastrada)";
         }

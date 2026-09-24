@@ -1,45 +1,38 @@
 package br.com.oficina.estoque;
 
+/** Peça real (SKU): instância comprada de um item do catálogo, com fabricante, nome técnico e estoque próprios. */
 public class PecaEntity {
     private Long idPeca;
-    private String nomePopular;
-    private String vidaUtilTempo;
-    private String vidaUtilKm;
-    private String sistema; // MOTOR | TRANSMISSAO | DIRECAO | SUSPENSAO | FREIOS | ARREFECIMENTO | ELETRICA | ALIMENTACAO | OUTROS
+    private Long idCatalogoPeca;
+    private String nomeTecnico;
+    private String fabricante;
+    private double valor;
     private int quantidadeEstoque;
 
     public PecaEntity() {}
-    public PecaEntity(Long id, String nomePopular, String vidaUtilTempo, String vidaUtilKm, String sistema) {
-        this.idPeca = id; this.nomePopular = nomePopular;
-        this.vidaUtilTempo = vidaUtilTempo;
-        this.vidaUtilKm = vidaUtilKm;
-        this.sistema = sistema != null ? sistema : "OUTROS";
+    public PecaEntity(Long idPeca, Long idCatalogoPeca, String nomeTecnico, String fabricante, double valor) {
+        this.idPeca = idPeca;
+        this.idCatalogoPeca = idCatalogoPeca;
+        this.nomeTecnico = nomeTecnico != null ? nomeTecnico : "";
+        this.fabricante = fabricante != null ? fabricante : "";
+        this.valor = valor;
     }
+
     public Long getIdPeca() { return idPeca; }
     public void setIdPeca(Long id) { this.idPeca = id; }
-    public String getNomePopular() { return nomePopular; }
-    public void setNomePopular(String n) { this.nomePopular = n; }
-    public String getNomeExibicao() { return nomePopular; }
-    public String getVidaUtilTempo() { return vidaUtilTempo; }
-    public void setVidaUtilTempo(String v) { this.vidaUtilTempo = v; }
-    public String getVidaUtilKm() { return vidaUtilKm; }
-    public void setVidaUtilKm(String v) { this.vidaUtilKm = v; }
-    public String getSistema() { return sistema != null ? sistema : "OUTROS"; }
-    public void setSistema(String s) { this.sistema = s != null ? s : "OUTROS"; }
+    public Long getIdCatalogoPeca() { return idCatalogoPeca; }
+    public void setIdCatalogoPeca(Long id) { this.idCatalogoPeca = id; }
+    public String getNomeTecnico() { return nomeTecnico; }
+    public void setNomeTecnico(String n) { this.nomeTecnico = n != null ? n : ""; }
+    public String getFabricante() { return fabricante; }
+    public void setFabricante(String f) { this.fabricante = f != null ? f : ""; }
+    public double getValor() { return valor; }
+    public void setValor(double v) { this.valor = v; }
     public int getQuantidadeEstoque() { return quantidadeEstoque; }
     public void setQuantidadeEstoque(int q) { this.quantidadeEstoque = q; }
 
-    public String getSistemaLabel() {
-        return switch (getSistema()) {
-            case "MOTOR"         -> "Motor";
-            case "TRANSMISSAO"   -> "Transmissão";
-            case "DIRECAO"       -> "Direção";
-            case "SUSPENSAO"     -> "Suspensão";
-            case "FREIOS"        -> "Freios";
-            case "ARREFECIMENTO" -> "Arrefecimento";
-            case "ELETRICA"      -> "Elétrica";
-            case "ALIMENTACAO"   -> "Alimentação";
-            default              -> "Outros";
-        };
+    /** Nome de exibição: nome técnico, com um fallback legível quando não informado. */
+    public String getNomeExibicao() {
+        return (nomeTecnico != null && !nomeTecnico.isBlank()) ? nomeTecnico : "(sem nome técnico)";
     }
 }

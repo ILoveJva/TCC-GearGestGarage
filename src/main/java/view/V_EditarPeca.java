@@ -1,6 +1,6 @@
 package view;
 
-import br.com.oficina.estoque.PecaEntity;
+import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
 
 import javax.swing.*;
@@ -16,13 +16,13 @@ import java.awt.geom.RoundRectangle2D;
 public class V_EditarPeca extends JPanel {
 
     private final OficinaController controller;
-    private final PecaEntity peca;
+    private final CatalogoPecaEntity peca;
 
     private JTextField txt_NomePopular, txt_VidaTempo, txt_VidaKm;
     private JComboBox<SistemaItem> cmb_Sistema;
     private JButton btn_Salvar;
 
-    public V_EditarPeca(OficinaController controller, PecaEntity peca) {
+    public V_EditarPeca(OficinaController controller, CatalogoPecaEntity peca) {
         this.controller = controller;
         this.peca = peca;
         setLayout(new GridBagLayout());
@@ -133,7 +133,7 @@ public class V_EditarPeca extends JPanel {
             String km    = txt_VidaKm.getText().trim();
             SistemaItem sistema = (SistemaItem) cmb_Sistema.getSelectedItem();
             try {
-                controller.atualizarPeca(peca.getIdPeca(),
+                controller.atualizarPeca(peca.getIdCatalogoPeca(),
                     nome,
                     tempo.isEmpty() ? "Não informado" : tempo,
                     km.isEmpty()    ? "Não informado" : km,

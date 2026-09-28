@@ -8,8 +8,11 @@ import controller.OficinaController;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
@@ -142,6 +145,7 @@ public class V_EditarOrcamento extends JPanel {
         cmb_ItemCatalogo = new JComboBox<>();
         cmb_ItemCatalogo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmb_ItemCatalogo.setBackground(Color.WHITE);
+        estilizarCombo(cmb_ItemCatalogo);
         cmb_ItemCatalogo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean sel, boolean focus) {
@@ -157,6 +161,7 @@ public class V_EditarOrcamento extends JPanel {
         cmb_FiltroSistema = new JComboBox<>();
         cmb_FiltroSistema.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmb_FiltroSistema.setBackground(Color.WHITE);
+        estilizarCombo(cmb_FiltroSistema);
         cmb_FiltroSistema.addItem(new SistemaItem("",             "Todos os Sistemas"));
         cmb_FiltroSistema.addItem(new SistemaItem("MOTOR",        "Motor"));
         cmb_FiltroSistema.addItem(new SistemaItem("TRANSMISSAO",  "Transmissão"));
@@ -214,13 +219,7 @@ public class V_EditarOrcamento extends JPanel {
         tbl_ItensSelecionados = criarTabela(mdl_ItensSelecionados);
         JScrollPane scroll = scrollTabela(tbl_ItensSelecionados, 100);
 
-        JButton btn_Rem = new JButton("Remover selecionado");
-        btn_Rem.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn_Rem.setForeground(Color.decode("#DC3545"));
-        btn_Rem.setContentAreaFilled(false);
-        btn_Rem.setBorderPainted(false);
-        btn_Rem.setFocusPainted(false);
-        btn_Rem.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn_Rem = botaoRemover("Remover selecionado");
         btn_Rem.addActionListener(e -> {
             int row = tbl_ItensSelecionados.getSelectedRow();
             if (row >= 0) {
@@ -265,21 +264,16 @@ public class V_EditarOrcamento extends JPanel {
         cmb_Peca = new JComboBox<>();
         cmb_Peca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmb_Peca.setBackground(Color.WHITE);
+        estilizarCombo(cmb_Peca);
 
-        txt_NomeTecnicoPeca = new JTextField();
+        txt_NomeTecnicoPeca = new CampoArredondado();
         txt_NomeTecnicoPeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txt_NomeTecnicoPeca.setToolTipText("Ex: Filtro Mann W811/80");
-        txt_NomeTecnicoPeca.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
-                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
         txt_NomeTecnicoPeca.setPreferredSize(new Dimension(0, 32));
 
-        txt_FabricantePeca = new JTextField();
+        txt_FabricantePeca = new CampoArredondado();
         txt_FabricantePeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txt_FabricantePeca.setToolTipText("Ex: Mann, Bosch, NGK");
-        txt_FabricantePeca.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
-                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
         txt_FabricantePeca.setPreferredSize(new Dimension(0, 32));
 
         JButton btn_AddPeca = botaoAcao("+ Adicionar", "#17A2B8");
@@ -333,13 +327,7 @@ public class V_EditarOrcamento extends JPanel {
         tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
         JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 160);
 
-        JButton btn_RemPeca = new JButton("Remover selecionada");
-        btn_RemPeca.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn_RemPeca.setForeground(Color.decode("#DC3545"));
-        btn_RemPeca.setContentAreaFilled(false);
-        btn_RemPeca.setBorderPainted(false);
-        btn_RemPeca.setFocusPainted(false);
-        btn_RemPeca.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn_RemPeca = botaoRemover("Remover selecionada");
         btn_RemPeca.addActionListener(e -> {
             int row = tbl_PecasSelecionadas.getSelectedRow();
             if (row >= 0) {
@@ -518,15 +506,26 @@ public class V_EditarOrcamento extends JPanel {
 
     // ===== helpers visuais =====
     private JButton botaoAcao(String texto, String corHex) {
-        JButton btn = new JButton(texto);
+        BotaoVidro btn = new BotaoVidro(texto, Color.decode(corHex));
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(Color.decode(corHex));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
         btn.setPreferredSize(new Dimension(120, 34));
         return btn;
+    }
+
+    private JButton botaoRemover(String texto) {
+        BotaoVidro btn = new BotaoVidro(texto, Color.decode("#DC3545"));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
+        btn.setPreferredSize(new Dimension(170, 30));
+        return btn;
+    }
+
+    /** Combo com fundo e borda arredondados (mesmo raio dos campos de texto). */
+    private static void estilizarCombo(JComboBox<?> cmb) {
+        cmb.setUI(new ComboArredondadoUI());
+        cmb.setOpaque(false);
+        cmb.setBorder(BorderFactory.createEmptyBorder(1, 8, 1, 4));
     }
 
     private JTable criarTabela(DefaultTableModel model) {
@@ -559,6 +558,91 @@ public class V_EditarOrcamento extends JPanel {
             g2.setColor(cor);
             g2.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2.dispose();
+        }
+    }
+
+    /** Campo de texto com fundo e borda arredondados; borda laranja quando focado. */
+    private static class CampoArredondado extends JTextField {
+        private static final int RAIO = 14;
+        private boolean focado = false;
+
+        CampoArredondado() {
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(2, 12, 2, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e)   { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, RAIO, RAIO));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(focado ? Color.decode("#FF9900") : Color.decode("#CCCCCC"));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, RAIO, RAIO));
+            g2.dispose();
+        }
+    }
+
+    /** UI de combo com cantos arredondados e seta simples. */
+    private static class ComboArredondadoUI extends BasicComboBoxUI {
+        private static final int RAIO = 14;
+
+        @Override
+        protected JButton createArrowButton() {
+            JButton b = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.decode("#666666"));
+                    int cx = getWidth() / 2, cy = getHeight() / 2;
+                    g2.fillPolygon(new int[]{cx - 4, cx + 4, cx}, new int[]{cy - 2, cy - 2, cy + 3}, 3);
+                    g2.dispose();
+                }
+            };
+            b.setContentAreaFilled(false);
+            b.setBorderPainted(false);
+            b.setFocusPainted(false);
+            b.setOpaque(false);
+            b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return b;
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            RoundRectangle2D forma = new RoundRectangle2D.Double(0.5, 0.5, c.getWidth() - 1, c.getHeight() - 1, RAIO, RAIO);
+            g2.setColor(Color.WHITE);
+            g2.fill(forma);
+            g2.setColor(Color.decode("#CCCCCC"));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(forma);
+            g2.dispose();
+            super.paint(g, c);
+        }
+
+        @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // fundo já pintado em paint(), com cantos arredondados
+        }
+
+        @Override
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            super.paintCurrentValue(g, bounds, false); // evita o retângulo azul de seleção
         }
     }
 
@@ -657,8 +741,8 @@ public class V_EditarOrcamento extends JPanel {
             Shape clipAnterior = g2.getClip();
             g2.clip(corpo);
 
-            GradientPaint gp = new GradientPaint(0, 0, comAlpha(clarear(corPreenchimento), 235),
-                    0, h, comAlpha(corPreenchimento, 215));
+            GradientPaint gp = new GradientPaint(0, 0, comAlpha(clarear(corPreenchimento), 220),
+                    0, h, comAlpha(corPreenchimento, 190));
             g2.setPaint(gp);
             g2.fill(corpo);
 
@@ -673,6 +757,10 @@ public class V_EditarOrcamento extends JPanel {
             g2.setColor(comAlpha(escurecer(corPreenchimento), 160));
             g2.setStroke(new BasicStroke(1f));
             g2.draw(corpo);
+
+            // filete interno claro: reforça o efeito de vidro
+            g2.setColor(new Color(255, 255, 255, 110));
+            g2.draw(new RoundRectangle2D.Double(1.5, 1.5, w - 4, h - 6, raio - 2, raio - 2));
 
             g2.dispose();
             super.paintComponent(g);

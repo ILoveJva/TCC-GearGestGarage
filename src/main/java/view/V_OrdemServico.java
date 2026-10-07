@@ -591,23 +591,34 @@ public class V_OrdemServico extends JPanel {
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lbl.setForeground(COR_VERDE);
 
-        String[] cols = {"Peça", "Nome Técnico", "Fabricante"};
+        String[] cols = {"Peça", "Nome Técnico", "Fabricante", "Qtd."};
         javax.swing.table.DefaultTableModel mdl = new javax.swing.table.DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
 
+        // Cada unidade vira uma linha em orcamento_peca — agrupa por peça+nome técnico+fabricante
+        // para mostrar a quantidade a ser trocada em vez de repetir uma linha por unidade.
+        java.util.LinkedHashMap<String, Object[]> linhasPorChave = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Integer> qtdPorChave = new java.util.LinkedHashMap<>();
         for (Object[] triple : pecas) {
             br.com.oficina.estoque.PecaEntity p = (br.com.oficina.estoque.PecaEntity) triple[0];
             String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
             String fabricante = triple.length > 3 ? (String) triple[3] : "";
-            mdl.addRow(new Object[]{
+            String chave = p.getNomeExibicao() + "|" + nomeTecnico + "|" + fabricante;
+            linhasPorChave.putIfAbsent(chave, new Object[]{
                     p.getNomeExibicao(),
                     nomeTecnico.isBlank() ? "—" : nomeTecnico,
                     fabricante.isBlank() ? "—" : fabricante
             });
+            qtdPorChave.merge(chave, 1, Integer::sum);
+        }
+        for (var entry : linhasPorChave.entrySet()) {
+            Object[] linha = entry.getValue();
+            mdl.addRow(new Object[]{ linha[0], linha[1], linha[2], qtdPorChave.get(entry.getKey()) });
         }
 
         JTable tbl = criarTabela(mdl);
+        tbl.getColumnModel().getColumn(3).setMaxWidth(60);
 
         int altura = Math.min((mdl.getRowCount() * 26) + 30, 200);
         JScrollPane scp = scrollTabela(tbl, altura);

@@ -112,6 +112,11 @@ public class V_VisualizarOrcamento extends JPanel {
         corpo.add(Box.createVerticalStrut(14));
         corpo.add(criarSecaoItens());
         corpo.add(Box.createVerticalStrut(14));
+        JPanel secaoPecas = criarSecaoPecas();
+        if (secaoPecas != null) {
+            corpo.add(secaoPecas);
+            corpo.add(Box.createVerticalStrut(14));
+        }
         corpo.add(criarRodapeTotal());
         corpo.add(Box.createVerticalStrut(14));
         corpo.add(criarBarraAcoes());
@@ -205,6 +210,65 @@ public class V_VisualizarOrcamento extends JPanel {
         }
 
         JTable tbl = criarTabela(mdl);
+        JScrollPane scroll = new JScrollPane(tbl);
+        scroll.getViewport().setBackground(COR_TABELA_FUNDO);
+        scroll.getViewport().setOpaque(true);
+        scroll.setOpaque(false);
+        ScrollBarPadrao.aplicar(scroll);
+        scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+
+        sec.add(lbl, BorderLayout.NORTH);
+        sec.add(scroll, BorderLayout.CENTER);
+        return sec;
+    }
+
+    private JPanel criarSecaoPecas() {
+        if (dadosPecas.isEmpty()) return null;
+
+        JPanel sec = new JPanel(new BorderLayout(0, 6));
+        sec.setOpaque(false);
+        sec.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
+
+        JLabel lbl = new JLabel("Peças a Trocar");
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(COR_TITULO);
+
+        String[] cols = {"Peça", "Nome Técnico", "Fabricante", "Qtd.", "Valor Unit. (R$)", "Subtotal (R$)"};
+        DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        // Cada unidade vira uma linha em orcamento_peca — agrupa por peça+nome técnico+fabricante
+        // para mostrar a quantidade a ser trocada em vez de repetir uma linha por unidade.
+        java.util.LinkedHashMap<String, Object[]> linhasPorChave = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Integer> qtdPorChave = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Double> valorPorChave = new java.util.LinkedHashMap<>();
+        for (Object[] triple : dadosPecas) {
+            br.com.oficina.estoque.PecaEntity p = (br.com.oficina.estoque.PecaEntity) triple[0];
+            double valor = (Double) triple[1];
+            String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
+            String fabricante = triple.length > 3 ? (String) triple[3] : "";
+            String chave = p.getNomeExibicao() + "|" + nomeTecnico + "|" + fabricante;
+            linhasPorChave.putIfAbsent(chave, new Object[]{
+                    p.getNomeExibicao(),
+                    nomeTecnico.isBlank() ? "—" : nomeTecnico,
+                    fabricante.isBlank() ? "—" : fabricante
+            });
+            qtdPorChave.merge(chave, 1, Integer::sum);
+            valorPorChave.putIfAbsent(chave, valor); // valor é intrínseco à peça (SKU): mesmo em todas as unidades
+        }
+        for (var entry : linhasPorChave.entrySet()) {
+            Object[] linha = entry.getValue();
+            int qtd = qtdPorChave.get(entry.getKey());
+            double valorUnit = valorPorChave.get(entry.getKey());
+            mdl.addRow(new Object[]{ linha[0], linha[1], linha[2],
+                    qtd, String.format("R$ %.2f", valorUnit), String.format("R$ %.2f", valorUnit * qtd) });
+        }
+
+        JTable tbl = criarTabela(mdl);
+        tbl.getColumnModel().getColumn(3).setMaxWidth(60);
+
         JScrollPane scroll = new JScrollPane(tbl);
         scroll.getViewport().setBackground(COR_TABELA_FUNDO);
         scroll.getViewport().setOpaque(true);

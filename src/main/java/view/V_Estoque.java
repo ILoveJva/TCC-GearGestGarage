@@ -109,6 +109,8 @@ public class V_Estoque extends JPanel {
         corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
         corpo.setOpaque(false);
 
+        corpo.add(criarCardPecasParaComprar());
+        corpo.add(Box.createVerticalStrut(16));
         corpo.add(criarCardEstoqueAtual());
         corpo.add(Box.createVerticalStrut(16));
         corpo.add(criarCardMovimentacoes());
@@ -129,6 +131,48 @@ public class V_Estoque extends JPanel {
         scroll.getViewport().setOpaque(false);
         ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
+    }
+
+    // =========================================================================
+    // Peças a comprar (baseado nas OS em aberto)
+    // =========================================================================
+    private JPanel criarCardPecasParaComprar() {
+        JPanel card = criarCard("Peças a comprar (OS em aberto)");
+        JPanel corpo = (JPanel) card.getComponent(1);
+        corpo.setLayout(new BorderLayout());
+
+        List<controller.OficinaController.PecaParaComprar> pendentes = controller.listarPecasParaComprar();
+        if (pendentes.isEmpty()) {
+            corpo.add(rotuloVazio("Nenhuma peça faltando. O estoque atende todas as OS em aberto."), BorderLayout.CENTER);
+            return card;
+        }
+
+        String[] cols = {"Peça", "Sistema", "Veículo", "Qtd. a comprar"};
+        DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        for (controller.OficinaController.PecaParaComprar p : pendentes)
+            mdl.addRow(new Object[]{ p.peca(), p.sistema(), p.veiculo(), p.quantidade() });
+
+        JTable tabela = new JTable(mdl);
+        estilizarTabela(tabela);
+        tabela.setRowHeight(26);
+        tabela.getColumnModel().getColumn(3).setMaxWidth(110);
+
+        DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
+        centro.setHorizontalAlignment(SwingConstants.CENTER);
+        centro.setBackground(COR_TABELA_FUNDO);
+        tabela.getColumnModel().getColumn(3).setCellRenderer(centro);
+
+        JScrollPane sc = new JScrollPane(tabela);
+        sc.setPreferredSize(new Dimension(0, 160));
+        sc.getViewport().setBackground(COR_TABELA_FUNDO);
+        sc.getViewport().setOpaque(true);
+        sc.setOpaque(false);
+        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+        ScrollBarPadrao.aplicar(sc);
+        corpo.add(sc, BorderLayout.CENTER);
+        return card;
     }
 
     // =========================================================================

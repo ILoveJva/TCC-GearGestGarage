@@ -46,12 +46,14 @@ public class V_EditarOrcamento extends JPanel {
     private JComboBox<ItemPeca> cmb_Peca;
     private JTextField txt_NomeTecnicoPeca;
     private JTextField txt_FabricantePeca;
+    private JTextField txt_QuantidadePeca;
     private DefaultTableModel mdl_PecasSelecionadas;
     private JTable tbl_PecasSelecionadas;
     private final List<Long> pecasSelecionadas = new ArrayList<>();
     private final List<Double> valoresPecasSelecionadas = new ArrayList<>();
     private final List<String> nomesTecnicosPecas = new ArrayList<>();
     private final List<String> fabricantesPecas = new ArrayList<>();
+    private final List<Integer> quantidadesPecas = new ArrayList<>();
 
     private JButton btn_Salvar;
 
@@ -276,6 +278,12 @@ public class V_EditarOrcamento extends JPanel {
         txt_FabricantePeca.setToolTipText("Ex: Mann, Bosch, NGK");
         txt_FabricantePeca.setPreferredSize(new Dimension(0, 32));
 
+        txt_QuantidadePeca = new CampoArredondado();
+        txt_QuantidadePeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txt_QuantidadePeca.setText("1");
+        txt_QuantidadePeca.setToolTipText("Quantas unidades desta peça serão trocadas nesta OS");
+        txt_QuantidadePeca.setPreferredSize(new Dimension(0, 32));
+
         JButton btn_AddPeca = botaoAcao("+ Adicionar", "#17A2B8");
         btn_AddPeca.addActionListener(e -> adicionarPeca());
 
@@ -300,7 +308,15 @@ public class V_EditarOrcamento extends JPanel {
         pnl_Fabricante.add(lbl_Fabricante, BorderLayout.NORTH);
         pnl_Fabricante.add(txt_FabricantePeca, BorderLayout.CENTER);
 
-        String[] cols = {"Peça", "Nome Técnico", "Fabricante", "Valor (R$)"};
+        JPanel pnl_Quantidade = new JPanel(new BorderLayout(0, 2));
+        pnl_Quantidade.setOpaque(false);
+        JLabel lbl_Quantidade = new JLabel("Quantidade");
+        lbl_Quantidade.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lbl_Quantidade.setForeground(Color.decode("#888888"));
+        pnl_Quantidade.add(lbl_Quantidade, BorderLayout.NORTH);
+        pnl_Quantidade.add(txt_QuantidadePeca, BorderLayout.CENTER);
+
+        String[] cols = {"Peça", "Nome Técnico", "Fabricante", "Qtd.", "Valor Unit. (R$)"};
         mdl_PecasSelecionadas = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return c >= 1; }
         };
@@ -309,13 +325,23 @@ public class V_EditarOrcamento extends JPanel {
             int row = ev.getFirstRow();
             int col = ev.getColumn();
             if (row < 0) return;
-            if (col == 3 && row < valoresPecasSelecionadas.size()) {
+            if (col == 4 && row < valoresPecasSelecionadas.size()) {
                 try {
-                    String txt = String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 3)).replace(",", ".");
+                    String txt = String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 4)).replace(",", ".");
                     valoresPecasSelecionadas.set(row, Double.parseDouble(txt));
                 } catch (NumberFormatException ex) {
                     valoresPecasSelecionadas.set(row, 0.0);
-                    mdl_PecasSelecionadas.setValueAt("0.00", row, 3);
+                    mdl_PecasSelecionadas.setValueAt("0.00", row, 4);
+                }
+                atualizarTotal();
+            } else if (col == 3 && row < quantidadesPecas.size()) {
+                try {
+                    int qtd = Integer.parseInt(String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 3)).trim());
+                    if (qtd <= 0) throw new NumberFormatException();
+                    quantidadesPecas.set(row, qtd);
+                } catch (NumberFormatException ex) {
+                    quantidadesPecas.set(row, 1);
+                    mdl_PecasSelecionadas.setValueAt(1, row, 3);
                 }
                 atualizarTotal();
             } else if (col == 1 && row < nomesTecnicosPecas.size()) {
@@ -325,6 +351,7 @@ public class V_EditarOrcamento extends JPanel {
             }
         });
         tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
+        tbl_PecasSelecionadas.getColumnModel().getColumn(3).setMaxWidth(60);
         JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 160);
 
         JButton btn_RemPeca = botaoRemover("Remover selecionada");
@@ -335,6 +362,7 @@ public class V_EditarOrcamento extends JPanel {
                 valoresPecasSelecionadas.remove(row);
                 nomesTecnicosPecas.remove(row);
                 fabricantesPecas.remove(row);
+                quantidadesPecas.remove(row);
                 mdl_PecasSelecionadas.removeRow(row);
                 atualizarTotal();
             }
@@ -352,6 +380,8 @@ public class V_EditarOrcamento extends JPanel {
         pnl_Norte.add(pnl_NomeTec);
         pnl_Norte.add(Box.createVerticalStrut(6));
         pnl_Norte.add(pnl_Fabricante);
+        pnl_Norte.add(Box.createVerticalStrut(6));
+        pnl_Norte.add(pnl_Quantidade);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);
@@ -384,17 +414,33 @@ public class V_EditarOrcamento extends JPanel {
                 mdl_ItensSelecionados.addRow(new Object[]{item.getNome(), tipo, String.format("%.2f", valor)});
             }
 
+            // Cada unidade é uma linha em orcamento_peca (mesmo id_peca repetido) — agrupa para
+            // reconstituir a quantidade e mostrar uma única linha editável por peça.
+            java.util.LinkedHashMap<Long, Object[]> pecasAgrupadas = new java.util.LinkedHashMap<>();
+            java.util.Map<Long, Integer> qtdPorIdPeca = new java.util.LinkedHashMap<>();
             for (Object[] triple : controller.listarPecasOrcamentoComValor(idOrcamento)) {
                 PecaEntity peca = (PecaEntity) triple[0];
                 double valor = (Double) triple[1];
                 String nomeTecnico = triple.length > 2 ? (String) triple[2] : "";
                 String fabricante = triple.length > 3 ? (String) triple[3] : "";
+                long idPeca = peca.getIdPeca();
+                pecasAgrupadas.putIfAbsent(idPeca, new Object[]{peca, valor, nomeTecnico, fabricante});
+                qtdPorIdPeca.merge(idPeca, 1, Integer::sum);
+            }
+            for (var entry : pecasAgrupadas.entrySet()) {
+                Object[] dados = entry.getValue();
+                PecaEntity peca = (PecaEntity) dados[0];
+                double valor = (Double) dados[1];
+                String nomeTecnico = (String) dados[2];
+                String fabricante = (String) dados[3];
+                int quantidade = qtdPorIdPeca.get(entry.getKey());
                 pecasSelecionadas.add(peca.getIdCatalogoPeca());
                 valoresPecasSelecionadas.add(valor);
                 nomesTecnicosPecas.add(nomeTecnico);
                 fabricantesPecas.add(fabricante);
+                quantidadesPecas.add(quantidade);
                 mdl_PecasSelecionadas.addRow(new Object[]{peca.getNomeExibicao(), nomeTecnico, fabricante,
-                        String.format("%.2f", valor)});
+                        quantidade, String.format("%.2f", valor)});
             }
             atualizarTotal();
         } catch (Exception e) {
@@ -450,19 +496,34 @@ public class V_EditarOrcamento extends JPanel {
         if (sel == null || sel.peca == null) return;
         String nomeTecnico = txt_NomeTecnicoPeca.getText().trim();
         String fabricante = txt_FabricantePeca.getText().trim();
+        int quantidade;
+        try {
+            String qtdTxt = txt_QuantidadePeca.getText().trim();
+            quantidade = qtdTxt.isEmpty() ? 1 : Integer.parseInt(qtdTxt);
+            if (quantidade <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            DialogoAlerta.aviso(this, "Informe uma quantidade válida maior que zero.", "Campo Inválido");
+            return;
+        }
         pecasSelecionadas.add(sel.peca.getIdCatalogoPeca());
         valoresPecasSelecionadas.add(0.0);
         nomesTecnicosPecas.add(nomeTecnico);
         fabricantesPecas.add(fabricante);
-        mdl_PecasSelecionadas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, "0.00"});
+        quantidadesPecas.add(quantidade);
+        mdl_PecasSelecionadas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, quantidade, "0.00"});
         txt_NomeTecnicoPeca.setText("");
         txt_FabricantePeca.setText("");
+        txt_QuantidadePeca.setText("1");
         atualizarTotal();
     }
 
     private void atualizarTotal() {
-        double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum()
-                + valoresPecasSelecionadas.stream().mapToDouble(Double::doubleValue).sum();
+        double totalPecas = 0;
+        for (int i = 0; i < valoresPecasSelecionadas.size(); i++) {
+            int qtd = i < quantidadesPecas.size() ? quantidadesPecas.get(i) : 1;
+            totalPecas += valoresPecasSelecionadas.get(i) * qtd;
+        }
+        double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum() + totalPecas;
         lbl_Total.setText(String.format("Total: R$ %.2f", total));
     }
 
@@ -476,7 +537,8 @@ public class V_EditarOrcamento extends JPanel {
                 controller.atualizarItensOrcamento(idOrcamento,
                         new ArrayList<>(itensSelecionados), new ArrayList<>(valoresItensSelecionados),
                         new ArrayList<>(pecasSelecionadas), new ArrayList<>(valoresPecasSelecionadas),
-                        new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas));
+                        new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas),
+                        new ArrayList<>(quantidadesPecas));
                 DialogoAlerta.sucesso(this, "Orçamento atualizado com sucesso!", "Sucesso");
                 navegar(new V_VisualizarOrcamento(controller, controller.buscarOrcamentoModel(idOrcamento)));
             } catch (Exception ex) {

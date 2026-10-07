@@ -56,12 +56,14 @@ public class V_CadastrarOrcamento extends JPanel {
     private GlassComboBox<ItemPeca> cmb_Peca;
     private GlassTextField txt_NomeTecnicoPeca;
     private GlassTextField txt_FabricantePeca;
+    private GlassTextField txt_QuantidadePeca;
     private DefaultTableModel mdl_PecasSelecionadas;
     private JTable tbl_PecasSelecionadas;
     private final List<Long> pecasSelecionadas = new ArrayList<>();
     private final List<Double> valoresPecasSelecionadas = new ArrayList<>();
     private final List<String> nomesTecnicosPecas = new ArrayList<>();
     private final List<String> fabricantesPecas = new ArrayList<>();
+    private final List<Integer> quantidadesPecas = new ArrayList<>();
 
     private BotaoAcao btn_Cadastrar;
 
@@ -385,6 +387,10 @@ public class V_CadastrarOrcamento extends JPanel {
         txt_FabricantePeca = criarTextField();
         txt_FabricantePeca.setToolTipText("Ex: Mann, Bosch, NGK");
 
+        txt_QuantidadePeca = criarTextField();
+        txt_QuantidadePeca.setText("1");
+        txt_QuantidadePeca.setToolTipText("Quantas unidades desta peça serão trocadas nesta OS");
+
         JButton btn_AddPeca = botaoAcao("+ Adicionar", COR_INFO);
         btn_AddPeca.addActionListener(e -> adicionarPeca());
 
@@ -405,7 +411,13 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_Fabricante.add(lbl_Fabricante, BorderLayout.NORTH);
         pnl_Fabricante.add(txt_FabricantePeca, BorderLayout.CENTER);
 
-        String[] cols = {"Peça (Popular)", "Nome Técnico", "Fabricante", "Valor (R$)"};
+        JPanel pnl_Quantidade = new JPanel(new BorderLayout(0, 3));
+        pnl_Quantidade.setOpaque(false);
+        JLabel lbl_Quantidade = criarLabelMini("Quantidade");
+        pnl_Quantidade.add(lbl_Quantidade, BorderLayout.NORTH);
+        pnl_Quantidade.add(txt_QuantidadePeca, BorderLayout.CENTER);
+
+        String[] cols = {"Peça (Popular)", "Nome Técnico", "Fabricante", "Qtd.", "Valor Unit. (R$)"};
         mdl_PecasSelecionadas = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return c >= 1; }
         };
@@ -414,13 +426,23 @@ public class V_CadastrarOrcamento extends JPanel {
             int row = ev.getFirstRow();
             int col = ev.getColumn();
             if (row < 0) return;
-            if (col == 3 && row < valoresPecasSelecionadas.size()) {
+            if (col == 4 && row < valoresPecasSelecionadas.size()) {
                 try {
-                    String txt = String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 3)).replace(",", ".");
+                    String txt = String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 4)).replace(",", ".");
                     valoresPecasSelecionadas.set(row, Double.parseDouble(txt));
                 } catch (NumberFormatException ex) {
                     valoresPecasSelecionadas.set(row, 0.0);
-                    mdl_PecasSelecionadas.setValueAt("0.00", row, 3);
+                    mdl_PecasSelecionadas.setValueAt("0.00", row, 4);
+                }
+                atualizarTotal();
+            } else if (col == 3 && row < quantidadesPecas.size()) {
+                try {
+                    int qtd = Integer.parseInt(String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 3)).trim());
+                    if (qtd <= 0) throw new NumberFormatException();
+                    quantidadesPecas.set(row, qtd);
+                } catch (NumberFormatException ex) {
+                    quantidadesPecas.set(row, 1);
+                    mdl_PecasSelecionadas.setValueAt(1, row, 3);
                 }
                 atualizarTotal();
             } else if (col == 1 && row < nomesTecnicosPecas.size()) {
@@ -430,6 +452,7 @@ public class V_CadastrarOrcamento extends JPanel {
             }
         });
         tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
+        tbl_PecasSelecionadas.getColumnModel().getColumn(3).setMaxWidth(60);
         JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 160);
 
         JButton btn_RemPeca = botaoLink("Remover selecionada", COR_PERIGO);
@@ -440,6 +463,7 @@ public class V_CadastrarOrcamento extends JPanel {
                 valoresPecasSelecionadas.remove(row);
                 nomesTecnicosPecas.remove(row);
                 fabricantesPecas.remove(row);
+                quantidadesPecas.remove(row);
                 mdl_PecasSelecionadas.removeRow(row);
                 atualizarTotal();
             }
@@ -457,6 +481,8 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_Norte.add(pnl_NomeTec);
         pnl_Norte.add(Box.createVerticalStrut(8));
         pnl_Norte.add(pnl_Fabricante);
+        pnl_Norte.add(Box.createVerticalStrut(8));
+        pnl_Norte.add(pnl_Quantidade);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 8));
         corpo.setOpaque(false);
@@ -548,8 +574,9 @@ public class V_CadastrarOrcamento extends JPanel {
             valoresPecasSelecionadas.add(0.0);
             nomesTecnicosPecas.add("");
             fabricantesPecas.add("");
+            quantidadesPecas.add(1);
             mdl_PecasSelecionadas.addRow(new Object[]{
-                    p.getNomeExibicao() + " (automático)", "", "", "0.00"
+                    p.getNomeExibicao() + " (automático)", "", "", 1, "0.00"
             });
         }
 
@@ -561,19 +588,34 @@ public class V_CadastrarOrcamento extends JPanel {
         if (sel == null || sel.peca == null) return;
         String nomeTecnico = txt_NomeTecnicoPeca.getText().trim();
         String fabricante = txt_FabricantePeca.getText().trim();
+        int quantidade;
+        try {
+            String qtdTxt = txt_QuantidadePeca.getText().trim();
+            quantidade = qtdTxt.isEmpty() ? 1 : Integer.parseInt(qtdTxt);
+            if (quantidade <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            aviso("Informe uma quantidade válida maior que zero.");
+            return;
+        }
         pecasSelecionadas.add(sel.peca.getIdCatalogoPeca());
         valoresPecasSelecionadas.add(0.0);
         nomesTecnicosPecas.add(nomeTecnico);
         fabricantesPecas.add(fabricante);
-        mdl_PecasSelecionadas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, "0.00"});
+        quantidadesPecas.add(quantidade);
+        mdl_PecasSelecionadas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, quantidade, "0.00"});
         txt_NomeTecnicoPeca.setText("");
         txt_FabricantePeca.setText("");
+        txt_QuantidadePeca.setText("1");
         atualizarTotal();
     }
 
     private void atualizarTotal() {
-        double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum()
-                + valoresPecasSelecionadas.stream().mapToDouble(Double::doubleValue).sum();
+        double totalPecas = 0;
+        for (int i = 0; i < valoresPecasSelecionadas.size(); i++) {
+            int qtd = i < quantidadesPecas.size() ? quantidadesPecas.get(i) : 1;
+            totalPecas += valoresPecasSelecionadas.get(i) * qtd;
+        }
+        double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum() + totalPecas;
         lbl_Total.setText(String.format("Total: R$ %.2f", total));
     }
 
@@ -601,8 +643,12 @@ public class V_CadastrarOrcamento extends JPanel {
             if (resp == null) { aviso("Selecione o responsável."); return; }
             if (itensSelecionados.isEmpty()) { aviso("Adicione pelo menos um item de serviço."); return; }
 
-            double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum()
-                    + valoresPecasSelecionadas.stream().mapToDouble(Double::doubleValue).sum();
+            double totalPecas = 0;
+            for (int i = 0; i < valoresPecasSelecionadas.size(); i++) {
+                int qtd = i < quantidadesPecas.size() ? quantidadesPecas.get(i) : 1;
+                totalPecas += valoresPecasSelecionadas.get(i) * qtd;
+            }
+            double total = valoresItensSelecionados.stream().mapToDouble(Double::doubleValue).sum() + totalPecas;
 
             try {
                 controller.criarOrcamento(total, resp.funcionario.getNome(), reclamacao,
@@ -610,7 +656,8 @@ public class V_CadastrarOrcamento extends JPanel {
                         resp.funcionario.getIdFuncionario(),
                         new ArrayList<>(itensSelecionados), new ArrayList<>(valoresItensSelecionados),
                         new ArrayList<>(pecasSelecionadas), new ArrayList<>(valoresPecasSelecionadas),
-                        new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas));
+                        new ArrayList<>(nomesTecnicosPecas), new ArrayList<>(fabricantesPecas),
+                        new ArrayList<>(quantidadesPecas));
 
                 DialogoAlerta.sucesso(this, String.format("Orçamento criado! Total: R$ %.2f  |  Status: PENDENTE.", total), "Sucesso");
 
@@ -621,6 +668,8 @@ public class V_CadastrarOrcamento extends JPanel {
                 pecasSelecionadas.clear();
                 valoresPecasSelecionadas.clear();
                 nomesTecnicosPecas.clear();
+                fabricantesPecas.clear();
+                quantidadesPecas.clear();
                 mdl_PecasSelecionadas.setRowCount(0);
                 lbl_Total.setText("Total: R$ 0,00");
 

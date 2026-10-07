@@ -289,7 +289,8 @@ public class OficinaController {
                                long idVeiculo, long idCliente, Long idFuncionario,
                                List<CatalogoServicoEntity> itens, List<Double> valoresItens,
                                List<Long> idPecas, List<Double> valoresPecas,
-                               List<String> nomesTecnicosPecas, List<String> fabricantesPecas) {
+                               List<String> nomesTecnicosPecas, List<String> fabricantesPecas,
+                               List<Integer> quantidadesPecas) {
         String hoje = java.time.LocalDate.now().toString();
         OrcamentoResponseDTO dto = bridge.orcamentoController.criar(valor, responsavel, reclamacao, hoje,
             null, idVeiculo, idCliente, idFuncionario);
@@ -311,8 +312,11 @@ public class OficinaController {
                         ? nomesTecnicosPecas.get(i) : "";
                     String fabricante = fabricantesPecas != null && i < fabricantesPecas.size()
                         ? fabricantesPecas.get(i) : "";
+                    int quantidade = quantidadesPecas != null && i < quantidadesPecas.size()
+                        ? Math.max(1, quantidadesPecas.get(i)) : 1;
                     PecaEntity real = bridge.pecaController.buscarOuCriar(idPecas.get(i), nomeTecnico, fabricante, valorCobrado);
-                    bridge.orcamentoPecaRepository.vincular(idOrcamento, real.getIdPeca());
+                    for (int q = 0; q < quantidade; q++)
+                        bridge.orcamentoPecaRepository.vincular(idOrcamento, real.getIdPeca());
                 }
         }
     }
@@ -363,7 +367,8 @@ public class OficinaController {
     public void atualizarItensOrcamento(long idOrcamento,
                                          List<CatalogoServicoEntity> itens, List<Double> valoresItens,
                                          List<Long> idPecas, List<Double> valoresPecas,
-                                         List<String> nomesTecnicosPecas, List<String> fabricantesPecas) {
+                                         List<String> nomesTecnicosPecas, List<String> fabricantesPecas,
+                                         List<Integer> quantidadesPecas) {
         bridge.catalogoServicoController.removerItensDoOrcamento(idOrcamento);
         bridge.orcamentoPecaRepository.removerPecasDoOrcamento(idOrcamento);
         if (itens != null)
@@ -371,17 +376,20 @@ public class OficinaController {
                 double v = valoresItens != null && i < valoresItens.size() ? valoresItens.get(i) : itens.get(i).getValor();
                 bridge.catalogoServicoController.vincularAOrcamento(idOrcamento, itens.get(i).getIdCatalogoServico(), v);
             }
+        double total = 0;
+        if (valoresItens != null) for (double v : valoresItens) total += v;
         if (idPecas != null)
             for (int i = 0; i < idPecas.size(); i++) {
                 double v = valoresPecas != null && i < valoresPecas.size() ? valoresPecas.get(i) : 0.0;
                 String nt = nomesTecnicosPecas != null && i < nomesTecnicosPecas.size() ? nomesTecnicosPecas.get(i) : "";
                 String fab = fabricantesPecas != null && i < fabricantesPecas.size() ? fabricantesPecas.get(i) : "";
+                int quantidade = quantidadesPecas != null && i < quantidadesPecas.size()
+                    ? Math.max(1, quantidadesPecas.get(i)) : 1;
                 PecaEntity real = bridge.pecaController.buscarOuCriar(idPecas.get(i), nt, fab, v);
-                bridge.orcamentoPecaRepository.vincular(idOrcamento, real.getIdPeca());
+                for (int q = 0; q < quantidade; q++)
+                    bridge.orcamentoPecaRepository.vincular(idOrcamento, real.getIdPeca());
+                total += v * quantidade;
             }
-        double total = 0;
-        if (valoresItens != null) for (double v : valoresItens) total += v;
-        if (valoresPecas != null) for (double v : valoresPecas) total += v;
         bridge.orcamentoController.atualizarValor(idOrcamento, total);
 
         boolean eraAprovado = bridge.orcamentoController.revogarAprovacaoSeNecessario(idOrcamento);
@@ -629,6 +637,53 @@ public class OficinaController {
             long ib = b.getIdMovimentacao() != null ? b.getIdMovimentacao() : 0L;
             return Long.compare(ib, ia);
         });
+        return out;
+    }
+
+    /** Uma peça que falta comprar: nome, sistema do veículo, placa e quantidade em falta. */
+    public record PecaParaComprar(String peca, String sistema, String veiculo, int quantidade) {}
+
+    /**
+     * Peças vinculadas a OS em aberto cujo estoque atual é insuficiente para atendê-las.
+     * A disponibilidade é checada pelo nome técnico (dentro do mesmo item de catálogo), não pelo
+     * id da peça exata: SKUs com o mesmo nome técnico mas fabricante diferente (ou não informado)
+     * contam como o mesmo estoque — ex.: "20W40" com fabricante "Ipiranga" cobre a necessidade de
+     * "20W40" sem fabricante informado.
+     */
+    public List<PecaParaComprar> listarPecasParaComprar() {
+        java.util.Map<Long, String> placas = new java.util.HashMap<>();
+        for (Veiculo v : listarVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
+
+        List<PecaParaComprar> out = new ArrayList<>();
+        for (ServicoResponseDTO os : listarServicosEmAberto()) {
+            // Agrupa pelo item de catálogo + nome técnico (não pelo id_peca exato)
+            java.util.Map<String, Integer> necessarias = new java.util.LinkedHashMap<>();
+            java.util.Map<String, PecaEntity> amostraPorChave = new java.util.LinkedHashMap<>();
+            for (Long idPeca : bridge.orcamentoPecaRepository.listarIdsPecaPorOrcamento(os.idOrcamento())) {
+                PecaEntity peca = bridge.pecaController.entidade(idPeca);
+                if (peca == null) continue;
+                String chave = peca.getIdCatalogoPeca() + "|" + peca.getNomeTecnico().trim().toLowerCase();
+                necessarias.merge(chave, 1, Integer::sum);
+                amostraPorChave.putIfAbsent(chave, peca);
+            }
+
+            String veiculo = placas.getOrDefault(os.idVeiculo(), "—");
+            for (java.util.Map.Entry<String, Integer> entry : necessarias.entrySet()) {
+                PecaEntity amostra = amostraPorChave.get(entry.getKey());
+                int estoqueDisponivel = 0;
+                String nomeTecnicoAlvo = amostra.getNomeTecnico().trim();
+                for (PecaEntity p : bridge.pecaController.listarPorCatalogo(amostra.getIdCatalogoPeca()))
+                    if (p.getNomeTecnico().trim().equalsIgnoreCase(nomeTecnicoAlvo))
+                        estoqueDisponivel += p.getQuantidadeEstoque();
+
+                int faltam = entry.getValue() - estoqueDisponivel;
+                if (faltam <= 0) continue;
+                CatalogoPecaEntity cat = bridge.catalogoPecaController.entidade(amostra.getIdCatalogoPeca());
+                String nomePeca = cat != null ? cat.getNomePopular() : amostra.getNomeExibicao();
+                String sistema = cat != null ? cat.getSistemaLabel() : "Outros";
+                out.add(new PecaParaComprar(nomePeca, sistema, veiculo, faltam));
+            }
+        }
         return out;
     }
 

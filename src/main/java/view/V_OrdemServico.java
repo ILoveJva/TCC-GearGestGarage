@@ -252,8 +252,7 @@ public class V_OrdemServico extends JPanel {
         tbl_Checklist.getColumnModel().getColumn(2).setPreferredWidth(110);
         tbl_Checklist.getColumnModel().getColumn(2).setMaxWidth(160);
 
-        int alturaCheck = Math.min(Math.max((mdl_Checklist.getRowCount() * 26) + 30, 90), 220);
-        JScrollPane scpCheck = scrollTabela(tbl_Checklist, alturaCheck);
+        JComponent scpCheck = tabelaCompleta(tbl_Checklist);
 
         JPanel pnl_Check = new JPanel(new BorderLayout(0, 4));
         pnl_Check.setOpaque(false);
@@ -345,10 +344,8 @@ public class V_OrdemServico extends JPanel {
         tbl.getColumnModel().getColumn(2).setPreferredWidth(110);
         tbl.getColumnModel().getColumn(2).setMaxWidth(160);
 
-        int alturaTabela = Math.min((mdl.getRowCount() * 26) + 30, 220);
-
         JLabel lblItens = criarLabelCampo("Itens realizados");
-        JScrollPane scp = scrollTabela(tbl, alturaTabela);
+        JComponent scp = tabelaCompleta(tbl);
 
         JPanel pnl_Itens = new JPanel(new BorderLayout(0, 4));
         pnl_Itens.setOpaque(false);
@@ -566,8 +563,7 @@ public class V_OrdemServico extends JPanel {
         tbl.getColumnModel().getColumn(1).setMaxWidth(80);
         tbl.getColumnModel().getColumn(1).setMinWidth(60);
 
-        int altura = Math.min((mdl.getRowCount() * 26) + 30, 200);
-        JScrollPane scp = scrollTabela(tbl, altura);
+        JComponent scp = tabelaCompleta(tbl);
 
         pnl.add(lbl, BorderLayout.NORTH);
         pnl.add(scp, BorderLayout.CENTER);
@@ -620,8 +616,7 @@ public class V_OrdemServico extends JPanel {
         JTable tbl = criarTabela(mdl);
         tbl.getColumnModel().getColumn(3).setMaxWidth(60);
 
-        int altura = Math.min((mdl.getRowCount() * 26) + 30, 200);
-        JScrollPane scp = scrollTabela(tbl, altura);
+        JComponent scp = tabelaCompleta(tbl);
 
         pnl.add(lbl, BorderLayout.NORTH);
         pnl.add(scp, BorderLayout.CENTER);
@@ -717,7 +712,7 @@ public class V_OrdemServico extends JPanel {
         nome.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         nome.setForeground(COR_TEXTO_CAMPO);
         nome.setToolTipText(m.getNomeArquivo()
-            + (m.getDescricao().isBlank() ? "" : " — " + m.getDescricao()));
+                + (m.getDescricao().isBlank() ? "" : " — " + m.getDescricao()));
         nome.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel rodape = new JPanel(new BorderLayout());
@@ -773,7 +768,7 @@ public class V_OrdemServico extends JPanel {
         JLabel lbl = new JLabel(icon);
         JScrollPane scp = new JScrollPane(lbl);
         scp.setPreferredSize(new Dimension(Math.min(icon.getIconWidth() + 30, 940),
-                                           Math.min(icon.getIconHeight() + 30, 680)));
+                Math.min(icon.getIconHeight() + 30, 680)));
         String titulo = m.getNomeArquivo() + (m.getDescricao().isBlank() ? "" : " — " + m.getDescricao());
         JOptionPane.showMessageDialog(this, scp, titulo, JOptionPane.PLAIN_MESSAGE);
     }
@@ -782,14 +777,14 @@ public class V_OrdemServico extends JPanel {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle("Selecionar foto ou vídeo");
         fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-            "Fotos e vídeos (jpg, png, gif, mp4, mov, avi, mkv, webm)",
-            "jpg", "jpeg", "png", "gif", "bmp", "mp4", "mov", "avi", "mkv", "webm", "wmv"));
+                "Fotos e vídeos (jpg, png, gif, mp4, mov, avi, mkv, webm)",
+                "jpg", "jpeg", "png", "gif", "bmp", "mp4", "mov", "avi", "mkv", "webm", "wmv"));
         if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
         File arquivo = fc.getSelectedFile();
 
         String descricao = JOptionPane.showInputDialog(this,
-            "Descrição (opcional) para o cliente:", "Descrever mídia",
-            JOptionPane.PLAIN_MESSAGE);
+                "Descrição (opcional) para o cliente:", "Descrever mídia",
+                JOptionPane.PLAIN_MESSAGE);
         if (descricao == null) descricao = ""; // cancelou o campo de descrição, mas mantém o upload
 
         try {
@@ -803,7 +798,7 @@ public class V_OrdemServico extends JPanel {
 
     private void removerMidia(br.com.oficina.atendimento.MidiaServicoEntity m) {
         boolean ok = DialogoConfirmacao.confirmar(this,
-            "Remover \"" + m.getNomeArquivo() + "\" desta O.S.?", "Confirmar remoção");
+                "Remover \"" + m.getNomeArquivo() + "\" desta O.S.?", "Confirmar remoção");
         if (!ok) return;
         try {
             controller.removerMidiaOS(m.getIdMidia());
@@ -958,13 +953,18 @@ public class V_OrdemServico extends JPanel {
         return tbl;
     }
 
-    private JScrollPane scrollTabela(JTable tbl, int altura) {
-        JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
-        scp.getViewport().setBackground(Color.WHITE);
-        scp.setPreferredSize(new Dimension(0, altura));
-        ScrollBarPadrao.aplicar(scp);
-        return scp;
+    /**
+     * Tabela sem scroll: o cabeçalho e todas as linhas ficam visíveis de uma vez,
+     * e o painel cresce conforme a quantidade de linhas.
+     */
+    private JComponent tabelaCompleta(JTable tbl) {
+        tbl.setFillsViewportHeight(true);
+        JPanel pnl = new JPanel(new BorderLayout());
+        pnl.setBackground(Color.WHITE);
+        pnl.setBorder(new RoundedBorder(RAIO_COMPONENTE - 4, COR_BORDA_SUAVE));
+        pnl.add(tbl.getTableHeader(), BorderLayout.NORTH);
+        pnl.add(tbl, BorderLayout.CENTER);
+        return pnl;
     }
 
     private static class RoundedBorder implements javax.swing.border.Border {

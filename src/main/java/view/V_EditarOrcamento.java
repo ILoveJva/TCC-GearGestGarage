@@ -9,7 +9,10 @@ import controller.OficinaController;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -23,8 +26,40 @@ import java.util.List;
 /**
  * Edição de itens de serviço e peças de um orçamento existente.
  * Campos de cliente/veículo/responsável/reclamação são somente-leitura.
+ *
+ * Visual alinhado ao mesmo padrão em vidro (glassmorphism) usado em
+ * V_CadastrarOrcamento / V_VisualizarOrcamento — mesma paleta e os mesmos
+ * renderizadores de tabela (CabecalhoVidroClaro + CelulaBrancaRenderer).
  */
 public class V_EditarOrcamento extends JPanel {
+
+    // =========================================================================
+    // PALETA E MEDIDAS — mesma linguagem visual de V_CadastrarOrcamento / V_VisualizarOrcamento
+    // =========================================================================
+    private static final Color COR_FUNDO_PAGINA = Color.decode("#FAFBFC");
+    private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
+    private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
+    private static final Color COR_BORDA_CARD   = Color.decode("#DDE3EA");
+    private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
+    private static final Color COR_LABEL_SUTIL  = Color.decode("#8A94A3");
+    private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
+
+    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
+    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
+    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
+    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
+    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
+    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
+    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
+    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
+
+    // Tabela de dados
+    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
+
+    private static final int ALTURA_CABECALHO = 26;
+    private static final int ALTURA_LINHA     = 26;
 
     private final OficinaController controller;
     private final long idOrcamento;
@@ -35,20 +70,25 @@ public class V_EditarOrcamento extends JPanel {
     // Itens de serviço
     private JComboBox<CatalogoServicoEntity> cmb_ItemCatalogo;
     private JComboBox<SistemaItem> cmb_FiltroSistema;
+    private JTextField txt_BuscaServico;
     private final List<CatalogoServicoEntity> todosItens = new ArrayList<>();
     private DefaultTableModel mdl_ItensSelecionados;
     private JTable tbl_ItensSelecionados;
+    private JScrollPane scroll_Itens;
     private JLabel lbl_Total;
     private final List<CatalogoServicoEntity> itensSelecionados = new ArrayList<>();
     private final List<Double> valoresItensSelecionados = new ArrayList<>();
 
     // Peças
     private JComboBox<ItemPeca> cmb_Peca;
+    private JTextField txt_BuscaPeca;
+    private final List<CatalogoPecaEntity> todasPecasCatalogo = new ArrayList<>();
     private JTextField txt_NomeTecnicoPeca;
     private JTextField txt_FabricantePeca;
     private JTextField txt_QuantidadePeca;
     private DefaultTableModel mdl_PecasSelecionadas;
     private JTable tbl_PecasSelecionadas;
+    private JScrollPane scroll_Pecas;
     private final List<Long> pecasSelecionadas = new ArrayList<>();
     private final List<Double> valoresPecasSelecionadas = new ArrayList<>();
     private final List<String> nomesTecnicosPecas = new ArrayList<>();
@@ -61,7 +101,7 @@ public class V_EditarOrcamento extends JPanel {
         this.controller = controller;
         this.idOrcamento = idOrcamento;
         setLayout(new GridBagLayout());
-        setBackground(Color.WHITE);
+        setBackground(COR_FUNDO_PAGINA);
         initComponents();
         carregarDados();
         carregarCatalogo();
@@ -70,9 +110,9 @@ public class V_EditarOrcamento extends JPanel {
     }
 
     private void initComponents() {
-        JPanel card = new JPanel(new BorderLayout(0, 12));
-        card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(640, 680));
+        JPanel card = new PainelGradiente(new BorderLayout(0, 14), COR_CARD_TOPO, COR_CARD_BASE);
+        card.setPreferredSize(new Dimension(680, 740));
+        card.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
 
         JPanel headerGlass = new CabecalhoVidro();
         headerGlass.setLayout(new BorderLayout());
@@ -80,20 +120,17 @@ public class V_EditarOrcamento extends JPanel {
         headerGlass.setPreferredSize(new Dimension(10, 42));
         headerGlass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-        JLabel titulo = new JLabel("Editar Orçamento");
+        JLabel titulo = new JLabel("Orçamentos > Editar Orçamento");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        titulo.setForeground(Color.decode("#3A4149"));
+        titulo.setForeground(COR_AERO_TEXTO);
         headerGlass.add(titulo, BorderLayout.WEST);
 
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.setBackground(Color.WHITE);
+        form.setOpaque(false);
 
-        pnl_InfoHeader = new JPanel(new GridLayout(0, 2, 8, 4));
-        pnl_InfoHeader.setBackground(Color.decode("#F5F5F5"));
-        pnl_InfoHeader.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
-                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+        pnl_InfoHeader = new PainelGradiente(new GridLayout(0, 2, 8, 4), COR_CARD_TOPO, COR_CARD_BASE, COR_BORDA_CARD);
+        pnl_InfoHeader.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
         pnl_InfoHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_InfoHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
@@ -138,11 +175,11 @@ public class V_EditarOrcamento extends JPanel {
         JPanel sec = new JPanel(new BorderLayout(0, 6));
         sec.setOpaque(false);
         sec.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 310));
+        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 900));
 
         JLabel lbl = new JLabel("Itens de Serviço");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(Color.decode("#333333"));
+        lbl.setForeground(COR_TITULO);
 
         cmb_ItemCatalogo = new JComboBox<>();
         cmb_ItemCatalogo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -178,13 +215,29 @@ public class V_EditarOrcamento extends JPanel {
 
         JLabel lbl_LocalFiltro = new JLabel("Local:");
         lbl_LocalFiltro.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl_LocalFiltro.setForeground(Color.decode("#555555"));
+        lbl_LocalFiltro.setForeground(COR_LABEL);
         lbl_LocalFiltro.setPreferredSize(new Dimension(46, 28));
 
         JPanel pnl_FiltroRow = new JPanel(new BorderLayout(8, 0));
         pnl_FiltroRow.setOpaque(false);
         pnl_FiltroRow.add(lbl_LocalFiltro, BorderLayout.WEST);
         pnl_FiltroRow.add(cmb_FiltroSistema, BorderLayout.CENTER);
+
+        txt_BuscaServico = new CampoArredondado();
+        txt_BuscaServico.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txt_BuscaServico.setToolTipText("Digite para buscar um serviço pelo nome");
+        txt_BuscaServico.setPreferredSize(new Dimension(0, 28));
+        BuscaUtil.aoDigitar(txt_BuscaServico, this::filtrarCatalogo);
+
+        JLabel lbl_Busca = new JLabel("Buscar:");
+        lbl_Busca.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lbl_Busca.setForeground(COR_LABEL);
+        lbl_Busca.setPreferredSize(new Dimension(46, 28));
+
+        JPanel pnl_BuscaRow = new JPanel(new BorderLayout(8, 0));
+        pnl_BuscaRow.setOpaque(false);
+        pnl_BuscaRow.add(lbl_Busca, BorderLayout.WEST);
+        pnl_BuscaRow.add(txt_BuscaServico, BorderLayout.CENTER);
 
         JButton btn_Add = botaoAcao("+ Adicionar", "#28A745");
         btn_Add.addActionListener(e -> adicionarItem());
@@ -194,8 +247,9 @@ public class V_EditarOrcamento extends JPanel {
         pnl_AddRow.add(cmb_ItemCatalogo, BorderLayout.CENTER);
         pnl_AddRow.add(btn_Add, BorderLayout.EAST);
 
-        JPanel pnl_NorteRows = new JPanel(new GridLayout(2, 1, 0, 4));
+        JPanel pnl_NorteRows = new JPanel(new GridLayout(3, 1, 0, 4));
         pnl_NorteRows.setOpaque(false);
+        pnl_NorteRows.add(pnl_BuscaRow);
         pnl_NorteRows.add(pnl_FiltroRow);
         pnl_NorteRows.add(pnl_AddRow);
 
@@ -219,7 +273,7 @@ public class V_EditarOrcamento extends JPanel {
             atualizarTotal();
         });
         tbl_ItensSelecionados = criarTabela(mdl_ItensSelecionados);
-        JScrollPane scroll = scrollTabela(tbl_ItensSelecionados, 100);
+        scroll_Itens = scrollTabela(tbl_ItensSelecionados, ALTURA_CABECALHO + ALTURA_LINHA);
 
         JButton btn_Rem = botaoRemover("Remover selecionado");
         btn_Rem.addActionListener(e -> {
@@ -228,6 +282,7 @@ public class V_EditarOrcamento extends JPanel {
                 itensSelecionados.remove(row);
                 valoresItensSelecionados.remove(row);
                 mdl_ItensSelecionados.removeRow(row);
+                ajustarAlturaTabela(scroll_Itens, tbl_ItensSelecionados);
                 atualizarTotal();
             }
         });
@@ -245,7 +300,7 @@ public class V_EditarOrcamento extends JPanel {
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);
         corpo.add(pnl_NorteRows, BorderLayout.NORTH);
-        corpo.add(scroll, BorderLayout.CENTER);
+        corpo.add(scroll_Itens, BorderLayout.CENTER);
         corpo.add(pnl_Rodape, BorderLayout.SOUTH);
 
         sec.add(lbl, BorderLayout.NORTH);
@@ -257,16 +312,31 @@ public class V_EditarOrcamento extends JPanel {
         JPanel sec = new JPanel(new BorderLayout(0, 6));
         sec.setOpaque(false);
         sec.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 340));
+        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 900));
 
         JLabel lbl = new JLabel("Peças a Substituir");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(Color.decode("#333333"));
+        lbl.setForeground(COR_TITULO);
 
         cmb_Peca = new JComboBox<>();
         cmb_Peca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmb_Peca.setBackground(Color.WHITE);
         estilizarCombo(cmb_Peca);
+
+        txt_BuscaPeca = new CampoArredondado();
+        txt_BuscaPeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txt_BuscaPeca.setToolTipText("Digite para buscar uma peça pelo nome popular");
+        txt_BuscaPeca.setPreferredSize(new Dimension(0, 32));
+        BuscaUtil.aoDigitar(txt_BuscaPeca, this::filtrarPecas);
+
+        JLabel lbl_BuscaPeca = new JLabel("Buscar peça:");
+        lbl_BuscaPeca.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lbl_BuscaPeca.setForeground(COR_LABEL_SUTIL);
+
+        JPanel pnl_BuscaPeca = new JPanel(new BorderLayout(0, 2));
+        pnl_BuscaPeca.setOpaque(false);
+        pnl_BuscaPeca.add(lbl_BuscaPeca, BorderLayout.NORTH);
+        pnl_BuscaPeca.add(txt_BuscaPeca, BorderLayout.CENTER);
 
         txt_NomeTecnicoPeca = new CampoArredondado();
         txt_NomeTecnicoPeca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -296,7 +366,7 @@ public class V_EditarOrcamento extends JPanel {
         pnl_NomeTec.setOpaque(false);
         JLabel lbl_NomeTec = new JLabel("Nome Técnico da Peça (opcional)");
         lbl_NomeTec.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lbl_NomeTec.setForeground(Color.decode("#888888"));
+        lbl_NomeTec.setForeground(COR_LABEL_SUTIL);
         pnl_NomeTec.add(lbl_NomeTec, BorderLayout.NORTH);
         pnl_NomeTec.add(txt_NomeTecnicoPeca, BorderLayout.CENTER);
 
@@ -304,7 +374,7 @@ public class V_EditarOrcamento extends JPanel {
         pnl_Fabricante.setOpaque(false);
         JLabel lbl_Fabricante = new JLabel("Fabricante da Peça (opcional)");
         lbl_Fabricante.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lbl_Fabricante.setForeground(Color.decode("#888888"));
+        lbl_Fabricante.setForeground(COR_LABEL_SUTIL);
         pnl_Fabricante.add(lbl_Fabricante, BorderLayout.NORTH);
         pnl_Fabricante.add(txt_FabricantePeca, BorderLayout.CENTER);
 
@@ -312,7 +382,7 @@ public class V_EditarOrcamento extends JPanel {
         pnl_Quantidade.setOpaque(false);
         JLabel lbl_Quantidade = new JLabel("Quantidade");
         lbl_Quantidade.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lbl_Quantidade.setForeground(Color.decode("#888888"));
+        lbl_Quantidade.setForeground(COR_LABEL_SUTIL);
         pnl_Quantidade.add(lbl_Quantidade, BorderLayout.NORTH);
         pnl_Quantidade.add(txt_QuantidadePeca, BorderLayout.CENTER);
 
@@ -352,7 +422,7 @@ public class V_EditarOrcamento extends JPanel {
         });
         tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
         tbl_PecasSelecionadas.getColumnModel().getColumn(3).setMaxWidth(60);
-        JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 160);
+        scroll_Pecas = scrollTabela(tbl_PecasSelecionadas, ALTURA_CABECALHO + ALTURA_LINHA);
 
         JButton btn_RemPeca = botaoRemover("Remover selecionada");
         btn_RemPeca.addActionListener(e -> {
@@ -364,6 +434,7 @@ public class V_EditarOrcamento extends JPanel {
                 fabricantesPecas.remove(row);
                 quantidadesPecas.remove(row);
                 mdl_PecasSelecionadas.removeRow(row);
+                ajustarAlturaTabela(scroll_Pecas, tbl_PecasSelecionadas);
                 atualizarTotal();
             }
         });
@@ -375,6 +446,8 @@ public class V_EditarOrcamento extends JPanel {
         JPanel pnl_Norte = new JPanel();
         pnl_Norte.setLayout(new BoxLayout(pnl_Norte, BoxLayout.Y_AXIS));
         pnl_Norte.setOpaque(false);
+        pnl_Norte.add(pnl_BuscaPeca);
+        pnl_Norte.add(Box.createVerticalStrut(6));
         pnl_Norte.add(pnl_Row);
         pnl_Norte.add(Box.createVerticalStrut(6));
         pnl_Norte.add(pnl_NomeTec);
@@ -386,7 +459,7 @@ public class V_EditarOrcamento extends JPanel {
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);
         corpo.add(pnl_Norte, BorderLayout.NORTH);
-        corpo.add(scroll, BorderLayout.CENTER);
+        corpo.add(scroll_Pecas, BorderLayout.CENTER);
         corpo.add(pnl_Rodape, BorderLayout.SOUTH);
 
         sec.add(lbl, BorderLayout.NORTH);
@@ -442,18 +515,30 @@ public class V_EditarOrcamento extends JPanel {
                 mdl_PecasSelecionadas.addRow(new Object[]{peca.getNomeExibicao(), nomeTecnico, fabricante,
                         quantidade, String.format("%.2f", valor)});
             }
+            ajustarAlturaTabela(scroll_Itens, tbl_ItensSelecionados);
+            ajustarAlturaTabela(scroll_Pecas, tbl_PecasSelecionadas);
             atualizarTotal();
         } catch (Exception e) {
             DialogoAlerta.erro(this, "Erro ao carregar orçamento: " + e.getMessage(), "Erro");
         }
     }
 
+    /** Redimensiona a área da tabela para caber todas as linhas sem precisar rolar internamente. */
+    private void ajustarAlturaTabela(JScrollPane scroll, JTable tbl) {
+        int linhas = Math.max(1, tbl.getRowCount());
+        int altura = ALTURA_CABECALHO + linhas * ALTURA_LINHA + 4;
+        scroll.setPreferredSize(new Dimension(0, altura));
+        revalidate();
+        repaint();
+    }
+
     private void addInfo(String rotulo, String valor) {
         JLabel lbl = new JLabel(rotulo);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(Color.decode("#555555"));
+        lbl.setForeground(COR_LABEL);
         JLabel val = new JLabel(valor);
         val.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        val.setForeground(COR_TEXTO_CAMPO);
         pnl_InfoHeader.add(lbl);
         pnl_InfoHeader.add(val);
     }
@@ -468,17 +553,31 @@ public class V_EditarOrcamento extends JPanel {
         cmb_ItemCatalogo.removeAllItems();
         SistemaItem sel = (SistemaItem) cmb_FiltroSistema.getSelectedItem();
         String cod = (sel != null && !sel.codigo.isEmpty()) ? sel.codigo : "";
+        String termo = txt_BuscaServico != null ? txt_BuscaServico.getText() : "";
         for (CatalogoServicoEntity item : todosItens) {
-            if (cod.isEmpty() || cod.equals(item.getSistema()))
+            boolean bateSistema = cod.isEmpty() || cod.equals(item.getSistema());
+            if (bateSistema && BuscaUtil.contem(item.getNome(), termo))
                 cmb_ItemCatalogo.addItem(item);
         }
     }
 
     private void carregarPecas() {
+        todasPecasCatalogo.clear();
+        todasPecasCatalogo.addAll(controller.listarTodasPecas());
+        filtrarPecas();
+    }
+
+    private void filtrarPecas() {
         cmb_Peca.removeAllItems();
-        List<CatalogoPecaEntity> pecas = controller.listarTodasPecas();
-        if (pecas.isEmpty()) cmb_Peca.addItem(new ItemPeca(null));
-        else for (CatalogoPecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
+        String termo = txt_BuscaPeca != null ? txt_BuscaPeca.getText() : "";
+        boolean alguma = false;
+        for (CatalogoPecaEntity p : todasPecasCatalogo) {
+            if (BuscaUtil.contem(p.getNomeExibicao(), termo)) {
+                cmb_Peca.addItem(new ItemPeca(p));
+                alguma = true;
+            }
+        }
+        if (!alguma) cmb_Peca.addItem(new ItemPeca(null));
     }
 
     private void adicionarItem() {
@@ -488,6 +587,7 @@ public class V_EditarOrcamento extends JPanel {
         valoresItensSelecionados.add(item.getValor());
         String tipo = "REVISAO".equals(item.getTipo()) ? "Revisão" : "Padrão";
         mdl_ItensSelecionados.addRow(new Object[]{item.getNome(), tipo, String.format("%.2f", item.getValor())});
+        ajustarAlturaTabela(scroll_Itens, tbl_ItensSelecionados);
         atualizarTotal();
     }
 
@@ -514,6 +614,7 @@ public class V_EditarOrcamento extends JPanel {
         txt_NomeTecnicoPeca.setText("");
         txt_FabricantePeca.setText("");
         txt_QuantidadePeca.setText("1");
+        ajustarAlturaTabela(scroll_Pecas, tbl_PecasSelecionadas);
         atualizarTotal();
     }
 
@@ -566,6 +667,111 @@ public class V_EditarOrcamento extends JPanel {
         @Override public String toString() { return label; }
     }
 
+    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7), igual às demais telas. */
+    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
+
+        CabecalhoVidroClaro() {
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setForeground(COR_AERO_TEXTO);
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            setText(value == null ? "" : value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int meio = h / 2;
+
+            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
+            g2.fillRect(0, 0, w, meio);
+
+            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
+            g2.fillRect(0, meio, w, h - meio);
+
+            g2.setColor(new Color(255, 255, 255, 140));
+            g2.fillRect(0, 0, w, Math.max(1, h / 5));
+
+            g2.setColor(COR_AERO_SEPARA);
+            g2.drawLine(w - 1, 3, w - 1, h - 4);
+
+            g2.setColor(COR_AERO_BORDA);
+            g2.drawLine(0, h - 1, w, h - 1);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Células de dados sempre com fundo branco (e destaque âmbar quando selecionadas), igual às demais telas. */
+    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
+        CelulaBrancaRenderer() {
+            setOpaque(true);
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
+            setForeground(COR_TEXTO_CAMPO);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+            return this;
+        }
+    }
+
+    /** Painel com fundo em gradiente suave, opcionalmente com uma borda arredondada colorida. */
+    private static class PainelGradiente extends JPanel {
+        private final Color corTopo;
+        private final Color corBase;
+        private final Color corBorda;
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
+            this(layout, corTopo, corBase, null);
+        }
+
+        PainelGradiente(LayoutManager layout, Color corTopo, Color corBase, Color corBorda) {
+            super(layout);
+            this.corTopo = corTopo;
+            this.corBase = corBase;
+            this.corBorda = corBorda;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            GradientPaint gp = new GradientPaint(0, 0, corTopo, 0, h, corBase);
+            g2.setPaint(gp);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 1, h - 1, 14, 14));
+
+            if (corBorda != null) {
+                g2.setStroke(new BasicStroke(1.3f));
+                g2.setColor(corBorda);
+                g2.draw(new RoundRectangle2D.Double(0.75, 0.75, w - 1.5, h - 1.5, 14, 14));
+            }
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
     // ===== helpers visuais =====
     private JButton botaoAcao(String texto, String corHex) {
         BotaoVidro btn = new BotaoVidro(texto, Color.decode(corHex));
@@ -590,19 +796,35 @@ public class V_EditarOrcamento extends JPanel {
         cmb.setBorder(BorderFactory.createEmptyBorder(1, 8, 1, 4));
     }
 
+    /** Monta a tabela com o mesmo vidro Aero cinza no cabeçalho e fundo branco nas células das demais telas. */
     private JTable criarTabela(DefaultTableModel model) {
         JTable tbl = new JTable(model);
         tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setRowHeight(24);
-        tbl.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tbl.getTableHeader().setReorderingAllowed(false);
+        tbl.setForeground(COR_TEXTO_CAMPO);
+        tbl.setBackground(COR_TABELA_FUNDO);
+        tbl.setOpaque(true);
+        tbl.setRowHeight(ALTURA_LINHA);
+        tbl.setShowGrid(false);
+        tbl.setIntercellSpacing(new Dimension(0, 0));
         tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl.setSelectionBackground(COR_TABELA_SELECAO);
+        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
+        tbl.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
+
+        JTableHeader header = tbl.getTableHeader();
+        header.setDefaultRenderer(new CabecalhoVidroClaro());
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, ALTURA_CABECALHO));
+        header.setReorderingAllowed(false);
+        header.setOpaque(false);
         return tbl;
     }
 
     private JScrollPane scrollTabela(JTable tbl, int altura) {
         JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(BorderFactory.createLineBorder(Color.decode("#CCCCCC")));
+        scp.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
+        scp.setOpaque(false);
+        scp.getViewport().setBackground(COR_TABELA_FUNDO);
+        scp.getViewport().setOpaque(true);
         scp.setPreferredSize(new Dimension(0, altura));
         ScrollBarPadrao.aplicar(scp);
         return scp;

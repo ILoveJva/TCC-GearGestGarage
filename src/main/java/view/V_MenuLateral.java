@@ -16,7 +16,7 @@ public class V_MenuLateral extends JPanel {
     // ==========================================
     private JLabel lbl_LogoOficina;
     private JButton btn_PaginaInicial;
-    private JButton btn_Pesquisar;
+    private JButton btn_Configuracoes;
     private JButton btn_Servicos;
     private JButton btn_Estoque;
 
@@ -55,8 +55,8 @@ public class V_MenuLateral extends JPanel {
         btn_PaginaInicial = new JButton("Página Inicial");
         estilizarBotaoMenu(btn_PaginaInicial, dimBtn, "/assets/icons/home.png", 50, 50);
 
-        btn_Pesquisar = new JButton("Pesquisar");
-        estilizarBotaoMenu(btn_Pesquisar, dimBtn, "/assets/icons/pesquisar.png", 50, 50);
+        btn_Configuracoes = new JButton("Configurações");
+        estilizarBotaoMenu(btn_Configuracoes, dimBtn, "/assets/icons/config.png", 50, 50);
 
         btn_Servicos = new JButton("Serviços");
         estilizarBotaoMenu(btn_Servicos, dimBtn, "/assets/icons/servicos.png", 50, 50);
@@ -70,7 +70,7 @@ public class V_MenuLateral extends JPanel {
         add(Box.createVerticalStrut(30));
         add(btn_PaginaInicial);
         add(Box.createVerticalStrut(30));
-        add(btn_Pesquisar);
+        add(btn_Configuracoes);
         add(Box.createVerticalStrut(30));
         add(btn_Servicos);
         add(Box.createVerticalStrut(30));
@@ -84,9 +84,8 @@ public class V_MenuLateral extends JPanel {
         // Retorna para a home do sistema passando o controlador para não perder os dados salvos
         btn_PaginaInicial.addActionListener(e -> navegarPara(new V_PaginaInicial(this.controller)));
 
-        // Links para as demais telas (descomente conforme criar os painéis correspondentes)
-        btn_Pesquisar.addActionListener(e -> {
-            navegarPara(new V_PesquisarGeral(this.controller));
+        btn_Configuracoes.addActionListener(e -> {
+            navegarPara(new V_Configuracoes(this.controller));
         });
 
         btn_Servicos.addActionListener(e -> {
@@ -94,7 +93,7 @@ public class V_MenuLateral extends JPanel {
         });
 
         btn_Estoque.addActionListener(e -> {
-            // navegarPara(new V_GerenciarEstoque(this.controller));
+            navegarPara(new V_Estoque(this.controller));
         });
     }
 

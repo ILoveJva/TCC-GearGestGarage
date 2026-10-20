@@ -45,6 +45,7 @@ public class V_CadastrarOrcamento extends JPanel {
     // -- Itens de serviço --
     private GlassComboBox<CatalogoServicoEntity> cmb_ItemCatalogo;
     private GlassComboBox<SistemaItem> cmb_FiltroSistema;
+    private GlassTextField txt_BuscaServico;
     private final List<CatalogoServicoEntity> todosItens = new ArrayList<>();
     private DefaultTableModel mdl_ItensSelecionados;
     private JTable tbl_ItensSelecionados;
@@ -54,6 +55,8 @@ public class V_CadastrarOrcamento extends JPanel {
 
     // -- Peças --
     private GlassComboBox<ItemPeca> cmb_Peca;
+    private GlassTextField txt_BuscaPeca;
+    private final List<CatalogoPecaEntity> todasPecasCatalogo = new ArrayList<>();
     private GlassTextField txt_NomeTecnicoPeca;
     private GlassTextField txt_FabricantePeca;
     private GlassTextField txt_QuantidadePeca;
@@ -245,7 +248,7 @@ public class V_CadastrarOrcamento extends JPanel {
     private JPanel criarSecaoItens() {
         JPanel sec = new PainelSecao(new BorderLayout(0, 8));
         sec.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
+        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 356));
         sec.setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
 
         JLabel lbl = criarLabelSecao("Itens de Serviço");
@@ -286,6 +289,16 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_FiltroRow.add(lbl_LocalFiltro, BorderLayout.WEST);
         pnl_FiltroRow.add(cmb_FiltroSistema, BorderLayout.CENTER);
 
+        txt_BuscaServico = criarTextField();
+        txt_BuscaServico.setToolTipText("Digite para buscar um serviço pelo nome");
+        JLabel lbl_Busca = criarLabelMini("Buscar:");
+        lbl_Busca.setPreferredSize(new Dimension(46, ALTURA_CAMPO));
+        JPanel pnl_BuscaRow = new JPanel(new BorderLayout(8, 0));
+        pnl_BuscaRow.setOpaque(false);
+        pnl_BuscaRow.add(lbl_Busca, BorderLayout.WEST);
+        pnl_BuscaRow.add(txt_BuscaServico, BorderLayout.CENTER);
+        BuscaUtil.aoDigitar(txt_BuscaServico, this::filtrarCatalogo);
+
         JButton btn_Add = botaoAcao("+ Adicionar", COR_SUCESSO);
         btn_Add.addActionListener(e -> adicionarItem());
 
@@ -294,8 +307,9 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_AddRow.add(cmb_ItemCatalogo, BorderLayout.CENTER);
         pnl_AddRow.add(btn_Add, BorderLayout.EAST);
 
-        JPanel pnl_NorteRows = new JPanel(new GridLayout(2, 1, 0, 6));
+        JPanel pnl_NorteRows = new JPanel(new GridLayout(3, 1, 0, 6));
         pnl_NorteRows.setOpaque(false);
+        pnl_NorteRows.add(pnl_BuscaRow);
         pnl_NorteRows.add(pnl_FiltroRow);
         pnl_NorteRows.add(pnl_AddRow);
 
@@ -357,7 +371,7 @@ public class V_CadastrarOrcamento extends JPanel {
     private JPanel criarSecaoPecas() {
         JPanel sec = new PainelSecao(new BorderLayout(0, 8));
         sec.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 360));
+        sec.setMaximumSize(new Dimension(Integer.MAX_VALUE, 496));
         sec.setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
 
         JLabel lbl = criarLabelSecao("Peças a Substituir");
@@ -380,6 +394,16 @@ public class V_CadastrarOrcamento extends JPanel {
 
         cmb_Peca = criarCombo();
         cmb_Peca.setRenderer(criarRendererPadrao());
+
+        txt_BuscaPeca = criarTextField();
+        txt_BuscaPeca.setToolTipText("Digite para buscar uma peça pelo nome popular");
+        BuscaUtil.aoDigitar(txt_BuscaPeca, this::filtrarPecas);
+        JPanel pnl_BuscaPecaRow = new JPanel(new BorderLayout(8, 0));
+        pnl_BuscaPecaRow.setOpaque(false);
+        JLabel lbl_BuscaPeca = criarLabelMini("Buscar:");
+        lbl_BuscaPeca.setPreferredSize(new Dimension(46, ALTURA_CAMPO));
+        pnl_BuscaPecaRow.add(lbl_BuscaPeca, BorderLayout.WEST);
+        pnl_BuscaPecaRow.add(txt_BuscaPeca, BorderLayout.CENTER);
 
         txt_NomeTecnicoPeca = criarTextField();
         txt_NomeTecnicoPeca.setToolTipText("Ex: Filtro Mann W811/80 (nome técnico específico desta peça)");
@@ -453,7 +477,7 @@ public class V_CadastrarOrcamento extends JPanel {
         });
         tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
         tbl_PecasSelecionadas.getColumnModel().getColumn(3).setMaxWidth(60);
-        JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 160);
+        JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 260);
 
         JButton btn_RemPeca = botaoLink("Remover selecionada", COR_PERIGO);
         btn_RemPeca.addActionListener(e -> {
@@ -476,6 +500,8 @@ public class V_CadastrarOrcamento extends JPanel {
         JPanel pnl_Norte = new JPanel();
         pnl_Norte.setLayout(new BoxLayout(pnl_Norte, BoxLayout.Y_AXIS));
         pnl_Norte.setOpaque(false);
+        pnl_Norte.add(pnl_BuscaPecaRow);
+        pnl_Norte.add(Box.createVerticalStrut(8));
         pnl_Norte.add(pnl_Row);
         pnl_Norte.add(Box.createVerticalStrut(8));
         pnl_Norte.add(pnl_NomeTec);
@@ -517,8 +543,10 @@ public class V_CadastrarOrcamento extends JPanel {
         cmb_ItemCatalogo.removeAllItems();
         SistemaItem sel = (SistemaItem) cmb_FiltroSistema.getSelectedItem();
         String cod = (sel != null && !sel.codigo.isEmpty()) ? sel.codigo : "";
+        String termo = txt_BuscaServico != null ? txt_BuscaServico.getText() : "";
         for (CatalogoServicoEntity item : todosItens) {
-            if (cod.isEmpty() || cod.equals(item.getSistema()))
+            boolean bateSistema = cod.isEmpty() || cod.equals(item.getSistema());
+            if (bateSistema && BuscaUtil.contem(item.getNome(), termo))
                 cmb_ItemCatalogo.addItem(item);
         }
     }
@@ -550,13 +578,22 @@ public class V_CadastrarOrcamento extends JPanel {
 
     /** Peças são genéricas (não dependem de veículo/modelo) — o valor é definido no próprio orçamento. */
     private void carregarPecas() {
+        todasPecasCatalogo.clear();
+        todasPecasCatalogo.addAll(controller.listarTodasPecas());
+        filtrarPecas();
+    }
+
+    private void filtrarPecas() {
         cmb_Peca.removeAllItems();
-        List<CatalogoPecaEntity> pecas = controller.listarTodasPecas();
-        if (pecas.isEmpty()) {
-            cmb_Peca.addItem(new ItemPeca(null));
-        } else {
-            for (CatalogoPecaEntity p : pecas) cmb_Peca.addItem(new ItemPeca(p));
+        String termo = txt_BuscaPeca != null ? txt_BuscaPeca.getText() : "";
+        boolean alguma = false;
+        for (CatalogoPecaEntity p : todasPecasCatalogo) {
+            if (BuscaUtil.contem(p.getNomeExibicao(), termo)) {
+                cmb_Peca.addItem(new ItemPeca(p));
+                alguma = true;
+            }
         }
+        if (!alguma) cmb_Peca.addItem(new ItemPeca(null));
     }
 
     private void adicionarItem() {

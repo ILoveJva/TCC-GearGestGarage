@@ -58,7 +58,6 @@ public class V_PaginaInicial extends JPanel {
     private JLabel lbl_NomeGaragem;
     private JLabel lbl_CnpjGaragem;
     private JLabel lbl_Especialidade;
-    private JButton btn_PesquisarHeader;
     private JButton btn_Configuracoes;
 
     // Botões de Visualização
@@ -134,14 +133,8 @@ public class V_PaginaInicial extends JPanel {
         pnl_Identidade.add(lbl_AvatarGaragem, BorderLayout.WEST);
         pnl_Identidade.add(pnl_TextoHeader, BorderLayout.CENTER);
 
-        // Os dois botões do topo (Pesquisar e Configurações) usam o novo botão de
+        // O botão do topo (Configurações) usa o novo botão de
         // "vidro 3D" (BotaoVidro3D) em vez do fundo amarelado (COR_CARTAO_OPACA).
-        btn_PesquisarHeader = new BotaoVidro3D();
-        ImageIcon icoBusca = carregarERedimensionarIcone("/assets/icons/pesquisar.png", 50, 50);
-        if (icoBusca != null) btn_PesquisarHeader.setIcon(icoBusca);
-        btn_PesquisarHeader.setPreferredSize(new Dimension(80, 80));
-        btn_PesquisarHeader.setToolTipText("Pesquisar");
-
         btn_Configuracoes = new BotaoVidro3D();
         ImageIcon icoConfig = carregarERedimensionarIcone("/assets/icons/config.png", 50, 50);
         if (icoConfig != null) {
@@ -157,7 +150,6 @@ public class V_PaginaInicial extends JPanel {
         JPanel pnl_ContainerBusca = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         pnl_ContainerBusca.setOpaque(false);
         pnl_ContainerBusca.add(btn_Configuracoes);
-        pnl_ContainerBusca.add(btn_PesquisarHeader);
 
         pnl_Header.add(pnl_Identidade, BorderLayout.CENTER);
         pnl_Header.add(pnl_ContainerBusca, BorderLayout.EAST);
@@ -237,7 +229,6 @@ public class V_PaginaInicial extends JPanel {
      * Vincula os cliques de navegação repassando o "controller" para as novas instâncias.
      */
     private void vincularAcoesBotoes() {
-        btn_PesquisarHeader.addActionListener(e -> navegarPara(new V_PesquisarGeral(this.controller)));
         btn_Configuracoes.addActionListener(e -> navegarPara(new V_Configuracoes(this.controller)));
 
         // Fluxos de Visualização / Consulta

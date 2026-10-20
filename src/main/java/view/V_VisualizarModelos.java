@@ -88,7 +88,7 @@ public class V_VisualizarModelos extends JPanel {
         pnl_Cabecalho.add(titulo, BorderLayout.WEST);
         pnl_Cabecalho.add(btn_Novo, BorderLayout.EAST);
 
-        String[] cols = {"Cód.", "Modelo", "Tipo", "Montadora"};
+        String[] cols = {"Cód.", "Modelo", "Ano", "Tipo", "Montadora"};
         mdl = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -108,6 +108,7 @@ public class V_VisualizarModelos extends JPanel {
         tabela.setFillsViewportHeight(true);
         tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
         tabela.getColumnModel().getColumn(0).setMaxWidth(60);
+        tabela.getColumnModel().getColumn(2).setMaxWidth(70);
 
         JTableHeader cabecalho = tabela.getTableHeader();
         cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
@@ -154,6 +155,7 @@ public class V_VisualizarModelos extends JPanel {
                 mdl.addRow(new Object[]{
                         String.format("%04d", mod.getIdModelo()),
                         mod.getNome(),
+                        mod.getAno() > 0 ? String.valueOf(mod.getAno()) : "—",
                         mod.getTipo(),
                         mont.getNome()
                 });

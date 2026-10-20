@@ -19,6 +19,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,6 +35,8 @@ public class V_EntradaEstoque extends JPanel {
     private final OficinaController controller;
 
     private GlassComboBox<ItemPeca> cmb_Peca;
+    private GlassTextField txt_BuscaPeca;
+    private final List<ItemPeca> todosItensPeca = new ArrayList<>();
     private GlassTextField txt_Quantidade;
     private GlassTextField txt_Valor;
     private JRadioButton rad_Estoque;
@@ -100,6 +103,13 @@ public class V_EntradaEstoque extends JPanel {
         cmb_Peca.setRenderer(criarRendererPadrao());
         cmb_Peca.addActionListener(e -> sugerirDestinoPelaPeca());
 
+        txt_BuscaPeca = criarTextField();
+        txt_BuscaPeca.setToolTipText("Digite para buscar uma peça pelo nome popular");
+        BuscaUtil.aoDigitar(txt_BuscaPeca, this::filtrarPecas);
+
+        JPanel pnl_L0 = linha(58);
+        pnl_L0.add(bloco("Buscar peça", txt_BuscaPeca), BorderLayout.CENTER);
+
         txt_Quantidade = criarTextField();
         txt_Quantidade.setToolTipText("Ex: 10");
         ((AbstractDocument) txt_Quantidade.getDocument()).setDocumentFilter(new FiltroInteiro());
@@ -162,6 +172,8 @@ public class V_EntradaEstoque extends JPanel {
         JPanel pnl_L5 = linha(200);
         pnl_L5.add(bloco("Observação", txt_Observacao), BorderLayout.CENTER);
 
+        form.add(pnl_L0);
+        form.add(Box.createVerticalStrut(12));
         form.add(pnl_L1);
         form.add(Box.createVerticalStrut(12));
         form.add(pnl_L2);
@@ -302,10 +314,19 @@ public class V_EntradaEstoque extends JPanel {
     }
 
     private void carregarPecas() {
+        todosItensPeca.clear();
+        for (CatalogoPecaEntity p : controller.listarEstoque())
+            todosItensPeca.add(new ItemPeca(p, controller.quantidadeEstoqueCatalogo(p.getIdCatalogoPeca())));
+        filtrarPecas();
+    }
+
+    private void filtrarPecas() {
         Object selecionado = cmb_Peca.getSelectedItem();
         cmb_Peca.removeAllItems();
-        for (CatalogoPecaEntity p : controller.listarEstoque())
-            cmb_Peca.addItem(new ItemPeca(p, controller.quantidadeEstoqueCatalogo(p.getIdCatalogoPeca())));
+        String termo = txt_BuscaPeca != null ? txt_BuscaPeca.getText() : "";
+        for (ItemPeca it : todosItensPeca)
+            if (it.peca == null || BuscaUtil.contem(it.peca.getNomeExibicao(), termo))
+                cmb_Peca.addItem(it);
         if (selecionado instanceof ItemPeca ip && ip.peca != null) {
             for (int i = 0; i < cmb_Peca.getItemCount(); i++) {
                 ItemPeca it = cmb_Peca.getItemAt(i);

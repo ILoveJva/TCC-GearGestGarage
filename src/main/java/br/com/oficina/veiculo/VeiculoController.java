@@ -31,4 +31,8 @@ public class VeiculoController {
     public ModeloEntity cadastrarModelo(String nome, int ano, String tipo, long idMontadora) {
         return service.cadastrarModelo(nome, ano, tipo, idMontadora);
     }
+
+    public void salvarFoto(long idVeiculo, java.io.File arquivo) {
+        service.salvarFoto(idVeiculo, arquivo);
+    }
 }

@@ -16,4 +16,11 @@ public class UsuarioService {
 
     public void logout(long idUsuario) { /* sessao nao persistida nesta camada */ }
     public List<UsuarioEntity> listarTodos() { return repository.listarUsuarios(); }
+
+    /** Copia a imagem escolhida para a pasta local, grava o caminho no usuário (avatar) e o retorna. */
+    public String salvarFoto(long idUsuario, java.io.File arquivo) {
+        String caminho = br.com.oficina.shared.config.ArquivoUtil.copiarParaPasta("fotos_usuarios", idUsuario, arquivo);
+        repository.salvarFoto(idUsuario, caminho);
+        return caminho;
+    }
 }

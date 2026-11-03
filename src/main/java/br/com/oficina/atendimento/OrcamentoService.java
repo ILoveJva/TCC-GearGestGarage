@@ -12,18 +12,19 @@ public class OrcamentoService {
     public OrcamentoEntity criar(OrcamentoRequestDTO d) {
         OrcamentoEntity o = new OrcamentoEntity(null, d.valor(), "", d.tipo(),
             d.responsavel(), d.reclamacao(), d.dataCriacao(), "PENDENTE",
-            d.idPeca(), d.idVeiculo(), d.idCliente(), d.idFuncionario(), d.idServicoRevisao());
+            d.idPeca(), d.idVeiculo(), d.idCliente(), d.idFuncionario(), d.idServicoRevisao(),
+            d.idOficina(), d.levar(), d.buscar());
         return repository.salvar(o);
     }
 
     /** Cria um orçamento interno (tipo=REVISAO) vinculado ao serviço pai. */
     public OrcamentoEntity criarRevisao(long idServico, double valor, String responsavel,
                                         String reclamacao, long idVeiculo, long idCliente,
-                                        Long idFuncionario) {
+                                        Long idFuncionario, long idOficina) {
         String hoje = java.time.LocalDate.now().toString();
         OrcamentoEntity o = new OrcamentoEntity(null, valor, "", "REVISAO",
             responsavel, reclamacao, hoje, "APROVADO",
-            null, idVeiculo, idCliente, idFuncionario, idServico);
+            null, idVeiculo, idCliente, idFuncionario, idServico, idOficina, false, false);
         OrcamentoEntity salvo = repository.salvar(o);
         repository.atualizarServicoRevisao(salvo.getIdOrcamento(), idServico);
         return salvo;
@@ -53,7 +54,8 @@ public class OrcamentoService {
     public OrcamentoResponseDTO paraDTO(OrcamentoEntity o) {
         return new OrcamentoResponseDTO(o.getIdOrcamento(), o.getValor(), o.getCodigo(),
             o.getTipo(), o.getResponsavel(), o.getReclamacao(), o.getDataCriacao(), o.getStatus(),
-            o.getIdVeiculo(), o.getIdCliente(), o.getIdServicoRevisao());
+            o.getIdVeiculo(), o.getIdCliente(), o.getIdServicoRevisao(),
+            o.getIdOficina(), o.isLevar(), o.isBuscar());
     }
 
     public List<OrcamentoResponseDTO> listar() {

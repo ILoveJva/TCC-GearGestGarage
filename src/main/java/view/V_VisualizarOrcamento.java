@@ -324,6 +324,10 @@ public class V_VisualizarOrcamento extends JPanel {
         JPanel direita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         direita.setOpaque(false);
 
+        BotaoAcao btnExportar = criarBotao("⤓ Exportar", "#6C5CE7");
+        btnExportar.addActionListener(e -> ExportadorOrcamento.exportar(this, controller, orcamento));
+        direita.add(btnExportar);
+
         String status = orcamento.getStatus();
         if ("PENDENTE".equalsIgnoreCase(status)) {
             BotaoAcao btnReprovar = criarBotao("✕ Reprovar", "#DC3545");

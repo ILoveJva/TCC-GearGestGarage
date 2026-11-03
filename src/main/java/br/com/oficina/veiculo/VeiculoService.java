@@ -83,6 +83,14 @@ public class VeiculoService {
             if (c != null) proprietario = c.getNome();
         }
         return new VeiculoResponseDTO(v.getIdVeiculo(), tipo, v.getPlaca(),
-            ano, nomeMontadora, nomeModelo, v.getIdCliente(), proprietario);
+            ano, nomeMontadora, nomeModelo, v.getIdCliente(), proprietario, v.getFoto());
+    }
+
+    /** Copia a imagem escolhida para a pasta local e grava o caminho no veículo. */
+    public void salvarFoto(long idVeiculo, java.io.File arquivo) {
+        if (repository.buscarPorId(idVeiculo) == null)
+            throw new RecursoNaoEncontradoException("Veiculo " + idVeiculo + " nao encontrado");
+        String caminho = br.com.oficina.shared.config.ArquivoUtil.copiarParaPasta("fotos_veiculos", idVeiculo, arquivo);
+        repository.salvarFoto(idVeiculo, caminho);
     }
 }

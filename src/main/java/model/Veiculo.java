@@ -8,6 +8,7 @@ public class Veiculo {
     private String cor;
     private String placa;
     private String vin;
+    private String foto;
     private Modelo modelo;
     private final List<Peca> listaPecas = new ArrayList<>();
 
@@ -27,6 +28,8 @@ public class Veiculo {
     public void setPlaca(String placa) { this.placa = placa; }
     public String getVin() { return vin; }
     public void setVin(String vin) { this.vin = vin; }
+    public String getFoto() { return foto; }
+    public void setFoto(String foto) { this.foto = foto; }
     public Modelo getModelo() { return modelo; }
     public void setModelo(Modelo modelo) { this.modelo = modelo; }
     public List<Peca> getListaPecas() { return listaPecas; }

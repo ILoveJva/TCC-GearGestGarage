@@ -66,7 +66,7 @@ public final class DatabaseConfig {
             "id_oficina", "nome", "endereco", "telefone", "cnpj"));
 
         con.registrarTabela(new Tabela("usuario", "id_usuario",
-            "id_usuario", "nome", "cpf", "email", "senha", "telefone", "id_oficina"));
+            "id_usuario", "nome", "cpf", "email", "senha", "telefone", "foto", "id_oficina"));
 
         con.registrarTabela(new Tabela("cliente", "id_cliente",
             "id_cliente", "id_usuario"));
@@ -81,7 +81,7 @@ public final class DatabaseConfig {
             "id_modelo", "nome", "ano", "tipo", "id_montadora"));
 
         con.registrarTabela(new Tabela("veiculo", "id_veiculo",
-            "id_veiculo", "placa", "codigo", "id_cliente", "id_modelo"));
+            "id_veiculo", "placa", "codigo", "foto", "id_cliente", "id_modelo"));
 
         con.registrarTabela(new Tabela("detalhes_veiculo", "id_detalhes",
             "id_detalhes", "id_veiculo", "motor", "cambio", "direcao",
@@ -100,7 +100,7 @@ public final class DatabaseConfig {
         con.registrarTabela(new Tabela("orcamento", "id_orcamento",
             "id_orcamento", "valor", "codigo", "tipo", "responsavel", "reclamacao",
             "data_criacao", "status", "id_peca", "id_veiculo", "id_cliente",
-            "id_funcionario", "id_servico_revisao"));
+            "id_funcionario", "id_servico_revisao", "id_oficina", "levar", "buscar"));
 
         con.registrarTabela(new Tabela("servico", "id_servico",
             "id_servico", "codigo", "data_servico", "km_servico", "titulo", "tipo_servico",

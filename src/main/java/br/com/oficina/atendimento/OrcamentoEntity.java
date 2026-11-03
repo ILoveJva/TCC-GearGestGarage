@@ -14,16 +14,21 @@ public class OrcamentoEntity {
     private Long idCliente;
     private Long idFuncionario;
     private Long idServicoRevisao;
+    private Long idOficina;
+    private boolean levar;
+    private boolean buscar;
 
     public OrcamentoEntity() {}
     public OrcamentoEntity(Long id, double valor, String codigo, String tipo, String responsavel,
                            String reclamacao, String dataCriacao, String status, Long idPeca,
-                           Long idVeiculo, Long idCliente, Long idFuncionario, Long idServicoRevisao) {
+                           Long idVeiculo, Long idCliente, Long idFuncionario, Long idServicoRevisao,
+                           Long idOficina, boolean levar, boolean buscar) {
         this.idOrcamento = id; this.valor = valor; this.codigo = codigo; this.tipo = tipo;
         this.responsavel = responsavel; this.reclamacao = reclamacao; this.dataCriacao = dataCriacao;
         this.status = status; this.idPeca = idPeca; this.idVeiculo = idVeiculo;
         this.idCliente = idCliente; this.idFuncionario = idFuncionario;
         this.idServicoRevisao = idServicoRevisao;
+        this.idOficina = idOficina; this.levar = levar; this.buscar = buscar;
     }
 
     public Long getIdOrcamento() { return idOrcamento; }
@@ -52,4 +57,10 @@ public class OrcamentoEntity {
     public void setIdFuncionario(Long id) { this.idFuncionario = id; }
     public Long getIdServicoRevisao() { return idServicoRevisao; }
     public void setIdServicoRevisao(Long id) { this.idServicoRevisao = id; }
+    public Long getIdOficina() { return idOficina; }
+    public void setIdOficina(Long id) { this.idOficina = id; }
+    public boolean isLevar() { return levar; }
+    public void setLevar(boolean levar) { this.levar = levar; }
+    public boolean isBuscar() { return buscar; }
+    public void setBuscar(boolean buscar) { this.buscar = buscar; }
 }

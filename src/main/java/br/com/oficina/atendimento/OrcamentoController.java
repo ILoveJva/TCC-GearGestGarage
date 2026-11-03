@@ -9,16 +9,26 @@ public class OrcamentoController {
 
     public OrcamentoResponseDTO criar(double valor, String responsavel, String reclamacao,
                                       String dataCriacao, Long idPeca, long idVeiculo,
-                                      long idCliente, Long idFuncionario) {
+                                      long idCliente, Long idFuncionario, long idOficina) {
         return service.paraDTO(service.criar(new OrcamentoRequestDTO(valor, "ENTRADA",
-            responsavel, reclamacao, dataCriacao, idPeca, idVeiculo, idCliente, idFuncionario, null)));
+            responsavel, reclamacao, dataCriacao, idPeca, idVeiculo, idCliente, idFuncionario, null,
+            idOficina, false, false)));
+    }
+
+    /** Solicitação de revisão feita pelo próprio cliente, possivelmente para uma oficina diferente da sua. */
+    public OrcamentoResponseDTO solicitar(double valor, String responsavel, String reclamacao,
+                                          String dataCriacao, long idVeiculo, long idCliente,
+                                          long idOficina, boolean levar, boolean buscar) {
+        return service.paraDTO(service.criar(new OrcamentoRequestDTO(valor, "ENTRADA",
+            responsavel, reclamacao, dataCriacao, null, idVeiculo, idCliente, null, null,
+            idOficina, levar, buscar)));
     }
 
     public OrcamentoResponseDTO criarRevisao(long idServico, double valor, String responsavel,
                                              String reclamacao, long idVeiculo, long idCliente,
-                                             Long idFuncionario) {
+                                             Long idFuncionario, long idOficina) {
         return service.paraDTO(service.criarRevisao(idServico, valor, responsavel, reclamacao,
-            idVeiculo, idCliente, idFuncionario));
+            idVeiculo, idCliente, idFuncionario, idOficina));
     }
 
     public void aprovar(long id) { service.aprovar(id); }

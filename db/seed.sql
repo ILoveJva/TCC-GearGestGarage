@@ -538,23 +538,23 @@ VALUES
 -- ============================================================
 
 INSERT INTO orcamento (codigo, valor, tipo, responsavel, reclamacao, data_criacao, status,
-                       id_peca, id_veiculo, id_cliente, id_funcionario)
+                       id_peca, id_veiculo, id_cliente, id_funcionario, id_oficina)
 VALUES
-('0001', 705.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Revisão preventiva dos 60.000 km', '2026-03-05', 'APROVADO', 2, 1, 1, 4),
-('0002', 1590.00, 'ENTRADA', 'Fábio Nakamura', 'Ruído metálico ao frear e pedal de freio baixo', '2026-03-19', 'APROVADO', 6, 3, 2, 5),
-('0003', 1000.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Motor falhando em baixa rotação e consumo elevado', '2026-04-08', 'APROVADO', 8, 5, 3, 4),
-('0004', 1910.00, 'ENTRADA', 'Diego Barbosa', 'Barulho na suspensão dianteira ao passar em lombadas', '2026-04-22', 'RECUSADO', 11, 2, 1, 6),
-('0005', 2400.00, 'ENTRADA', 'Leandro Souza', 'Veículo não liga pela manhã e luz da bateria acesa no painel', '2026-05-06', 'APROVADO', 14, 7, 4, 7),
-('0006', 1410.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Superaquecimento e perda de líquido de arrefecimento', '2026-05-20', 'APROVADO', 17, 8, 5, 4),
-('0007', 860.00, 'ENTRADA', 'Fábio Nakamura', 'Revisão geral antes de viagem longa', '2026-06-10', 'APROVADO', 22, 4, 2, 5),
-('0008', 1435.00, 'REVISAO', 'Fábio Nakamura', 'Itens reprovados na revisão: coifa rasgada e folga no terminal', '2026-06-12', 'APROVADO', 25, 4, 2, 5),
-('0009', 1520.00, 'ENTRADA', 'Diego Barbosa', 'Embreagem patinando em subidas e cheiro de queimado', '2026-06-24', 'APROVADO', 28, 6, 3, 6),
-('0010', 2970.00, 'ENTRADA', 'Leandro Souza', 'Ar-condicionado não gela', '2026-07-08', 'RECUSADO', 29, 1, 1, 7),
-('0011', 1775.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Troca preventiva da correia dentada aos 120.000 km', '2026-07-22', 'APROVADO', 31, 7, 4, 4),
-('0012', 785.00, 'ENTRADA', 'Diego Barbosa', 'Escapamento furado com ruído excessivo', '2026-08-24', 'APROVADO', 36, 8, 5, 6),
-('0013', 1220.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Revisão preventiva dos 90.000 km', '2026-08-28', 'APROVADO', 39, 2, 1, 4),
-('0014', 890.00, 'ENTRADA', 'Leandro Souza', 'Vidro elétrico do motorista não sobe', '2026-09-01', 'PENDENTE', 43, 7, 4, 7),
-('0015', 1220.00, 'ENTRADA', 'Fábio Nakamura', 'Ruído no rolamento da roda dianteira direita', '2026-09-02', 'PENDENTE', 44, 5, 3, 5);
+('0001', 705.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Revisão preventiva dos 60.000 km', '2026-03-05', 'APROVADO', 2, 1, 1, 4, 1),
+('0002', 1590.00, 'ENTRADA', 'Fábio Nakamura', 'Ruído metálico ao frear e pedal de freio baixo', '2026-03-19', 'APROVADO', 6, 3, 2, 5, 1),
+('0003', 1000.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Motor falhando em baixa rotação e consumo elevado', '2026-04-08', 'APROVADO', 8, 5, 3, 4, 1),
+('0004', 1910.00, 'ENTRADA', 'Diego Barbosa', 'Barulho na suspensão dianteira ao passar em lombadas', '2026-04-22', 'RECUSADO', 11, 2, 1, 6, 1),
+('0005', 2400.00, 'ENTRADA', 'Leandro Souza', 'Veículo não liga pela manhã e luz da bateria acesa no painel', '2026-05-06', 'APROVADO', 14, 7, 4, 7, 1),
+('0006', 1410.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Superaquecimento e perda de líquido de arrefecimento', '2026-05-20', 'APROVADO', 17, 8, 5, 4, 1),
+('0007', 860.00, 'ENTRADA', 'Fábio Nakamura', 'Revisão geral antes de viagem longa', '2026-06-10', 'APROVADO', 22, 4, 2, 5, 1),
+('0008', 1435.00, 'REVISAO', 'Fábio Nakamura', 'Itens reprovados na revisão: coifa rasgada e folga no terminal', '2026-06-12', 'APROVADO', 25, 4, 2, 5, 1),
+('0009', 1520.00, 'ENTRADA', 'Diego Barbosa', 'Embreagem patinando em subidas e cheiro de queimado', '2026-06-24', 'APROVADO', 28, 6, 3, 6, 1),
+('0010', 2970.00, 'ENTRADA', 'Leandro Souza', 'Ar-condicionado não gela', '2026-07-08', 'RECUSADO', 29, 1, 1, 7, 1),
+('0011', 1775.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Troca preventiva da correia dentada aos 120.000 km', '2026-07-22', 'APROVADO', 31, 7, 4, 4, 1),
+('0012', 785.00, 'ENTRADA', 'Diego Barbosa', 'Escapamento furado com ruído excessivo', '2026-08-24', 'APROVADO', 36, 8, 5, 6, 1),
+('0013', 1220.00, 'ENTRADA', 'Marcos Vinícius Prado', 'Revisão preventiva dos 90.000 km', '2026-08-28', 'APROVADO', 39, 2, 1, 4, 1),
+('0014', 890.00, 'ENTRADA', 'Leandro Souza', 'Vidro elétrico do motorista não sobe', '2026-09-01', 'PENDENTE', 43, 7, 4, 7, 1),
+('0015', 1220.00, 'ENTRADA', 'Fábio Nakamura', 'Ruído no rolamento da roda dianteira direita', '2026-09-02', 'PENDENTE', 44, 5, 3, 5, 1);
 
 INSERT INTO orcamento_servico (id_orcamento, id_catalogo_servico, valor_cobrado)
 VALUES

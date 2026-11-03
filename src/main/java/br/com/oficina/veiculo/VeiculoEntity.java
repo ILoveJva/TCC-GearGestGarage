@@ -4,6 +4,7 @@ public class VeiculoEntity {
     private Long idVeiculo;
     private String placa;
     private String codigo;
+    private String foto;
     private Long idCliente;
     private Long idModelo;
 
@@ -19,6 +20,8 @@ public class VeiculoEntity {
     public void setPlaca(String placa) { this.placa = placa; }
     public String getCodigo() { return codigo != null ? codigo : ""; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
+    public String getFoto() { return foto; }
+    public void setFoto(String foto) { this.foto = foto; }
     public Long getIdCliente() { return idCliente; }
     public void setIdCliente(Long id) { this.idCliente = id; }
     public Long getIdModelo() { return idModelo; }

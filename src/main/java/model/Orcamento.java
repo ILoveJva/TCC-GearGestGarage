@@ -13,6 +13,10 @@ public class Orcamento {
     private final long idCliente;
     private final String placaVeiculo;
     private final String nomeCliente;
+    private long idOficina;
+    private String nomeOficina = "";
+    private boolean levar;
+    private boolean buscar;
 
     public Orcamento(long idOrcamento, String codigo, String tipo, double valor, String responsavel,
                      String reclamacao, String dataCriacao, String status, long idVeiculo, long idCliente,
@@ -36,6 +40,14 @@ public class Orcamento {
     public long getIdCliente() { return idCliente; }
     public String getPlacaVeiculo() { return placaVeiculo; }
     public String getNomeCliente() { return nomeCliente; }
+    public long getIdOficina() { return idOficina; }
+    public void setIdOficina(long idOficina) { this.idOficina = idOficina; }
+    public String getNomeOficina() { return nomeOficina; }
+    public void setNomeOficina(String nomeOficina) { this.nomeOficina = nomeOficina; }
+    public boolean isLevar() { return levar; }
+    public void setLevar(boolean levar) { this.levar = levar; }
+    public boolean isBuscar() { return buscar; }
+    public void setBuscar(boolean buscar) { this.buscar = buscar; }
 
 
     @Override

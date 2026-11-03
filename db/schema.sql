@@ -48,6 +48,7 @@ CREATE TABLE usuario (
     email VARCHAR(150) NOT NULL,
     senha VARCHAR(255) NOT NULL,
     telefone VARCHAR(20) NOT NULL,
+    foto VARCHAR(500) NULL,
     id_oficina INT NOT NULL,
     PRIMARY KEY (cpf),
     UNIQUE KEY uq_usuario_id (id_usuario),
@@ -81,6 +82,7 @@ CREATE TABLE veiculo (
     id_veiculo INT NOT NULL AUTO_INCREMENT,
     placa VARCHAR(10) NOT NULL,
     codigo VARCHAR(20) NOT NULL DEFAULT '',
+    foto VARCHAR(500) NULL,
     id_cliente INT NOT NULL,
     id_modelo INT NOT NULL,
     PRIMARY KEY (placa),
@@ -138,11 +140,16 @@ CREATE TABLE orcamento (
     id_cliente INT NOT NULL,
     id_funcionario INT,
     id_servico_revisao INT NULL,
+    -- Oficina para a qual o orçamento foi direcionado (cliente pode solicitar em qualquer oficina).
+    id_oficina INT NOT NULL,
+    levar TINYINT(1) NOT NULL DEFAULT 0,
+    buscar TINYINT(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (id_orcamento),
     CONSTRAINT fk_orcamento_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca),
     CONSTRAINT fk_orcamento_veiculo FOREIGN KEY (id_veiculo) REFERENCES veiculo (id_veiculo),
     CONSTRAINT fk_orcamento_cliente FOREIGN KEY (id_cliente) REFERENCES cliente (id_cliente),
-    CONSTRAINT fk_orcamento_funcionario FOREIGN KEY (id_funcionario) REFERENCES funcionario (id_funcionario)
+    CONSTRAINT fk_orcamento_funcionario FOREIGN KEY (id_funcionario) REFERENCES funcionario (id_funcionario),
+    CONSTRAINT fk_orcamento_oficina FOREIGN KEY (id_oficina) REFERENCES oficina (id_oficina)
 );
 
 CREATE TABLE servico (

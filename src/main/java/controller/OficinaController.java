@@ -293,7 +293,7 @@ public class OficinaController {
                                List<Integer> quantidadesPecas) {
         String hoje = java.time.LocalDate.now().toString();
         OrcamentoResponseDTO dto = bridge.orcamentoController.criar(valor, responsavel, reclamacao, hoje,
-            null, idVeiculo, idCliente, idFuncionario);
+            null, idVeiculo, idCliente, idFuncionario, getOficina().getIdOficina());
         long idOrcamento = dto.idOrcamento() != null ? dto.idOrcamento() : 0L;
         if (idOrcamento > 0) {
             if (itens != null)
@@ -339,11 +339,7 @@ public class OficinaController {
         for (Cliente c : listarClientes()) nomes.put(c.getIdUsuario(), c.getNome());
         for (FuncionarioEntity f : listarFuncionarios())
             if (f.getIdUsuario() != null) nomes.put(f.getIdUsuario(), f.getNome() + " (Func.)");
-        long idV = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
-        long idC = dto.idCliente() != null ? dto.idCliente() : 0L;
-        return new model.Orcamento(dto.idOrcamento(), dto.codigo(), dto.tipo(),
-            dto.valor(), dto.responsavel(), dto.reclamacao(), dto.dataCriacao(), dto.status(),
-            idV, idC, placas.getOrDefault(idV, "—"), nomes.getOrDefault(idC, "—"));
+        return montarOrcamento(dto, placas, nomes);
     }
 
     public java.util.LinkedHashMap<CatalogoServicoEntity, Double> listarItensOrcamentoComValor(long idOrcamento) {
@@ -405,20 +401,36 @@ public class OficinaController {
         for (FuncionarioEntity f : listarFuncionarios())
             if (f.getIdUsuario() != null) nomes.put(f.getIdUsuario(), f.getNome() + " (Func.)");
 
-        java.util.Set<Long> clientes = idsClientesDaOficina();
+        long idOf = idOficinaAtual();
         List<model.Orcamento> out = new ArrayList<>();
         for (OrcamentoResponseDTO dto : bridge.orcamentoController.entrada()) {
-            if (dto.idCliente() == null || !clientes.contains(dto.idCliente())) continue;
+            if (dto.idOficina() == null || dto.idOficina() != idOf) continue;
             long idVeic = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
             long idCli  = dto.idCliente() != null ? dto.idCliente() : 0L;
-            out.add(new model.Orcamento(
-                dto.idOrcamento() != null ? dto.idOrcamento() : 0L,
-                dto.codigo(), dto.tipo(),
-                dto.valor(), dto.responsavel(), dto.reclamacao(), dto.dataCriacao(), dto.status(),
-                idVeic, idCli,
-                placas.getOrDefault(idVeic, "—"), nomes.getOrDefault(idCli, "—")));
+            out.add(montarOrcamento(dto, placas, nomes));
         }
         return out;
+    }
+
+    private model.Orcamento montarOrcamento(OrcamentoResponseDTO dto,
+                                             java.util.Map<Long, String> placas,
+                                             java.util.Map<Long, String> nomes) {
+        long idVeic = dto.idVeiculo() != null ? dto.idVeiculo() : 0L;
+        long idCli  = dto.idCliente() != null ? dto.idCliente() : 0L;
+        model.Orcamento o = new model.Orcamento(
+            dto.idOrcamento() != null ? dto.idOrcamento() : 0L,
+            dto.codigo(), dto.tipo(),
+            dto.valor(), dto.responsavel(), dto.reclamacao(), dto.dataCriacao(), dto.status(),
+            idVeic, idCli,
+            placas.getOrDefault(idVeic, "—"), nomes.getOrDefault(idCli, "—"));
+        if (dto.idOficina() != null) {
+            o.setIdOficina(dto.idOficina());
+            model.Oficina of = buscarOficinaPorId(dto.idOficina());
+            o.setNomeOficina(of != null ? of.getNome() : "—");
+        }
+        o.setLevar(dto.levar());
+        o.setBuscar(dto.buscar());
+        return o;
     }
 
     /** Abre uma O.S. vinculada a um orçamento aprovado. */
@@ -468,7 +480,8 @@ public class OficinaController {
                                                   String reclamacao, long idVeiculo, long idCliente,
                                                   Long idFuncionario) {
         OrcamentoResponseDTO dto = bridge.orcamentoController.criarRevisao(
-            idServico, valor, responsavel, reclamacao, idVeiculo, idCliente, idFuncionario);
+            idServico, valor, responsavel, reclamacao, idVeiculo, idCliente, idFuncionario,
+            getOficina().getIdOficina());
         java.util.Map<Long, String> placas = new java.util.HashMap<>();
         for (Veiculo v : listarVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
         java.util.Map<Long, String> nomes = new java.util.HashMap<>();
@@ -756,7 +769,9 @@ public class OficinaController {
         Montadora mont = new Montadora(0, dto.montadora(), "");
         Modelo mod = new Modelo(0, dto.modelo(), dto.ano(), dto.tipo(), mont);
         mont.addModelo(mod);
-        return new Veiculo(dto.idVeiculo(), "", dto.placa(), "", mod);
+        Veiculo v = new Veiculo(dto.idVeiculo(), "", dto.placa(), "", mod);
+        v.setFoto(dto.foto());
+        return v;
     }
     private void anexarVeiculos(Cliente c) {
         for (VeiculoResponseDTO dto : bridge.veiculoController.todos())
@@ -875,5 +890,104 @@ public class OficinaController {
                 .filter(c -> c.getIdUsuario() == id)
                 .findFirst()
                 .orElse(null);
+    }
+
+    // ============== PORTAL DO CLIENTE ==============
+    // Telas em que o próprio cliente está logado (view.V_Cliente*). Ao contrário das
+    // listagens acima (restritas à oficina ativa), aqui o cliente enxerga seus próprios
+    // dados em QUALQUER oficina — ele pode solicitar revisão fora da oficina onde se cadastrou.
+
+    /** true se o usuário logado é um cliente (não funcionário). */
+    public boolean isClienteLogado() {
+        if (usuarioLogado == null) return false;
+        for (ClienteEntity ce : bridge.clienteController.entidades())
+            if (ce.getIdUsuario() != null && ce.getIdUsuario().equals(usuarioLogado.getIdUsuario()))
+                return true;
+        return false;
+    }
+
+    /** id_cliente (PK) do cliente logado, ou 0 se não houver. */
+    private long meuIdCliente() {
+        if (usuarioLogado == null) return 0L;
+        for (ClienteEntity ce : bridge.clienteController.entidades())
+            if (ce.getIdUsuario() != null && ce.getIdUsuario().equals(usuarioLogado.getIdUsuario()))
+                return ce.getIdCliente() != null ? ce.getIdCliente() : 0L;
+        return 0L;
+    }
+
+    public Cliente getMeuCliente() { return cliente_id(meuIdCliente()); }
+
+    /** Veículos do cliente logado (em qualquer oficina em que tenha sido cadastrado). */
+    public List<Veiculo> listarMeusVeiculos() { return listarVeiculosPorProprietario(meuIdCliente()); }
+
+    /** Orçamentos do cliente logado, de qualquer oficina (ao contrário de {@link #listarOrcamentos()}). */
+    public List<model.Orcamento> listarMeusOrcamentos() {
+        long idCli = meuIdCliente();
+        java.util.Map<Long, String> placas = new java.util.HashMap<>();
+        for (Veiculo v : listarVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
+        java.util.Map<Long, String> nomes = new java.util.HashMap<>();
+        for (Cliente c : listarClientes()) nomes.put(c.getIdUsuario(), c.getNome());
+
+        List<model.Orcamento> out = new ArrayList<>();
+        for (OrcamentoResponseDTO dto : bridge.orcamentoController.todos()) {
+            if (dto.idCliente() == null || dto.idCliente() != idCli) continue;
+            out.add(montarOrcamento(dto, placas, nomes));
+        }
+        out.sort((a, b) -> Long.compare(b.getIdOrcamento(), a.getIdOrcamento()));
+        return out;
+    }
+
+    /** Serviços (OS) dos veículos do cliente logado, de qualquer oficina. */
+    public List<ServicoResponseDTO> listarMeusServicos() {
+        java.util.Set<Long> meusVeiculos = new java.util.HashSet<>();
+        for (Veiculo v : listarMeusVeiculos()) meusVeiculos.add(v.getIdVeiculo());
+        List<ServicoResponseDTO> out = new ArrayList<>();
+        for (ServicoResponseDTO dto : bridge.servicoController.todas())
+            if (dto.idVeiculo() != null && meusVeiculos.contains(dto.idVeiculo())) out.add(dto);
+        return out;
+    }
+
+    /** Busca oficinas por nome/endereço (termo vazio retorna todas). */
+    public List<model.Oficina> buscarOficinas(String termo) {
+        String t = termo == null ? "" : termo.trim().toLowerCase();
+        List<model.Oficina> out = new ArrayList<>();
+        for (model.Oficina o : listarTodas()) {
+            if (t.isEmpty()
+                || (o.getNome() != null && o.getNome().toLowerCase().contains(t))
+                || (o.getEndereco() != null && o.getEndereco().toLowerCase().contains(t)))
+                out.add(o);
+        }
+        return out;
+    }
+
+    /** O cliente logado solicita revisão de um de seus veículos em qualquer oficina do sistema. */
+    public void solicitarRevisao(long idVeiculo, long idOficinaDestino, String motivo,
+                                 String descricao, boolean levar, boolean buscar) {
+        String reclamacao = motivo != null ? motivo : "";
+        if (descricao != null && !descricao.isBlank()) reclamacao += "\n\n" + descricao;
+        String hoje = java.time.LocalDate.now().toString();
+        bridge.orcamentoController.solicitar(0.0, usuarioLogado.getNome(), reclamacao, hoje,
+            idVeiculo, meuIdCliente(), idOficinaDestino, levar, buscar);
+    }
+
+    public void salvarFotoVeiculo(long idVeiculo, java.io.File arquivo) {
+        bridge.veiculoController.salvarFoto(idVeiculo, arquivo);
+    }
+
+    public void salvarFotoPerfil(java.io.File arquivo) {
+        String caminho = bridge.usuarioController.salvarFoto(usuarioLogado.getIdUsuario(), arquivo);
+        usuarioLogado.setFoto(caminho);
+    }
+
+    public String getFotoPerfil() { return usuarioLogado != null ? usuarioLogado.getFoto() : null; }
+
+    /** Atualiza nome/telefone/email do cliente logado (CPF não é alterável aqui). */
+    public void atualizarMeuPerfil(String nome, String telefone, String email) {
+        Cliente c = getMeuCliente();
+        if (c == null) return;
+        bridge.clienteController.atualizar(meuIdCliente(), nome, c.getCpf(), email, telefone);
+        usuarioLogado.setNome(nome);
+        usuarioLogado.setEmail(email);
+        usuarioLogado.setTelefone(telefone);
     }
 }

@@ -8,5 +8,6 @@ public record VeiculoResponseDTO(
     String montadora,
     String modelo,
     Long idCliente,
-    String proprietario
+    String proprietario,
+    String foto
 ) {}

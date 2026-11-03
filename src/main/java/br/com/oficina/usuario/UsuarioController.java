@@ -12,4 +12,5 @@ public class UsuarioController {
     }
     public void logout(long idUsuario) { service.logout(idUsuario); }
     public List<UsuarioEntity> todos() { return service.listarTodos(); }
+    public String salvarFoto(long idUsuario, java.io.File arquivo) { return service.salvarFoto(idUsuario, arquivo); }
 }

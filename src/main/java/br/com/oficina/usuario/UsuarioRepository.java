@@ -21,6 +21,8 @@ public class UsuarioRepository {
         UsuarioEntity u = new UsuarioEntity(r.getLong("id_usuario"), r.get("nome"), r.get("email"),
             r.get("senha"), r.get("telefone"), r.getLong("id_oficina"));
         u.setCpf(r.get("cpf"));
+        String foto = r.get("foto");
+        u.setFoto(foto == null || foto.isBlank() ? null : foto);
         return u;
     }
 
@@ -47,6 +49,10 @@ public class UsuarioRepository {
         List<UsuarioEntity> out = new ArrayList<>();
         for (Registro r : tUsuario.registros()) out.add(mapUsuario(r));
         return out;
+    }
+
+    public boolean salvarFoto(long idUsuario, String caminhoFoto) {
+        return tUsuario.atualizar(idUsuario, "foto", caminhoFoto);
     }
 
     // ---------- cliente ----------

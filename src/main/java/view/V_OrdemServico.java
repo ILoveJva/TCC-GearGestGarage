@@ -91,14 +91,28 @@ public class V_OrdemServico extends JPanel {
         JButton btn_Voltar = botaoLink("← Voltar para Lista", COR_LABEL);
         btn_Voltar.addActionListener(e -> navegar(new V_VisualizarServicos(controller)));
 
+        JButton btn_FichaTarefas = botaoLink("📄 Ficha de Tarefas", COR_AZUL);
+        btn_FichaTarefas.addActionListener(e -> {
+            if (servico == null) {
+                DialogoAlerta.aviso(this, "Serviço ainda não carregado.", "Aviso");
+                return;
+            }
+            ExportadorFichaTarefas.exportar(this, controller, servico);
+        });
+
         JLabel lbl_Mapa = new JLabel("Página Inicial > Consultar Serviços > Detalhes");
         lbl_Mapa.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl_Mapa.setForeground(COR_LABEL);
 
+        JPanel pnl_AcoesTopo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        pnl_AcoesTopo.setOpaque(false);
+        pnl_AcoesTopo.add(btn_FichaTarefas);
+        pnl_AcoesTopo.add(btn_Voltar);
+
         JPanel pnl_Topo = new JPanel(new BorderLayout());
         pnl_Topo.setOpaque(false);
         pnl_Topo.add(lbl_Mapa, BorderLayout.WEST);
-        pnl_Topo.add(btn_Voltar, BorderLayout.EAST);
+        pnl_Topo.add(pnl_AcoesTopo, BorderLayout.EAST);
         add(pnl_Topo, BorderLayout.NORTH);
 
         JPanel pnl_Header = new JPanel();

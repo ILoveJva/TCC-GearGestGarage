@@ -11,5 +11,8 @@ public record OrcamentoResponseDTO(
     String status,
     Long idVeiculo,
     Long idCliente,
-    Long idServicoRevisao
+    Long idServicoRevisao,
+    Long idOficina,
+    boolean levar,
+    boolean buscar
 ) {}

@@ -21,7 +21,8 @@ public class OrcamentoRepository {
             r.get("responsavel"), r.get("reclamacao"), r.get("data_criacao"), r.get("status"),
             longOuNull(r, "id_peca"), longOuNull(r, "id_veiculo"),
             longOuNull(r, "id_cliente"), longOuNull(r, "id_funcionario"),
-            longOuNull(r, "id_servico_revisao"));
+            longOuNull(r, "id_servico_revisao"), longOuNull(r, "id_oficina"),
+            "1".equals(r.get("levar")), "1".equals(r.get("buscar")));
     }
 
     public OrcamentoEntity salvar(OrcamentoEntity o) {
@@ -37,7 +38,10 @@ public class OrcamentoRepository {
             .set("id_veiculo", o.getIdVeiculo())
             .set("id_cliente", o.getIdCliente())
             .set("id_funcionario", o.getIdFuncionario())
-            .set("id_servico_revisao", o.getIdServicoRevisao()));
+            .set("id_servico_revisao", o.getIdServicoRevisao())
+            .set("id_oficina", o.getIdOficina())
+            .set("levar", o.isLevar() ? 1 : 0)
+            .set("buscar", o.isBuscar() ? 1 : 0));
         o.setIdOrcamento(id);
 
         long idVeic = o.getIdVeiculo() != null ? o.getIdVeiculo() : 0L;

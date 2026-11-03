@@ -19,8 +19,11 @@ public class VeiculoRepository {
 
     // ---- veiculo ----
     private VeiculoEntity mapVeiculo(Registro r) {
-        return new VeiculoEntity(r.getLong("id_veiculo"), r.get("placa"), r.get("codigo"),
+        VeiculoEntity v = new VeiculoEntity(r.getLong("id_veiculo"), r.get("placa"), r.get("codigo"),
             r.getLong("id_cliente"), r.getLong("id_modelo"));
+        String foto = r.get("foto");
+        v.setFoto(foto == null || foto.isBlank() ? null : foto);
+        return v;
     }
 
     public VeiculoEntity salvar(VeiculoEntity v) {
@@ -44,6 +47,10 @@ public class VeiculoRepository {
     public VeiculoEntity buscarPorId(long id) {
         Registro r = tVeiculo.buscarPorId(id);
         return r == null ? null : mapVeiculo(r);
+    }
+
+    public boolean salvarFoto(long idVeiculo, String caminhoFoto) {
+        return tVeiculo.atualizar(idVeiculo, "foto", caminhoFoto);
     }
 
     public List<VeiculoEntity> listarTodos() {

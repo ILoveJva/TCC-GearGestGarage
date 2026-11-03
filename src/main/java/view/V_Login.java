@@ -167,7 +167,11 @@ public class V_Login extends JFrame {
         if (autenticado) {
             DialogoAlerta.sucesso(this, "Login efetuado com sucesso!", "Bem-vindo");
             this.dispose();
-            SwingUtilities.invokeLater(() -> new V_Main(controller).setVisible(true));
+            if (controller.isClienteLogado()) {
+                SwingUtilities.invokeLater(() -> new V_ClienteMain(controller).setVisible(true));
+            } else {
+                SwingUtilities.invokeLater(() -> new V_Main(controller).setVisible(true));
+            }
         } else {
             DialogoAlerta.erro(this, "E-mail ou senha incorretos.", "Erro de Autenticacao");
         }

@@ -10,5 +10,8 @@ public record OrcamentoRequestDTO(
     Long idVeiculo,
     Long idCliente,
     Long idFuncionario,
-    Long idServicoRevisao
+    Long idServicoRevisao,
+    Long idOficina,
+    boolean levar,
+    boolean buscar
 ) {}

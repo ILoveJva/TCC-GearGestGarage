@@ -61,6 +61,15 @@ public class V_Estoque extends JPanel {
     private static final Color COR_ENTRADA_CLARA  = Color.decode("#3FC464");
     private static final Color COR_ENTRADA_ESCURA = Color.decode("#1E7E34");
 
+    // Botão "Relatório de Estoque" (laranja do sistema; base = COR_ACAO)
+    private static final Color COR_RELATORIO_CLARA  = Color.decode("#FFAD33");
+    private static final Color COR_RELATORIO_ESCURA = Color.decode("#E68A00");
+
+    // Botão "Relatório de Movimentações" (azul)
+    private static final Color COR_MOV        = Color.decode("#2E86DE");
+    private static final Color COR_MOV_CLARA  = Color.decode("#4A9AE8");
+    private static final Color COR_MOV_ESCURA = Color.decode("#1F6FBF");
+
     // Botão "Voltar" (neutro — cinza)
     private static final Color COR_VOLTAR         = Color.decode("#6C757D");
     private static final Color COR_VOLTAR_CLARA   = Color.decode("#868E96");
@@ -97,11 +106,28 @@ public class V_Estoque extends JPanel {
         btn_Entrada.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
         btn_Entrada.addActionListener(e -> navegar(new V_EntradaEstoque(controller)));
 
+        // Relatórios em .rtf: posição atual do estoque e, separado, o histórico de movimentações.
+        BotaoAcao btn_RelEstoque = new BotaoAcao("Relatório de Estoque", COR_ACAO, COR_RELATORIO_CLARA, COR_RELATORIO_ESCURA);
+        btn_RelEstoque.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
+        btn_RelEstoque.setToolTipText("Exporta as peças em estoque com data e hora de emissão (.rtf)");
+        btn_RelEstoque.addActionListener(e -> ExportadorEstoque.exportarEstoque(this, controller));
+
+        BotaoAcao btn_RelMov = new BotaoAcao("Relatório de Movimentações", COR_MOV, COR_MOV_CLARA, COR_MOV_ESCURA);
+        btn_RelMov.setPreferredSize(new Dimension(220, ALTURA_BOTAO));
+        btn_RelMov.setToolTipText("Exporta o histórico de entradas e saídas do estoque (.rtf)");
+        btn_RelMov.addActionListener(e -> ExportadorEstoque.exportarMovimentacoes(this, controller));
+
+        JPanel pnl_Botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnl_Botoes.setOpaque(false);
+        pnl_Botoes.add(btn_RelEstoque);
+        pnl_Botoes.add(btn_RelMov);
+        pnl_Botoes.add(btn_Entrada);
+
         JPanel pnl_TituloBtn = new JPanel(new BorderLayout());
         pnl_TituloBtn.setOpaque(false);
         pnl_TituloBtn.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
         pnl_TituloBtn.add(titulo, BorderLayout.WEST);
-        pnl_TituloBtn.add(btn_Entrada, BorderLayout.EAST);
+        pnl_TituloBtn.add(pnl_Botoes, BorderLayout.EAST);
         add(pnl_TituloBtn, BorderLayout.NORTH);
 
         // ---- Corpo: estoque atual + histórico ----
@@ -318,9 +344,7 @@ public class V_Estoque extends JPanel {
     }
 
     private String situacao(int qtd) {
-        if (qtd <= 0) return "Sem estoque";
-        if (qtd <= 2) return "Baixo";
-        return "OK";
+        return ExportadorEstoque.situacao(qtd);
     }
 
     /** Uma linha da tabela de Estoque: catálogo (id_catalogo_peca) ou peça real (id_peca). */

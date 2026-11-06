@@ -1,5 +1,6 @@
 package view;
 
+import br.com.oficina.atendimento.CatalogoServicoEntity;
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import controller.OficinaController;
 import model.Veiculo;
@@ -24,6 +25,12 @@ import java.util.List;
  *
  * Cinco modos de visualização: Dia, Semana, Mês, 3 Meses e Ano.
  * A semana começa no domingo (padrão dos calendários brasileiros).
+ *
+ * <p><b>Modo cliente</b> ({@link #paraCliente(OficinaController)}): mesma interface,
+ * mas mostra só os processos do cliente logado — solicitação de orçamento, início
+ * de cada OS, etapas concluídas e a data estimada da próxima revisão (validade em
+ * meses dos serviços do catálogo). Clicar num dia abre o modo "Dia" e clicar num
+ * evento expande seus detalhes em vez de abrir a OS (tela exclusiva da oficina).
  */
 public class PainelCalendario extends JPanel {
 
@@ -35,7 +42,10 @@ public class PainelCalendario extends JPanel {
     private static final Color COR_ABERTA    = Color.decode("#E74C3C");
     private static final Color COR_ANDAMENTO = Color.decode("#F39C12");
     private static final Color COR_CONCLUIDA = Color.decode("#27AE60");
-    private static final Color COR_PRAZO     = Color.decode("#8E44AD"); // reservado p/ prazos de orçamento
+    private static final Color COR_PRAZO     = Color.decode("#8E44AD"); // prazos/solicitações de orçamento
+    private static final Color COR_ETAPA     = Color.decode("#16A085"); // etapa da OS concluída (modo cliente)
+    private static final Color COR_REVISAO   = Color.decode("#2980B9"); // próxima revisão estimada (modo cliente)
+    private static final Color COR_CONGELADA = Color.decode("#7F8C8D"); // OS aguardando novo orçamento
 
     private static final Locale PT_BR = new Locale("pt", "BR");
 
@@ -48,7 +58,7 @@ public class PainelCalendario extends JPanel {
 
     /** Um item na agenda. {@code idOS <= 0} quando não há OS navegável (ex.: futuro prazo de orçamento). */
     private static final class EventoAgenda {
-        enum Tipo { SERVICO, PRAZO_ORCAMENTO }
+        enum Tipo { SERVICO, PRAZO_ORCAMENTO, ORCAMENTO, ETAPA, PREVISAO_REVISAO }
         final LocalDate data;
         final String titulo;
         final String detalhe;
@@ -56,14 +66,26 @@ public class PainelCalendario extends JPanel {
         final Color cor;
         final long idOS;
         final Tipo tipo;
+        /** Linhas exibidas quando o evento é expandido (modo cliente). */
+        final List<String> linhasExpandidas;
         EventoAgenda(LocalDate data, String titulo, String detalhe, String statusLabel,
                      Color cor, long idOS, Tipo tipo) {
+            this(data, titulo, detalhe, statusLabel, cor, idOS, tipo, Collections.emptyList());
+        }
+        EventoAgenda(LocalDate data, String titulo, String detalhe, String statusLabel,
+                     Color cor, long idOS, Tipo tipo, List<String> linhasExpandidas) {
             this.data = data; this.titulo = titulo; this.detalhe = detalhe;
             this.statusLabel = statusLabel; this.cor = cor; this.idOS = idOS; this.tipo = tipo;
+            this.linhasExpandidas = linhasExpandidas;
         }
     }
 
     private final OficinaController controller;
+    private final boolean modoCliente;
+    /** Evento com detalhes abertos no modo "Dia" (modo cliente). */
+    private EventoAgenda eventoExpandido;
+    /** Status de cada OS do cliente (id → status), para escolher a aba certa em "Ver meus serviços". */
+    private final Map<Long, String> statusOS = new HashMap<>();
 
     private final List<EventoAgenda> eventos = new ArrayList<>();
     private final Map<LocalDate, List<EventoAgenda>> indice = new HashMap<>();
@@ -77,7 +99,17 @@ public class PainelCalendario extends JPanel {
     private JPanel pnl_Modos;
 
     public PainelCalendario(OficinaController controller) {
+        this(controller, false);
+    }
+
+    /** Calendário do Portal do Cliente: só os processos do cliente logado. */
+    public static PainelCalendario paraCliente(OficinaController controller) {
+        return new PainelCalendario(controller, true);
+    }
+
+    private PainelCalendario(OficinaController controller, boolean modoCliente) {
         this.controller = controller;
+        this.modoCliente = modoCliente;
         setLayout(new BorderLayout(0, 8));
         setOpaque(false);
         setPreferredSize(new Dimension(880, 480));
@@ -176,6 +208,15 @@ public class PainelCalendario extends JPanel {
     private JComponent construirLegenda() {
         JPanel legenda = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 4));
         legenda.setOpaque(false);
+        if (modoCliente) {
+            legenda.add(itemLegenda("Orçamento", COR_PRAZO));
+            legenda.add(itemLegenda("Serviço aberto", COR_ABERTA));
+            legenda.add(itemLegenda("Em andamento", COR_ANDAMENTO));
+            legenda.add(itemLegenda("Concluído", COR_CONCLUIDA));
+            legenda.add(itemLegenda("Etapa concluída", COR_ETAPA));
+            legenda.add(itemLegenda("Revisão estimada", COR_REVISAO));
+            return legenda;
+        }
         legenda.add(itemLegenda("Aberta", COR_ABERTA));
         legenda.add(itemLegenda("Em Andamento", COR_ANDAMENTO));
         legenda.add(itemLegenda("Concluída", COR_CONCLUIDA));
@@ -204,7 +245,15 @@ public class PainelCalendario extends JPanel {
     // =========================================================================
     private void carregarEventos() {
         eventos.clear();
+        if (modoCliente) carregarEventosCliente();
+        else carregarEventosOficina();
 
+        indice.clear();
+        for (EventoAgenda e : eventos)
+            indice.computeIfAbsent(e.data, k -> new ArrayList<>()).add(e);
+    }
+
+    private void carregarEventosOficina() {
         Map<Long, Veiculo> veic = new HashMap<>();
         for (Veiculo v : controller.listarVeiculos()) veic.put(v.getIdVeiculo(), v);
 
@@ -223,10 +272,176 @@ public class PainelCalendario extends JPanel {
 
         // Prazos de orçamento — recurso ainda não implementado (ver método abaixo).
         eventos.addAll(carregarPrazosOrcamento());
+    }
 
-        indice.clear();
-        for (EventoAgenda e : eventos)
-            indice.computeIfAbsent(e.data, k -> new ArrayList<>()).add(e);
+    // ---------------------------------------------------------------- modo cliente
+
+    /**
+     * Todas as datas conhecidas de cada processo do cliente logado:
+     * <ul>
+     *   <li>solicitação do orçamento ({@code orcamento.data_criacao});</li>
+     *   <li>início da OS ({@code servico.data_servico});</li>
+     *   <li>cada etapa concluída ({@code item_servico.data_realizacao});</li>
+     *   <li>próxima revisão <i>estimada</i>: data da OS (ou da última etapa, se já
+     *       concluída) + {@code validade_meses} de cada serviço do catálogo do orçamento.</li>
+     * </ul>
+     */
+    private void carregarEventosCliente() {
+        statusOS.clear();
+        Map<Long, Veiculo> veic = new HashMap<>();
+        for (Veiculo v : controller.listarMeusVeiculos()) veic.put(v.getIdVeiculo(), v);
+        Map<Long, String> oficinas = new HashMap<>();
+        for (model.Oficina o : controller.listarTodas()) oficinas.put(o.getIdOficina(), o.getNome());
+        DateTimeFormatter br = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        // 1. Orçamentos
+        for (model.Orcamento o : controller.listarMeusOrcamentos()) {
+            LocalDate d = parseData(o.getDataCriacao());
+            if (d == null) continue;
+            String veiculo = descreverVeiculo(veic.get(o.getIdVeiculo()), o.getPlacaVeiculo());
+            String situacao = statusOrcamento(o.getStatus());
+            List<String> det = new ArrayList<>();
+            det.add("<b>Solicitado em:</b> " + d.format(br));
+            det.add("<b>Oficina:</b> " + esc(valor(o.getNomeOficina())));
+            det.add("<b>Veículo:</b> " + esc(veiculo));
+            det.add("<b>Situação:</b> " + esc(situacao));
+            if (o.getValor() > 0)
+                det.add("<b>Valor:</b> " + String.format(PT_BR, "R$ %,.2f", o.getValor()));
+            String motivo = o.getReclamacao() == null ? "" : o.getReclamacao().split("\\R", 2)[0].trim();
+            if (!motivo.isEmpty()) det.add("<b>Motivo:</b> " + esc(motivo));
+            if (o.isLevar()) det.add("Você levará o veículo até a oficina.");
+            if (o.isBuscar()) det.add("A oficina buscará o veículo.");
+            String titulo = "Orçamento" + (o.getCodigo().isBlank() ? " #" + o.getIdOrcamento() : " " + o.getCodigo());
+            eventos.add(new EventoAgenda(d, titulo, veiculo, situacao, COR_PRAZO, -1,
+                    EventoAgenda.Tipo.ORCAMENTO, det));
+        }
+
+        // 2. Serviços (OS), suas etapas e a revisão estimada
+        for (ServicoResponseDTO s : controller.listarMeusServicos()) {
+            LocalDate inicio = parseData(s.dataServico());
+            String nomeOS = (s.titulo() != null && !s.titulo().isBlank()) ? s.titulo() : "OS #" + s.idServico();
+            String veiculo = descreverVeiculo(veic.get(s.idVeiculo()), null);
+            String oficina = s.idOficina() != null ? oficinas.getOrDefault(s.idOficina(), "—") : "—";
+            String situacao = statusServicoCliente(s.status());
+            long idOS = s.idServico() != null ? s.idServico() : -1;
+            statusOS.put(idOS, s.status());
+
+            List<ServicoResponseDTO.ItemView> etapas = s.itens() == null ? List.of() : s.itens();
+            int concluidas = 0;
+            LocalDate ultimaEtapa = null;
+            List<String> checklist = new ArrayList<>();
+            for (ServicoResponseDTO.ItemView it : etapas) {
+                boolean ok = etapaConcluida(it.status());
+                LocalDate dr = parseData(it.dataRealizacao());
+                if (ok) concluidas++;
+                if (ok && dr != null && (ultimaEtapa == null || dr.isAfter(ultimaEtapa))) ultimaEtapa = dr;
+                checklist.add((ok ? "<span style='color:#27AE60'>✓</span> " : "○ ") + esc(it.descricao())
+                        + (ok && dr != null ? " <span style='color:#888888'>— " + dr.format(br) + "</span>" : ""));
+            }
+
+            List<String> det = new ArrayList<>();
+            if (s.codigo() != null && !s.codigo().isBlank()) det.add("<b>Código:</b> " + esc(s.codigo()));
+            if (inicio != null) det.add("<b>Início:</b> " + inicio.format(br));
+            det.add("<b>Oficina:</b> " + esc(oficina));
+            det.add("<b>Veículo:</b> " + esc(veiculo));
+            det.add("<b>Situação:</b> " + esc(situacao));
+            if (!etapas.isEmpty()) {
+                det.add("<b>Progresso:</b> " + concluidas + " de " + etapas.size() + " etapa(s) concluída(s)");
+                det.addAll(checklist);
+            }
+
+            if (inicio != null)
+                eventos.add(new EventoAgenda(inicio, "Início: " + nomeOS, veiculo, situacao,
+                        corServicoCliente(s.status()), idOS, EventoAgenda.Tipo.SERVICO, det));
+
+            for (ServicoResponseDTO.ItemView it : etapas) {
+                LocalDate dr = parseData(it.dataRealizacao());
+                if (!etapaConcluida(it.status()) || dr == null) continue;
+                List<String> detEtapa = new ArrayList<>();
+                detEtapa.add("<b>Etapa:</b> " + esc(it.descricao()));
+                detEtapa.add("<b>Concluída em:</b> " + dr.format(br));
+                if (it.tempoGasto() != null && !it.tempoGasto().isBlank())
+                    detEtapa.add("<b>Tempo gasto:</b> " + esc(it.tempoGasto()));
+                detEtapa.add("<b>Serviço:</b> " + esc(nomeOS) + " (" + esc(situacao) + ")");
+                detEtapa.add("<b>Veículo:</b> " + esc(veiculo));
+                detEtapa.add("<b>Oficina:</b> " + esc(oficina));
+                eventos.add(new EventoAgenda(dr, "Etapa: " + valor(it.descricao()), nomeOS + " · " + veiculo,
+                        "Concluída", COR_ETAPA, idOS, EventoAgenda.Tipo.ETAPA, detEtapa));
+            }
+
+            // Revisão estimada: só faz sentido para OS que não estão congeladas nem canceladas.
+            if (s.idOrcamento() == null || "CONGELADA".equalsIgnoreCase(s.status())
+                    || "CANCELADA".equalsIgnoreCase(s.status())) continue;
+            boolean concluida = "CONCLUIDA".equalsIgnoreCase(s.status());
+            LocalDate base = concluida && ultimaEtapa != null ? ultimaEtapa : inicio;
+            if (base == null) continue;
+            for (CatalogoServicoEntity c : controller.listarItensDoOrcamento(s.idOrcamento())) {
+                Integer meses = c.getValidadeMeses();
+                if (meses == null || meses <= 0) continue;
+                LocalDate prevista = base.plusMonths(meses);
+                List<String> detRev = new ArrayList<>();
+                detRev.add("<b>Data estimada:</b> " + prevista.format(br));
+                detRev.add("<b>Serviço de referência:</b> " + esc(c.getNome()));
+                detRev.add("<b>Validade:</b> " + meses + " mes(es)"
+                        + (c.getValidadeKm() != null && c.getValidadeKm() > 0
+                           ? String.format(PT_BR, " ou %,d km (o que vier primeiro)", c.getValidadeKm()) : ""));
+                detRev.add((concluida ? "<b>Realizado em:</b> " : "<b>Calculado a partir do início da OS:</b> ")
+                        + base.format(br));
+                detRev.add("<b>Veículo:</b> " + esc(veiculo));
+                detRev.add("<b>Oficina:</b> " + esc(oficina));
+                eventos.add(new EventoAgenda(prevista, "Revisão: " + valor(c.getNome()), veiculo,
+                        "Estimada", COR_REVISAO, idOS, EventoAgenda.Tipo.PREVISAO_REVISAO, detRev));
+            }
+        }
+    }
+
+    private static String descreverVeiculo(Veiculo v, String placaFallback) {
+        if (v == null) return placaFallback != null && !placaFallback.isBlank() ? placaFallback : "—";
+        StringBuilder sb = new StringBuilder();
+        if (v.getModelo() != null) {
+            if (v.getModelo().getMontadora() != null) sb.append(v.getModelo().getMontadora().getNome()).append(' ');
+            sb.append(v.getModelo().getNome()).append(" · ");
+        }
+        sb.append(v.getPlaca());
+        return sb.toString();
+    }
+
+    /** Etapas são gravadas como CONCLUIDO pelo sistema, mas há dados antigos com CONCLUIDA. */
+    private static boolean etapaConcluida(String status) {
+        return "CONCLUIDO".equalsIgnoreCase(status) || "CONCLUIDA".equalsIgnoreCase(status);
+    }
+
+    private static String valor(String s) { return s == null || s.isBlank() ? "—" : s; }
+
+    private static String statusOrcamento(String s) {
+        if (s == null) return "Aguardando";
+        return switch (s.toUpperCase()) {
+            case "PENDENTE" -> "Aguardando aprovação";
+            case "APROVADO" -> "Aprovado";
+            case "REPROVADO", "RECUSADO" -> "Reprovado";
+            default -> s;
+        };
+    }
+
+    private static String statusServicoCliente(String s) {
+        if (s == null) return "Aberto";
+        return switch (s.toUpperCase()) {
+            case "EM_ANDAMENTO" -> "Em andamento";
+            case "CONCLUIDA" -> "Concluído";
+            case "CONGELADA" -> "Aguardando novo orçamento";
+            case "CANCELADA" -> "Cancelado";
+            default -> "Aberto";
+        };
+    }
+
+    private static Color corServicoCliente(String s) {
+        if (s == null) return COR_ABERTA;
+        return switch (s.toUpperCase()) {
+            case "EM_ANDAMENTO" -> COR_ANDAMENTO;
+            case "CONCLUIDA" -> COR_CONCLUIDA;
+            case "CONGELADA", "CANCELADA" -> COR_CONGELADA;
+            default -> COR_ABERTA;
+        };
     }
 
     /**
@@ -345,7 +560,8 @@ public class PainelCalendario extends JPanel {
 
         List<EventoAgenda> evs = eventosOrdenados(dataReferencia);
         if (evs.isEmpty()) {
-            lista.add(rotuloVazio("Nenhum serviço agendado para este dia."));
+            lista.add(rotuloVazio(modoCliente ? "Nenhum evento neste dia."
+                                              : "Nenhum serviço agendado para este dia."));
         } else {
             for (EventoAgenda ev : evs) {
                 lista.add(linhaEventoDia(ev));
@@ -361,6 +577,7 @@ public class PainelCalendario extends JPanel {
     }
 
     private JComponent linhaEventoDia(EventoAgenda ev) {
+        if (modoCliente) return linhaEventoExpansivel(ev);
         JPanel linha = new JPanel(new BorderLayout(10, 0));
         linha.setBackground(Color.WHITE);
         linha.setBorder(BorderFactory.createCompoundBorder(
@@ -395,6 +612,101 @@ public class PainelCalendario extends JPanel {
 
         adicionarClique(linha, ev);
         return linha;
+    }
+
+    /**
+     * Linha do modo "Dia" no calendário do cliente: clicar alterna entre recolhido
+     * (título + status) e expandido (todas as datas e informações do processo).
+     */
+    private JComponent linhaEventoExpansivel(EventoAgenda ev) {
+        boolean aberto = ev == eventoExpandido;
+
+        JPanel linha = new JPanel(new BorderLayout(0, 6));
+        linha.setBackground(aberto ? Color.decode("#FAFAFA") : Color.WHITE);
+        linha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 4, 0, 0, ev.cor),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+        linha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel cab = new JPanel(new BorderLayout(10, 0));
+        cab.setOpaque(false);
+        cab.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JLabel seta = new JLabel(aberto ? "▾" : "▸");
+        seta.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        seta.setForeground(COR_SUAVE);
+
+        JPanel textos = new JPanel();
+        textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
+        textos.setOpaque(false);
+        JLabel t = new JLabel(ev.titulo);
+        t.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        t.setForeground(COR_TEXTO);
+        textos.add(t);
+        if (!ev.detalhe.isEmpty()) {
+            JLabel d = new JLabel(ev.detalhe);
+            d.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            d.setForeground(COR_SUAVE);
+            textos.add(d);
+        }
+
+        JLabel status = new JLabel(ev.statusLabel);
+        status.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        status.setForeground(ev.cor);
+
+        cab.add(seta, BorderLayout.WEST);
+        cab.add(textos, BorderLayout.CENTER);
+        cab.add(status, BorderLayout.EAST);
+        linha.add(cab, BorderLayout.NORTH);
+
+        MouseAdapter alternar = new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                eventoExpandido = aberto ? null : ev;
+                renderizar();
+            }
+        };
+        for (Component c : new Component[]{cab, seta, textos, status, t}) c.addMouseListener(alternar);
+
+        if (aberto) {
+            StringBuilder html = new StringBuilder("<html>");
+            for (String l : ev.linhasExpandidas) html.append(l).append("<br>");
+            html.append("</html>");
+            JLabel corpo = new JLabel(html.toString());
+            corpo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            corpo.setForeground(COR_TEXTO);
+            corpo.setBorder(BorderFactory.createEmptyBorder(2, 22, 0, 0));
+            linha.add(corpo, BorderLayout.CENTER);
+
+            JComponent acao = acaoDoEvento(ev);
+            if (acao != null) {
+                JPanel rodape = new JPanel(new FlowLayout(FlowLayout.LEFT, 22, 0));
+                rodape.setOpaque(false);
+                rodape.add(acao);
+                linha.add(rodape, BorderLayout.SOUTH);
+            }
+        }
+
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, linha.getPreferredSize().height));
+        return linha;
+    }
+
+    /** Atalho para a tela do portal relacionada ao evento expandido. */
+    private JComponent acaoDoEvento(EventoAgenda ev) {
+        String texto;
+        Runnable acao;
+        switch (ev.tipo) {
+            case ORCAMENTO -> { texto = "Ver meus orçamentos"; acao = () -> EstiloCliente.navegar(this, new V_ClienteOrcamentos(controller)); }
+            case SERVICO, ETAPA -> {
+                boolean concluido = "CONCLUIDA".equalsIgnoreCase(statusOS.get(ev.idOS));
+                texto = "Ver meus serviços";
+                acao = () -> EstiloCliente.navegar(this, new V_ClienteServicos(controller, concluido));
+            }
+            case PREVISAO_REVISAO -> { texto = "Buscar oficina para a revisão"; acao = () -> EstiloCliente.navegar(this, new V_ClienteBuscarOficinas(controller)); }
+            default -> { return null; }
+        }
+        JButton b = botaoBarra(texto);
+        b.addActionListener(e -> acao.run());
+        return b;
     }
 
     // =========================================================================
@@ -593,7 +905,7 @@ public class PainelCalendario extends JPanel {
         c.setForeground(tem ? Color.decode("#E67E22") : Color.decode("#555555"));
         c.setBorder(BorderFactory.createLineBorder(COR_BORDA));
         c.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        if (tem) c.setToolTipText(evs.size() + " serviço(s) neste dia");
+        if (tem) c.setToolTipText(evs.size() + (modoCliente ? " evento(s)" : " serviço(s)") + " neste dia");
         c.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 dataReferencia = d; modoAtual = Modo.DIA; renderizar();
@@ -612,6 +924,7 @@ public class PainelCalendario extends JPanel {
     }
 
     private int ordemStatus(EventoAgenda ev) {
+        if (modoCliente) return ev.tipo.ordinal(); // serviço, orçamento, etapa, revisão
         if (ev.cor == COR_ABERTA)    return 0;
         if (ev.cor == COR_ANDAMENTO) return 1;
         if (ev.cor == COR_CONCLUIDA) return 2;
@@ -634,8 +947,24 @@ public class PainelCalendario extends JPanel {
         return c;
     }
 
-    /** Torna o componente clicável: abre a OS quando houver uma associada. */
+    /**
+     * Torna o componente clicável. Na oficina abre a OS associada; no portal do
+     * cliente abre o dia do evento no modo "Dia" já com os detalhes expandidos.
+     */
     private void adicionarClique(JComponent comp, EventoAgenda ev) {
+        if (modoCliente) {
+            comp.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            comp.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) {
+                    eventoExpandido = ev;
+                    dataReferencia = ev.data;
+                    modoAtual = Modo.DIA;
+                    renderizar();
+                    e.consume();
+                }
+            });
+            return;
+        }
         if (ev.idOS <= 0) return;
         comp.setCursor(new Cursor(Cursor.HAND_CURSOR));
         comp.addMouseListener(new MouseAdapter() {

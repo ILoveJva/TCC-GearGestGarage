@@ -22,6 +22,7 @@ final class RtfUtil {
 
     static final String PREAMBULO =
         "{\\rtf1\\ansi\\ansicpg1252\\deff0\\uc1{\\fonttbl{\\f0 Times New Roman;}}"
+        + "{\\colortbl;\\red230\\green230\\blue230;}"
         + "\\paperw11906\\paperh16838\\margl1701\\margr1134\\margt1701\\margb1134\\f0\\fs24\n";
     static final String FECHAMENTO = "}";
 
@@ -51,12 +52,23 @@ final class RtfUtil {
         }
     }
 
-    /** Escreve uma linha de tabela RTF; larguras em twips (cumulativas a partir da margem esquerda). */
+    /** Borda simples fina nos quatro lados de uma célula. */
+    private static final String BORDA_CELULA =
+        "\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10";
+
+    /**
+     * Escreve uma linha de tabela RTF; larguras em twips (somadas a partir da margem esquerda).
+     * A linha de cabeçalho tem fundo cinza e é marcada para repetir a cada página (\\trhdr — o
+     * Word respeita; o LibreOffice ignora ao importar RTF).
+     */
     static void tabela(StringBuilder rtf, String[] celulas, int[] largurasTwips, boolean cabecalho) {
         rtf.append("\\trowd\\trgaph80\\trleft0");
+        if (cabecalho) rtf.append("\\trhdr");
         int acumulado = 0;
         for (int largura : largurasTwips) {
             acumulado += largura;
+            rtf.append(BORDA_CELULA);
+            if (cabecalho) rtf.append("\\clcbpat1\\clshdng0");
             rtf.append("\\cellx").append(acumulado);
         }
         for (String texto : celulas) {
@@ -112,7 +124,8 @@ final class RtfUtil {
             } else if (c == '\n') {
                 sb.append("\\par ");
             } else if (c > 127) {
-                sb.append("\\u").append((int) c).append("?");
+                // \\uN do RTF é um inteiro de 16 bits COM sinal: acima de 32767 vira negativo.
+                sb.append("\\u").append((int) (short) c).append("?");
             } else {
                 sb.append(c);
             }

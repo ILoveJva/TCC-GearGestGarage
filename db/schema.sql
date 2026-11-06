@@ -46,7 +46,7 @@ CREATE TABLE usuario (
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL,
-    senha VARCHAR(255) NOT NULL,
+    senha VARCHAR(255) default "1234",
     telefone VARCHAR(20) NOT NULL,
     foto VARCHAR(500) NULL,
     id_oficina INT NOT NULL,

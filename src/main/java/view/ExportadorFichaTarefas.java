@@ -90,9 +90,9 @@ public final class ExportadorFichaTarefas {
                 ? veiculo.getModelo().getMontadora().getNome() : "—";
             String modelo = veiculo.getModelo() != null ? veiculo.getModelo().getNome() : "—";
             int ano = veiculo.getModelo() != null ? veiculo.getModelo().getAno() : 0;
-            rtf.append("\\b ").append(escapar("Placa: ")).append("\\b0 ").append(escapar(valorOuTraco(veiculo.getPlaca()))).append("\\par\n");
             rtf.append("\\b ").append(escapar("Marca/Modelo: ")).append("\\b0 ").append(escapar(marca + " " + modelo)).append("\\par\n");
             rtf.append("\\b ").append(escapar("Ano: ")).append("\\b0 ").append(escapar(ano > 0 ? String.valueOf(ano) : "—")).append("\\par\n");
+            rtf.append("\\b ").append(escapar("Placa: ")).append("\\b0 ").append(escapar(valorOuTraco(veiculo.getPlaca()))).append("\\par\n");
         } else {
             rtf.append(escapar("Veículo não encontrado.")).append("\\par\n");
         }
@@ -102,14 +102,7 @@ public final class ExportadorFichaTarefas {
             rtf.append("\\b ").append(escapar("Direção: ")).append("\\b0 ").append(escapar(valorOuTraco(detalhes.getDirecao()))).append("\\par\n");
             rtf.append("\\b ").append(escapar("Freios: ")).append("\\b0 ").append(escapar(valorOuTraco(detalhes.getSistemaFreios()))).append("\\par\n");
             rtf.append("\\b ").append(escapar("Cor: ")).append("\\b0 ").append(escapar(valorOuTraco(detalhes.getCor()))).append("\\par\n");
-            rtf.append("\\b ").append(escapar("VIN: ")).append("\\b0 ").append(escapar(valorOuTraco(detalhes.getVin()))).append("\\par\n");
         }
-        rtf.append("\\par\n");
-
-        // Dados do cliente
-        rtf.append("\\b\\fs26 ").append(escapar("Cliente")).append("\\b0\\fs24\\par\n");
-        rtf.append("\\b ").append(escapar("Nome: ")).append("\\b0 ").append(escapar(cliente != null ? valorOuTraco(cliente.getNome()) : "—")).append("\\par\n");
-        rtf.append("\\b ").append(escapar("Telefone: ")).append("\\b0 ").append(escapar(cliente != null ? valorOuTraco(cliente.getTelefone()) : "—")).append("\\par\n");
         rtf.append("\\par\n");
 
         // Reclamação do cliente

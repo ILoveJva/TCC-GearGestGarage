@@ -76,8 +76,8 @@ public class V_PaginaInicial extends JPanel {
     public V_PaginaInicial(OficinaController controller) {
         this.controller = controller;
 
-        // Configura o fundo cinza claro idêntico ao protótipo para destacar os cards brancos
-        setBackground(Color.decode("#F5F5F5"));
+        // Fundo vermelho da página principal
+        setBackground(Color.RED);
         setLayout(new BorderLayout(20, 20));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 

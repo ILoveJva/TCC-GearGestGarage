@@ -270,6 +270,436 @@ final class EstiloCliente {
         return sc;
     }
 
+    // ------------------------------------------------------------------ telas internas (Figma)
+
+    static final Color CORPO_CARTAO = Color.decode("#BDBDBD"); // área expandida dos cartões
+    static final Color CAIXA_CLARA  = Color.decode("#DCDCDC"); // caixas dentro da área expandida
+    static final Color VERDE        = Color.decode("#22C55E");
+    static final Color AMARELO      = Color.decode("#F2E600");
+    static final Color VERMELHO     = Color.decode("#E11D1D");
+
+    /** Largura máxima do conteúdo: em telas largas o miolo fica centralizado, como numa página web. */
+    static final int LARGURA_CONTEUDO = 1040;
+
+    /**
+     * Cabeçalho das telas internas: título centralizado (como no protótipo) e, à esquerda,
+     * o link "← Voltar" — no desktop não há o botão "voltar" do celular.
+     */
+    static JComponent cabecalhoPagina(String titulo, Runnable voltar) {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setOpaque(false);
+        JLabel t = new JLabel(titulo, SwingConstants.CENTER);
+        t.setFont(fonte(Font.PLAIN, 28));
+        t.setForeground(TEXTO);
+        p.add(t, BorderLayout.CENTER);
+
+        JLabel v = new JLabel(voltar != null ? "← Voltar" : "");
+        v.setFont(fonte(Font.PLAIN, 14));
+        v.setForeground(TEXTO_SUAVE);
+        v.setPreferredSize(new Dimension(90, 20));
+        if (voltar != null) {
+            v.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            v.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) { voltar.run(); }
+                @Override public void mouseEntered(MouseEvent e) { v.setForeground(ACENTO); }
+                @Override public void mouseExited(MouseEvent e) { v.setForeground(TEXTO_SUAVE); }
+            });
+        }
+        JLabel espelho = new JLabel();
+        espelho.setPreferredSize(new Dimension(90, 20));
+        p.add(v, BorderLayout.WEST);
+        p.add(espelho, BorderLayout.EAST);
+        return p;
+    }
+
+    /**
+     * Página padrão das telas internas: cabeçalho + conteúdo centralizado com largura máxima,
+     * tudo dentro de uma rolagem vertical.
+     */
+    static JPanel pagina(String titulo, Runnable voltar, JComponent conteudo) {
+        JPanel coluna = new JPanel(new BorderLayout(0, 22));
+        coluna.setOpaque(false);
+        coluna.add(cabecalhoPagina(titulo, voltar), BorderLayout.NORTH);
+        coluna.add(conteudo, BorderLayout.CENTER);
+
+        JPanel centro = new JPanel(new CentroComLarguraMaxima(LARGURA_CONTEUDO));
+        centro.setBackground(FUNDO);
+        centro.setBorder(BorderFactory.createEmptyBorder(24, 32, 32, 32));
+        centro.add(coluna);
+
+        JPanel raiz = new JPanel(new BorderLayout());
+        raiz.setBackground(FUNDO);
+        raiz.add(rolagem(new LarguraDaViewport(centro)), BorderLayout.CENTER);
+        return raiz;
+    }
+
+    /** Layout de um filho só: ocupa a largura disponível até {@code max} e fica centralizado. */
+    private static final class CentroComLarguraMaxima implements LayoutManager {
+        private final int max;
+        CentroComLarguraMaxima(int max) { this.max = max; }
+        @Override public void addLayoutComponent(String n, Component c) {}
+        @Override public void removeLayoutComponent(Component c) {}
+        @Override public Dimension minimumLayoutSize(Container p) { return preferredLayoutSize(p); }
+        @Override public Dimension preferredLayoutSize(Container p) {
+            Insets in = p.getInsets();
+            if (p.getComponentCount() == 0) return new Dimension(in.left + in.right, in.top + in.bottom);
+            Dimension d = p.getComponent(0).getPreferredSize();
+            return new Dimension(Math.min(d.width, max) + in.left + in.right, d.height + in.top + in.bottom);
+        }
+        @Override public void layoutContainer(Container p) {
+            if (p.getComponentCount() == 0) return;
+            Insets in = p.getInsets();
+            int disp = p.getWidth() - in.left - in.right;
+            int w = Math.min(disp, max);
+            Component c = p.getComponent(0);
+            // Altura preferida (não estica até o fim da tela): o conteúdo fica no topo.
+            c.setBounds(in.left + (disp - w) / 2, in.top, w, c.getPreferredSize().height);
+        }
+    }
+
+    /** Painel que acompanha a largura da viewport (só rola na vertical). */
+    private static final class LarguraDaViewport extends JPanel implements Scrollable {
+        LarguraDaViewport(JComponent c) {
+            super(new BorderLayout());
+            setBackground(FUNDO);
+            add(c);
+        }
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 18; }
+        @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return r.height - 40; }
+        @Override public boolean getScrollableTracksViewportWidth() { return true; }
+        @Override public boolean getScrollableTracksViewportHeight() {
+            return getParent() instanceof JViewport vp && vp.getHeight() > getPreferredSize().height;
+        }
+    }
+
+    /** Rótulo centralizado acima de um campo ("Tipo do veículo", "Marca"...). */
+    static JLabel rotuloCampo(String texto) {
+        JLabel l = new JLabel(texto, SwingConstants.CENTER);
+        l.setFont(fonte(Font.PLAIN, 19));
+        l.setForeground(TEXTO);
+        return l;
+    }
+
+    /** Borda arredondada "invisível": só dá cantos ao fundo pintado pelo componente. */
+    static final class BordaPilula extends javax.swing.border.AbstractBorder {
+        private final int raio;
+        BordaPilula(int raio) { this.raio = raio; }
+        @Override public Insets getBorderInsets(Component c) { return new Insets(4, 12, 4, 12); }
+        @Override public Insets getBorderInsets(Component c, Insets i) {
+            i.set(4, 12, 4, 12); return i;
+        }
+        @Override public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+            // Cobre os cantos com a cor do pai, simulando arredondamento num componente opaco.
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color fundoPai = c.getParent() != null ? c.getParent().getBackground() : FUNDO;
+            java.awt.geom.Area cantos = new java.awt.geom.Area(new Rectangle(x, y, w, h));
+            cantos.subtract(new java.awt.geom.Area(new RoundRectangle2D.Double(x, y, w - 1, h - 1, raio * 2, raio * 2)));
+            g2.setColor(fundoPai);
+            g2.fill(cantos);
+            g2.dispose();
+        }
+    }
+
+    /** Campo de texto cinza arredondado do protótipo. */
+    static JTextField campoTexto() {
+        JTextField t = new JTextField();
+        t.setFont(fonte(Font.PLAIN, 15));
+        t.setBackground(TILE);
+        t.setForeground(TEXTO);
+        t.setHorizontalAlignment(SwingConstants.CENTER);
+        t.setBorder(new BordaPilula(10));
+        t.setPreferredSize(new Dimension(200, 36));
+        return t;
+    }
+
+    /** JComboBox cinza arredondado, texto centralizado e seta "⌄" à direita, como no protótipo. */
+    static <T> JComboBox<T> combo(java.util.function.Function<T, String> texto) {
+        JComboBox<T> c = new JComboBox<>();
+        c.setFont(fonte(Font.PLAIN, 15));
+        c.setBackground(TILE);
+        c.setForeground(TEXTO);
+        c.setFocusable(false);
+        c.setPreferredSize(new Dimension(200, 36));
+        c.setBorder(new BordaPilula(10));
+        c.setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
+            @Override protected JButton createArrowButton() {
+                JButton b = new JButton("⌄");
+                b.setFont(fonte(Font.BOLD, 16));
+                b.setBorder(BorderFactory.createEmptyBorder(0, 6, 6, 4));
+                b.setContentAreaFilled(false);
+                b.setFocusPainted(false);
+                b.setForeground(TEXTO);
+                return b;
+            }
+            @Override public void paintCurrentValueBackground(Graphics g, Rectangle r, boolean f) {
+                g.setColor(TILE);
+                g.fillRect(r.x, r.y, r.width, r.height);
+            }
+        });
+        c.setRenderer(new DefaultListCellRenderer() {
+            @SuppressWarnings("unchecked")
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                setText(v == null ? "" : texto.apply((T) v));
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setFont(fonte(Font.PLAIN, 15));
+                if (i < 0) { setOpaque(false); setBackground(TILE); }
+                else if (!s) setBackground(Color.WHITE);
+                return this;
+            }
+        });
+        return c;
+    }
+
+    /** Valor somente leitura em "pílula" cinza (tela Informações do Veículo). */
+    static JComponent pilula(String valor) {
+        PainelArredondado p = new PainelArredondado(new BorderLayout(), 10, TILE);
+        p.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
+        JLabel l = new JLabel(valor == null || valor.isBlank() ? "—" : valor, SwingConstants.CENTER);
+        l.setFont(fonte(Font.PLAIN, 16));
+        l.setForeground(TEXTO);
+        p.add(l);
+        return p;
+    }
+
+    /** Botão arredondado de cor sólida (Aprovar/Reprovar, Solicitar Revisão, Exportar...). */
+    static JButton botao(String texto, Color fundo, Color textoCor, int tamFonte) {
+        JButton b = new JButton(texto) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color c = getModel().isPressed() ? fundo.darker()
+                        : getModel().isRollover() ? misturar(fundo, Color.WHITE, 0.15) : fundo;
+                g2.setColor(c);
+                int raio = Math.min(getHeight(), 24);
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), raio, raio));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        b.setFont(fonte(Font.PLAIN, tamFonte));
+        b.setForeground(textoCor);
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+        b.setOpaque(false);
+        b.setRolloverEnabled(true);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        return b;
+    }
+
+    static Color misturar(Color a, Color b, double t) {
+        return new Color((int) (a.getRed() * (1 - t) + b.getRed() * t),
+                (int) (a.getGreen() * (1 - t) + b.getGreen() * t),
+                (int) (a.getBlue() * (1 - t) + b.getBlue() * t));
+    }
+
+    /** Bolinha de status dos cartões (cheia, ou só contorno para "finalizado"). */
+    static Icon bolinha(Color cor, boolean vazada) {
+        return new Icon() {
+            @Override public int getIconWidth() { return 14; }
+            @Override public int getIconHeight() { return 14; }
+            @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (vazada) {
+                    g2.setColor(TEXTO);
+                    g2.setStroke(new BasicStroke(1.3f));
+                    g2.draw(new Ellipse2D.Double(x + 1, y + 1, 11.5, 11.5));
+                } else {
+                    g2.setColor(cor);
+                    g2.fill(new Ellipse2D.Double(x + 1, y + 1, 12, 12));
+                }
+                g2.dispose();
+            }
+        };
+    }
+
+    /** Chevron (⌄ / ⌃) desenhado em vetor. */
+    static Icon chevron(boolean paraCima) {
+        return new Icon() {
+            @Override public int getIconWidth() { return 18; }
+            @Override public int getIconHeight() { return 18; }
+            @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(TEXTO);
+                g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                if (paraCima) g2.drawPolyline(new int[]{x + 3, x + 9, x + 15}, new int[]{y + 12, y + 6, y + 12}, 3);
+                else g2.drawPolyline(new int[]{x + 3, x + 9, x + 15}, new int[]{y + 6, y + 12, y + 6}, 3);
+                g2.dispose();
+            }
+        };
+    }
+
+    /**
+     * Cartão sanfona das telas Orçamentos e Serviços: cabeçalho cinza (bolinha de status,
+     * título, veículo, "Por: oficina" e chevron) e, ao clicar, a área expandida mais escura.
+     */
+    static class CartaoExpansivel extends JPanel {
+        private final JComponent corpo;
+        private final JLabel seta;
+        private boolean aberto;
+
+        CartaoExpansivel(Icon status, String titulo, String subtitulo, String oficina,
+                         JComponent corpo, boolean abertoInicial) {
+            super(new BorderLayout());
+            this.corpo = corpo;
+            setOpaque(false);
+
+            JPanel cab = new JPanel(new BorderLayout(14, 0));
+            cab.setOpaque(false);
+            cab.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+            cab.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            JLabel dot = new JLabel(status);
+            JPanel textos = new JPanel();
+            textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
+            textos.setOpaque(false);
+            JLabel t = new JLabel(titulo);
+            t.setFont(fonte(Font.PLAIN, 17));
+            t.setForeground(TEXTO);
+            JLabel st = new JLabel(subtitulo);
+            st.setFont(fonte(Font.PLAIN, 13));
+            st.setForeground(TEXTO);
+            textos.add(t);
+            textos.add(st);
+
+            JPanel esquerda = new JPanel(new BorderLayout(12, 0));
+            esquerda.setOpaque(false);
+            esquerda.add(dot, BorderLayout.WEST);
+            esquerda.add(textos, BorderLayout.CENTER);
+
+            JLabel por = new JLabel("<html><div style='text-align:center'><span style='font-size:13px'>Por:</span><br>"
+                    + escapar(oficina) + "</div></html>", SwingConstants.CENTER);
+            por.setFont(fonte(Font.PLAIN, 12));
+            por.setForeground(TEXTO);
+            seta = new JLabel();
+
+            JPanel direita = new JPanel(new BorderLayout(18, 0));
+            direita.setOpaque(false);
+            direita.add(por, BorderLayout.CENTER);
+            direita.add(seta, BorderLayout.EAST);
+
+            cab.add(esquerda, BorderLayout.CENTER);
+            cab.add(direita, BorderLayout.EAST);
+
+            MouseAdapter alternar = new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) { setAberto(!aberto); }
+            };
+            for (Component c : new Component[]{cab, dot, textos, t, st, por, seta, esquerda, direita})
+                c.addMouseListener(alternar);
+
+            corpo.setOpaque(false);
+            add(cab, BorderLayout.NORTH);
+            add(corpo, BorderLayout.CENTER);
+            setAberto(abertoInicial);
+        }
+
+        void setAberto(boolean a) {
+            aberto = a;
+            corpo.setVisible(a);
+            seta.setIcon(chevron(a));
+            revalidate();
+            repaint();
+        }
+
+        @Override public Dimension getMaximumSize() {
+            return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+        }
+
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            RoundRectangle2D forma = new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16);
+            g2.setColor(TILE);
+            g2.fill(forma);
+            if (aberto) {
+                int y = getComponent(0).getHeight();
+                g2.clip(forma);
+                g2.setColor(CORPO_CARTAO);
+                g2.fillRect(0, y, getWidth(), getHeight() - y);
+            }
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** "Ford Fiesta 2004" — marca, modelo e ano do veículo. */
+    static String nomeVeiculo(model.Veiculo v) {
+        if (v == null) return "—";
+        StringBuilder sb = new StringBuilder();
+        if (v.getModelo() != null) {
+            if (v.getModelo().getMontadora() != null) sb.append(v.getModelo().getMontadora().getNome()).append(' ');
+            sb.append(v.getModelo().getNome());
+            if (v.getModelo().getAno() > 0) sb.append(' ').append(v.getModelo().getAno());
+        }
+        String s = sb.toString().trim();
+        return s.isEmpty() ? valorOuPlaca(v) : s;
+    }
+
+    private static String valorOuPlaca(model.Veiculo v) { return v.getPlaca() == null ? "—" : v.getPlaca(); }
+
+    /** Cartão de veículo do protótipo ("Seus veículos"): moldura branca com a foto e o nome abaixo. */
+    static JComponent cartaoVeiculo(model.Veiculo v, Runnable aoClicar) {
+        PainelArredondado card = new PainelArredondado(new BorderLayout(0, 10), 12, TILE);
+        card.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        card.setToolTipText("Ver informações do veículo");
+
+        PainelArredondado moldura = new PainelArredondado(new BorderLayout(), 10, Color.WHITE);
+        moldura.setPreferredSize(new Dimension(190, 130));
+        JLabel foto = new JLabel("", SwingConstants.CENTER);
+        ImageIcon icon = ImagemUtil.carregar(v.getFoto(), 180, 120);
+        foto.setIcon(icon != null ? icon : recurso("/assets/icons/vveiculos.png", 90, 90));
+        moldura.add(foto, BorderLayout.CENTER);
+
+        JLabel nome = new JLabel("<html><div style='text-align:center'>" + escapar(nomeVeiculo(v))
+                + "<br><span style='color:#6B6B6B;font-size:11px'>" + escapar(valorOuPlaca(v))
+                + "</span></div></html>", SwingConstants.CENTER);
+        nome.setFont(fonte(Font.PLAIN, 14));
+        nome.setForeground(TEXTO);
+
+        card.add(moldura, BorderLayout.CENTER);
+        card.add(nome, BorderLayout.SOUTH);
+        hoverClique(card, aoClicar, moldura, foto, nome);
+        return card;
+    }
+
+    /** Hover (escurece o cinza) + clique num PainelArredondado e em seus filhos. */
+    static void hoverClique(PainelArredondado card, Runnable aoClicar, Component... filhos) {
+        MouseAdapter ma = new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { aoClicar.run(); }
+            @Override public void mouseEntered(MouseEvent e) { card.setCor(TILE_HOVER); }
+            @Override public void mouseExited(MouseEvent e) {
+                Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), card);
+                if (!card.contains(pt)) card.setCor(TILE);
+            }
+        };
+        card.addMouseListener(ma);
+        for (Component c : filhos) c.addMouseListener(ma);
+    }
+
+    static String escapar(String s) {
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    static String dataBR(String iso) {
+        if (iso == null || iso.isBlank()) return "—";
+        try {
+            return java.time.LocalDate.parse(iso.trim()).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception e) {
+            return iso;
+        }
+    }
+
+    static String reais(double v) {
+        return String.format(new java.util.Locale("pt", "BR"), "R$ %,.2f", v);
+    }
+
     /** Navega dentro da janela do Portal do Cliente. */
     static void navegar(Component origem, JPanel pagina) {
         Window w = SwingUtilities.getWindowAncestor(origem);

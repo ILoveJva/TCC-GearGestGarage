@@ -1,170 +1,221 @@
 package view;
 
+import br.com.oficina.atendimento.dto.OrcamentoResponseDTO;
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
+import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
+import model.Oficina;
 import model.Veiculo;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
-/** Serviços (OS) dos veículos do cliente, alternando entre Em andamento e Finalizados. */
+/**
+ * "Serviços em Andamento" e "Serviços finalizados" (protótipo do Figma): cartões sanfona
+ * com bolinha de status (verde = em andamento, amarelo = aguardando início, vazada =
+ * finalizado), serviço, veículo e oficina. Expandido mostra as etapas com ✓, a descrição
+ * do trabalho (e quem a escreveu), o status e — nos finalizados — "Exportar relatório".
+ */
 public class V_ClienteServicos extends JPanel {
 
     private final OficinaController controller;
-    private final Map<Long, String> placas = new HashMap<>();
-    private JPanel pnlLista;
-    private boolean mostrandoFinalizados;
-    private JButton btnAndamento, btnFinalizados;
+    private final Map<Long, Veiculo> veiculos = new HashMap<>();
+    private final Map<Long, String> oficinas = new HashMap<>();
+    private final Map<Long, String> funcionarios = new HashMap<>();
+    private final boolean finalizados;
 
     public V_ClienteServicos(OficinaController controller) {
         this(controller, false);
     }
 
-    /** @param finalizados abre direto na aba "Finalizados" (atalho "Consultar Serviços Antigos"). */
+    /** @param finalizados abre a lista de finalizados (atalho "Consultar Serviços Antigos"). */
     public V_ClienteServicos(OficinaController controller, boolean finalizados) {
         this.controller = controller;
-        this.mostrandoFinalizados = finalizados;
-        for (Veiculo v : controller.listarMeusVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
+        this.finalizados = finalizados;
+        for (Veiculo v : controller.listarMeusVeiculos()) veiculos.put(v.getIdVeiculo(), v);
+        for (Oficina o : controller.listarTodas()) oficinas.put(o.getIdOficina(), o.getNome());
+        try {
+            for (FuncionarioEntity f : controller.listarFuncionarios())
+                if (f.getIdFuncionario() != null) funcionarios.put(f.getIdFuncionario(), f.getNome());
+        } catch (Exception ignored) { }
 
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBackground(EstiloCliente.FUNDO);
 
-        JPanel topo = new JPanel(new BorderLayout(0, 10));
-        topo.setOpaque(false);
+        JPanel conteudo = new JPanel(new BorderLayout(0, 18));
+        conteudo.setOpaque(false);
+        conteudo.add(construirAlternador(), BorderLayout.NORTH);
+        conteudo.add(construirLista(), BorderLayout.CENTER);
 
-        JLabel titulo = new JLabel("Serviços");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        topo.add(titulo, BorderLayout.NORTH);
-
-        JPanel toggle = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        toggle.setOpaque(false);
-        btnAndamento = new JButton("Em andamento");
-        btnFinalizados = new JButton("Finalizados");
-        btnAndamento.addActionListener(e -> { mostrandoFinalizados = false; atualizarLista(); });
-        btnFinalizados.addActionListener(e -> { mostrandoFinalizados = true; atualizarLista(); });
-        toggle.add(btnAndamento);
-        toggle.add(btnFinalizados);
-        topo.add(toggle, BorderLayout.SOUTH);
-
-        add(topo, BorderLayout.NORTH);
-
-        pnlLista = new JPanel();
-        pnlLista.setLayout(new BoxLayout(pnlLista, BoxLayout.Y_AXIS));
-        pnlLista.setBackground(Color.WHITE);
-
-        JScrollPane scroll = new JScrollPane(pnlLista);
-        scroll.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        add(scroll, BorderLayout.CENTER);
-
-        atualizarLista();
+        add(EstiloCliente.pagina(finalizados ? "Serviços finalizados" : "Serviços em Andamento",
+                () -> EstiloCliente.navegar(this, new V_ClienteMenu(controller)), conteudo));
     }
 
-    private void atualizarLista() {
-        btnAndamento.setFont(new Font("Segoe UI", mostrandoFinalizados ? Font.PLAIN : Font.BOLD, 13));
-        btnFinalizados.setFont(new Font("Segoe UI", mostrandoFinalizados ? Font.BOLD : Font.PLAIN, 13));
+    /** No desktop as duas listas ficam a um clique: "Em andamento | Finalizados". */
+    private JComponent construirAlternador() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        p.setOpaque(false);
+        JButton andamento = EstiloCliente.botao("Em andamento",
+                finalizados ? EstiloCliente.TILE : EstiloCliente.TEXTO,
+                finalizados ? EstiloCliente.TEXTO : Color.WHITE, 13);
+        JButton fin = EstiloCliente.botao("Finalizados",
+                finalizados ? EstiloCliente.TEXTO : EstiloCliente.TILE,
+                finalizados ? Color.WHITE : EstiloCliente.TEXTO, 13);
+        andamento.addActionListener(e -> { if (finalizados) EstiloCliente.navegar(this, new V_ClienteServicos(controller, false)); });
+        fin.addActionListener(e -> { if (!finalizados) EstiloCliente.navegar(this, new V_ClienteServicos(controller, true)); });
+        p.add(andamento);
+        p.add(fin);
+        return p;
+    }
 
-        pnlLista.removeAll();
-        List<ServicoResponseDTO> servicos = controller.listarMeusServicos().stream()
-            .filter(s -> mostrandoFinalizados == "CONCLUIDA".equalsIgnoreCase(s.status()))
-            .toList();
+    private JComponent construirLista() {
+        JPanel lista = new JPanel();
+        lista.setLayout(new BoxLayout(lista, BoxLayout.Y_AXIS));
+        lista.setOpaque(false);
+
+        List<ServicoResponseDTO> servicos = new ArrayList<>(controller.listarMeusServicos().stream()
+                .filter(s -> finalizados == ServicoCliente.finalizado(s.status()))
+                .toList());
+        // Mais recentes primeiro.
+        servicos.sort(Comparator.comparing((ServicoResponseDTO s) -> s.dataServico() == null ? "" : s.dataServico())
+                .reversed());
 
         if (servicos.isEmpty()) {
-            JLabel vazio = new JLabel(mostrandoFinalizados
-                ? "Nenhum serviço finalizado ainda." : "Nenhum serviço em andamento.");
-            vazio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            pnlLista.add(vazio);
+            JLabel vazio = new JLabel(finalizados ? "Nenhum serviço finalizado ainda."
+                    : "Nenhum serviço em andamento.", SwingConstants.CENTER);
+            vazio.setFont(EstiloCliente.fonte(Font.ITALIC, 14));
+            vazio.setForeground(EstiloCliente.TEXTO_SUAVE);
+            vazio.setAlignmentX(Component.CENTER_ALIGNMENT);
+            lista.add(vazio);
+        }
+        boolean primeiro = true;
+        for (ServicoResponseDTO s : servicos) {
+            Veiculo v = s.idVeiculo() != null ? veiculos.get(s.idVeiculo()) : null;
+            String titulo = (s.titulo() != null && !s.titulo().isBlank() ? s.titulo() : "OS #" + s.idServico()) + ":";
+            String oficina = s.idOficina() != null ? oficinas.getOrDefault(s.idOficina(), "—") : "—";
+            EstiloCliente.CartaoExpansivel card = new EstiloCliente.CartaoExpansivel(
+                    bolinha(s.status()), titulo,
+                    EstiloCliente.nomeVeiculo(v) + (v != null ? " · " + v.getPlaca() : ""),
+                    oficina, construirCorpo(s, v), primeiro && !finalizados);
+            card.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lista.add(card);
+            lista.add(Box.createVerticalStrut(12));
+            primeiro = false;
+        }
+        return lista;
+    }
+
+    private Icon bolinha(String status) {
+        if (ServicoCliente.finalizado(status))
+            return EstiloCliente.bolinha(null, true);
+        if ("EM_ANDAMENTO".equalsIgnoreCase(status)) return EstiloCliente.bolinha(EstiloCliente.VERDE, false);
+        if ("CONGELADA".equalsIgnoreCase(status)) return EstiloCliente.bolinha(Color.decode("#9E9E9E"), false);
+        return EstiloCliente.bolinha(EstiloCliente.AMARELO, false);
+    }
+
+    // ------------------------------------------------------------------ área expandida
+
+    private JComponent construirCorpo(ServicoResponseDTO s, Veiculo v) {
+        ServicoCliente.Etapas etapas = ServicoCliente.separar(s);
+
+        JPanel corpo = new JPanel(new BorderLayout(24, 14));
+        corpo.setBorder(BorderFactory.createEmptyBorder(14, 24, 16, 24));
+
+        // Esquerda: etapas com ✓.
+        StringBuilder html = new StringBuilder("<html><b>Serviço:</b><ul style='margin-left:16px'>");
+        if (etapas.checklist().isEmpty()) html.append("<li>Etapas ainda não registradas pela oficina.</li>");
+        for (ServicoResponseDTO.ItemView it : etapas.checklist()) {
+            boolean ok = ServicoCliente.etapaConcluida(it.status());
+            html.append("<li>").append(EstiloCliente.escapar(it.descricao()))
+                .append(ok ? " <b>✓</b>" : "")
+                .append(ok && it.dataRealizacao() != null
+                        ? " <span style='color:#555555'>(" + EstiloCliente.dataBR(it.dataRealizacao()) + ")</span>" : "")
+                .append("</li>");
+        }
+        html.append("</ul></html>");
+        JLabel lblEtapas = new JLabel(html.toString());
+        lblEtapas.setFont(EstiloCliente.fonte(Font.PLAIN, 13));
+        lblEtapas.setForeground(EstiloCliente.TEXTO);
+        lblEtapas.setVerticalAlignment(SwingConstants.TOP);
+        corpo.add(lblEtapas, BorderLayout.CENTER);
+
+        // Direita: "Descrição (por: fulano)" em caixa clara arredondada.
+        String autor = null, descricao;
+        if (etapas.descricao() != null) {
+            descricao = etapas.descricao().descricao();
+            if (etapas.descricao().idFuncionario() != null)
+                autor = funcionarios.get(etapas.descricao().idFuncionario());
         } else {
-            for (ServicoResponseDTO s : servicos) {
-                pnlLista.add(criarCartao(s));
-                pnlLista.add(Box.createVerticalStrut(10));
-            }
+            descricao = reclamacaoDoOrcamento(s);
         }
-        pnlLista.revalidate();
-        pnlLista.repaint();
+        String rotuloDesc = etapas.descricao() != null
+                ? "Descrição" + (autor != null ? " (por: " + autor + ")" : "") + ":"
+                : "Sua solicitação:";
+
+        JPanel direita = new JPanel(new BorderLayout(0, 6));
+        direita.setOpaque(false);
+        JLabel tituloDesc = new JLabel(rotuloDesc, SwingConstants.CENTER);
+        tituloDesc.setFont(EstiloCliente.fonte(Font.PLAIN, 13));
+        direita.add(tituloDesc, BorderLayout.NORTH);
+        EstiloCliente.PainelArredondado caixa = new EstiloCliente.PainelArredondado(
+                new BorderLayout(), 16, EstiloCliente.CAIXA_CLARA);
+        caixa.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        JLabel txtDesc = new JLabel("<html><div style='text-align:center;width:260px'>"
+                + EstiloCliente.escapar(descricao == null || descricao.isBlank() ? "Sem descrição." : descricao)
+                    .replace("\n", "<br>") + "</div></html>", SwingConstants.CENTER);
+        txtDesc.setFont(EstiloCliente.fonte(Font.PLAIN, 13));
+        caixa.add(txtDesc);
+        direita.add(caixa, BorderLayout.CENTER);
+        if (etapas.observacaoSaida() != null) {
+            JLabel saida = new JLabel("<html><div style='text-align:center;width:280px'><b>Estado na saída:</b> "
+                    + EstiloCliente.escapar(etapas.observacaoSaida().descricao()) + "</div></html>", SwingConstants.CENTER);
+            saida.setFont(EstiloCliente.fonte(Font.PLAIN, 12));
+            direita.add(saida, BorderLayout.SOUTH);
+        }
+        corpo.add(direita, BorderLayout.EAST);
+
+        // Rodapé centralizado: status, datas e exportação.
+        JPanel rodape = new JPanel();
+        rodape.setLayout(new BoxLayout(rodape, BoxLayout.Y_AXIS));
+        rodape.setOpaque(false);
+        rodape.add(centralizado("Status: " + ServicoCliente.traduzirStatus(s.status())));
+        String datas = "Início: " + EstiloCliente.dataBR(s.dataServico());
+        if (etapas.conclusao() != null) datas += "   ·   Concluído em: " + EstiloCliente.dataBR(etapas.conclusao());
+        else if (!etapas.checklist().isEmpty())
+            datas += "   ·   " + etapas.concluidas() + " de " + etapas.checklist().size() + " etapa(s) concluída(s)";
+        rodape.add(Box.createVerticalStrut(4));
+        rodape.add(centralizado(datas));
+        if (finalizados) {
+            rodape.add(Box.createVerticalStrut(10));
+            JButton exportar = EstiloCliente.botao("Exportar relatório (Word)", EstiloCliente.TEXTO, Color.WHITE, 13);
+            exportar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            String nomeVeiculo = EstiloCliente.nomeVeiculo(v) + (v != null ? " · " + v.getPlaca() : "");
+            String descFinal = descricao;
+            exportar.addActionListener(e -> ExportadorServicoCliente.exportar(this, controller, s,
+                    nomeVeiculo, etapas, descFinal));
+            rodape.add(exportar);
+        }
+        corpo.add(rodape, BorderLayout.SOUTH);
+        return corpo;
     }
 
-    private JPanel criarCartao(ServicoResponseDTO s) {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(Color.decode("#F7F7F7"));
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.decode("#CCCCCC")),
-            BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        String placa = placas.getOrDefault(s.idVeiculo(), "—");
-        JLabel cabecalho = new JLabel("<html><b>" + s.titulo() + "</b> — " + placa
-            + " &nbsp;&nbsp; Status: " + traduzirStatus(s.status()) + "</html>");
-        cabecalho.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        cabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(cabecalho);
-
-        if (s.itens() != null && !s.itens().isEmpty()) {
-            card.add(Box.createVerticalStrut(6));
-            for (var item : s.itens()) {
-                String marca = etapaConcluida(item.status()) ? "✓" : "○";
-                JLabel linha = new JLabel(marca + " " + item.descricao());
-                linha.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                linha.setAlignmentX(Component.LEFT_ALIGNMENT);
-                card.add(linha);
-            }
-        }
-
-        if (mostrandoFinalizados) {
-            card.add(Box.createVerticalStrut(8));
-            JButton btnExportar = new JButton("Exportar relatório (.txt)");
-            btnExportar.setAlignmentX(Component.LEFT_ALIGNMENT);
-            btnExportar.addActionListener(e -> exportar(s, placa));
-            card.add(btnExportar);
-        }
-
-        return card;
-    }
-
-    private void exportar(ServicoResponseDTO s, String placa) {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setSelectedFile(new File("servico_" + s.codigo() + ".txt"));
-        int resultado = chooser.showSaveDialog(this);
-        if (resultado != JFileChooser.APPROVE_OPTION) return;
-
-        try (PrintWriter w = new PrintWriter(chooser.getSelectedFile(), "UTF-8")) {
-            w.println("Relatório de Serviço");
-            w.println("Código: " + s.codigo());
-            w.println("Título: " + s.titulo());
-            w.println("Veículo: " + placa);
-            w.println("Data: " + s.dataServico());
-            w.println("Status: " + traduzirStatus(s.status()));
-            w.println();
-            w.println("Checklist:");
-            if (s.itens() != null)
-                for (var item : s.itens())
-                    w.println("  [" + (etapaConcluida(item.status()) ? "x" : " ") + "] " + item.descricao());
-            DialogoAlerta.sucesso(this, "Relatório exportado com sucesso!", "Sucesso");
-        } catch (Exception ex) {
-            DialogoAlerta.erro(this, "Erro ao exportar: " + ex.getMessage(), "Erro");
+    private String reclamacaoDoOrcamento(ServicoResponseDTO s) {
+        if (s.idOrcamento() == null || s.idOrcamento() <= 0) return null;
+        try {
+            OrcamentoResponseDTO orc = controller.buscarOrcamento(s.idOrcamento());
+            return orc != null ? orc.reclamacao() : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    /** Etapas são gravadas como CONCLUIDO pelo sistema, mas há dados antigos com CONCLUIDA. */
-    private static boolean etapaConcluida(String status) {
-        return "CONCLUIDO".equalsIgnoreCase(status) || "CONCLUIDA".equalsIgnoreCase(status);
-    }
-
-    private String traduzirStatus(String status) {
-        if (status == null) return "—";
-        return switch (status.toUpperCase()) {
-            case "ABERTA" -> "Aberta";
-            case "EM_ANDAMENTO" -> "Em andamento";
-            case "CONCLUIDA" -> "Finalizado";
-            case "CONGELADA" -> "Aguardando novo orçamento";
-            default -> status;
-        };
+    private static JLabel centralizado(String texto) {
+        JLabel l = new JLabel(texto, SwingConstants.CENTER);
+        l.setFont(EstiloCliente.fonte(Font.PLAIN, 13));
+        l.setForeground(EstiloCliente.TEXTO);
+        l.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return l;
     }
 }

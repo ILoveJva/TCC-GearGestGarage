@@ -137,7 +137,9 @@ public class V_ClientePerfil extends JPanel {
             col.add(vazio, BorderLayout.CENTER);
             return col;
         }
-        for (Veiculo v : veiculos) grade.add(cartaoVeiculo(v));
+        for (Veiculo v : veiculos)
+            grade.add(EstiloCliente.cartaoVeiculo(v,
+                    () -> EstiloCliente.navegar(this, new V_ClienteDetalhesVeiculo(controller, v))));
 
         // NORTH impede que o GridLayout estique os cartões até o fim da tela.
         JPanel topo = new JPanel(new BorderLayout());
@@ -145,61 +147,6 @@ public class V_ClientePerfil extends JPanel {
         topo.add(grade, BorderLayout.NORTH);
         col.add(EstiloCliente.rolagem(topo), BorderLayout.CENTER);
         return col;
-    }
-
-    private JComponent cartaoVeiculo(Veiculo v) {
-        EstiloCliente.PainelArredondado card = new EstiloCliente.PainelArredondado(
-                new BorderLayout(0, 10), 12, EstiloCliente.TILE);
-        card.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
-        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        card.setToolTipText("Ver detalhes do veículo");
-
-        // Área branca arredondada para a foto, como no protótipo.
-        EstiloCliente.PainelArredondado moldura = new EstiloCliente.PainelArredondado(
-                new BorderLayout(), 10, Color.WHITE);
-        moldura.setPreferredSize(new Dimension(200, 130));
-        JLabel foto = new JLabel("", SwingConstants.CENTER);
-        ImageIcon icon = ImagemUtil.carregar(v.getFoto(), 190, 120);
-        if (icon != null) {
-            foto.setIcon(icon);
-        } else {
-            foto.setIcon(EstiloCliente.recurso("/assets/icons/vveiculos.png", 90, 90));
-        }
-        moldura.add(foto, BorderLayout.CENTER);
-
-        JLabel nome = new JLabel("<html><div style='text-align:center'>" + nomeVeiculo(v) + "</div></html>",
-                SwingConstants.CENTER);
-        nome.setFont(EstiloCliente.fonte(Font.PLAIN, 14));
-        nome.setForeground(EstiloCliente.TEXTO);
-
-        card.add(moldura, BorderLayout.CENTER);
-        card.add(nome, BorderLayout.SOUTH);
-
-        MouseAdapter ma = new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                EstiloCliente.navegar(V_ClientePerfil.this, new V_ClienteDetalhesVeiculo(controller, v));
-            }
-            @Override public void mouseEntered(MouseEvent e) { card.setCor(EstiloCliente.TILE_HOVER); }
-            @Override public void mouseExited(MouseEvent e) {
-                Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), card);
-                if (!card.contains(pt)) card.setCor(EstiloCliente.TILE);
-            }
-        };
-        for (Component c : new Component[]{card, moldura, foto, nome}) c.addMouseListener(ma);
-        return card;
-    }
-
-    private static String nomeVeiculo(Veiculo v) {
-        StringBuilder sb = new StringBuilder();
-        if (v.getModelo() != null) {
-            if (v.getModelo().getMontadora() != null) sb.append(v.getModelo().getMontadora().getNome()).append(' ');
-            sb.append(v.getModelo().getNome());
-            if (v.getModelo().getAno() > 0) sb.append(' ').append(v.getModelo().getAno());
-        }
-        String linha1 = sb.toString().trim().replace("&", "&amp;").replace("<", "&lt;");
-        String placa = v.getPlaca() == null ? "" : v.getPlaca();
-        return (linha1.isEmpty() ? "" : linha1 + "<br>")
-                + "<span style='color:#6B6B6B;font-size:11px'>" + placa + "</span>";
     }
 
     // ------------------------------------------------------------------ ações

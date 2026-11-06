@@ -95,7 +95,7 @@ public class ServicoService {
         List<ServicoResponseDTO.ItemView> itens = new ArrayList<>();
         for (ItemServicoEntity i : s.getItens())
             itens.add(new ServicoResponseDTO.ItemView(i.getIdItemServico(), i.getEtapa(),
-                i.getCodigo(), i.getDescricao(), i.getStatus(), i.getTempoGasto(), i.getIdFuncionario()));
+                i.getCodigo(), i.getDescricao(), i.getStatus(), i.getTempoGasto(), i.getIdFuncionario(), i.getDataRealizacao()));
         return new ServicoResponseDTO(s.getIdServico(), s.getCodigo(), s.getTitulo(),
             s.getTipoServico(), s.getTipoManutencao(), s.getStatus(), s.getDataServico(),
             s.getIdVeiculo(), s.getIdOficina(), s.getIdOrcamento(), itens);

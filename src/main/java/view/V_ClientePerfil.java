@@ -6,11 +6,19 @@ import model.Veiculo;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.List;
 
-/** Perfil do cliente: avatar, dados pessoais e atalho para os veículos. */
+/**
+ * Perfil do cliente (protótipo do Figma adaptado para desktop): à esquerda o avatar
+ * circular, o nome com o lápis de edição e os tiles "Editar informações" / "Editar
+ * Veículos"; à direita a grade "Seus veículos" com foto e nome de cada carro.
+ */
 public class V_ClientePerfil extends JPanel {
+
+    private static final int TAM_AVATAR = 200;
 
     private final OficinaController controller;
     private JLabel lblAvatar;
@@ -20,84 +28,191 @@ public class V_ClientePerfil extends JPanel {
         this.controller = controller;
 
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBackground(EstiloCliente.FUNDO);
 
-        JPanel corpo = new JPanel();
-        corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
-        corpo.setBackground(Color.WHITE);
+        JPanel colunas = new JPanel(new BorderLayout());
+        colunas.setBackground(EstiloCliente.FUNDO);
+        colunas.add(construirColunaPerfil(), BorderLayout.WEST);
+        colunas.add(construirColunaVeiculos(), BorderLayout.CENTER);
+
+        add(colunas, BorderLayout.CENTER);
+    }
+
+    // ------------------------------------------------------------------ coluna esquerda
+
+    private JComponent construirColunaPerfil() {
+        JPanel col = new JPanel();
+        col.setLayout(new BoxLayout(col, BoxLayout.Y_AXIS));
+        col.setBackground(EstiloCliente.FUNDO);
+        col.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 0, 1, EstiloCliente.LINHA),
+                BorderFactory.createEmptyBorder(36, 36, 36, 36)));
+        col.setPreferredSize(new Dimension(440, 10));
 
         lblAvatar = new JLabel();
         lblAvatar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
-        lblAvatar.setPreferredSize(new Dimension(120, 120));
-        lblAvatar.setMaximumSize(new Dimension(120, 120));
+        lblAvatar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lblAvatar.setToolTipText("Clique para trocar a foto");
+        lblAvatar.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { trocarFoto(); }
+        });
         atualizarAvatar();
-        corpo.add(lblAvatar);
+        col.add(lblAvatar);
 
-        JButton btnTrocarFoto = new JButton("Trocar foto");
-        btnTrocarFoto.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnTrocarFoto.addActionListener(e -> trocarFoto());
-        corpo.add(Box.createVerticalStrut(8));
-        corpo.add(btnTrocarFoto);
-        corpo.add(Box.createVerticalStrut(16));
+        JLabel trocar = new JLabel("Trocar foto");
+        trocar.setFont(EstiloCliente.fonte(Font.PLAIN, 12));
+        trocar.setForeground(EstiloCliente.TEXTO_SUAVE);
+        trocar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        trocar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        trocar.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { trocarFoto(); }
+            @Override public void mouseEntered(MouseEvent e) { trocar.setForeground(EstiloCliente.ACENTO); }
+            @Override public void mouseExited(MouseEvent e) { trocar.setForeground(EstiloCliente.TEXTO_SUAVE); }
+        });
+        col.add(Box.createVerticalStrut(6));
+        col.add(trocar);
+        col.add(Box.createVerticalStrut(18));
 
+        // Nome grande com o lápis ao lado, como no protótipo.
         Cliente meu = controller.getMeuCliente();
         lblNome = new JLabel(meu != null ? meu.getNome() : "");
-        lblNome.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblNome.setAlignmentX(Component.CENTER_ALIGNMENT);
-        corpo.add(lblNome);
-        corpo.add(Box.createVerticalStrut(20));
+        lblNome.setFont(EstiloCliente.fonte(Font.PLAIN, 30));
+        lblNome.setForeground(EstiloCliente.TEXTO);
 
-        JPanel botoes = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
-        botoes.setOpaque(false);
+        JLabel lapis = new JLabel(EstiloCliente.iconeLapis(22));
+        lapis.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lapis.setToolTipText("Editar informações");
+        lapis.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { editarInformacoes(); }
+        });
 
-        JButton btnEditar = new JButton("Editar informações");
-        btnEditar.addActionListener(e -> editarInformacoes());
-        botoes.add(btnEditar);
+        JPanel linhaNome = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+        linhaNome.setOpaque(false);
+        linhaNome.add(lblNome);
+        linhaNome.add(lapis);
+        linhaNome.setAlignmentX(Component.CENTER_ALIGNMENT);
+        linhaNome.setMaximumSize(new Dimension(Integer.MAX_VALUE, linhaNome.getPreferredSize().height));
+        col.add(linhaNome);
 
-        JButton btnVeiculos = new JButton("Editar veículos");
-        btnVeiculos.addActionListener(e -> navegar(new V_ClienteVeiculos(this.controller)));
-        botoes.add(btnVeiculos);
-
-        botoes.setAlignmentX(Component.CENTER_ALIGNMENT);
-        corpo.add(botoes);
-        corpo.add(Box.createVerticalStrut(24));
-
-        JLabel tituloVeiculos = new JLabel("Seus veículos");
-        tituloVeiculos.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        tituloVeiculos.setAlignmentX(Component.CENTER_ALIGNMENT);
-        corpo.add(tituloVeiculos);
-        corpo.add(Box.createVerticalStrut(10));
-
-        List<Veiculo> veiculos = controller.listarMeusVeiculos();
-        if (veiculos.isEmpty()) {
-            JLabel vazio = new JLabel("Nenhum veículo cadastrado.");
-            vazio.setAlignmentX(Component.CENTER_ALIGNMENT);
-            corpo.add(vazio);
-        } else {
-            for (Veiculo v : veiculos) {
-                String marca = v.getModelo() != null && v.getModelo().getMontadora() != null
-                    ? v.getModelo().getMontadora().getNome() : "";
-                String modelo = v.getModelo() != null ? v.getModelo().getNome() : "";
-                JLabel linha = new JLabel(marca + " " + modelo + " — " + v.getPlaca());
-                linha.setAlignmentX(Component.CENTER_ALIGNMENT);
-                corpo.add(linha);
-            }
+        if (meu != null && meu.getEmail() != null && !meu.getEmail().isBlank()) {
+            JLabel email = new JLabel(meu.getEmail());
+            email.setFont(EstiloCliente.fonte(Font.PLAIN, 13));
+            email.setForeground(EstiloCliente.TEXTO_SUAVE);
+            email.setAlignmentX(Component.CENTER_ALIGNMENT);
+            col.add(Box.createVerticalStrut(4));
+            col.add(email);
         }
+        col.add(Box.createVerticalStrut(26));
 
-        add(new JScrollPane(corpo), BorderLayout.CENTER);
+        JPanel tiles = new JPanel(new GridLayout(1, 2, 16, 0));
+        tiles.setOpaque(false);
+        tiles.add(EstiloCliente.tile("Editar informações", "/assets/icons/config.png",
+                null, this::editarInformacoes));
+        tiles.add(EstiloCliente.tile("Editar Veículos", "/assets/icons/vveiculos.png",
+                EstiloCliente.iconeLapis(16), () -> EstiloCliente.navegar(this, new V_ClienteVeiculos(controller))));
+        tiles.setAlignmentX(Component.CENTER_ALIGNMENT);
+        tiles.setMaximumSize(new Dimension(360, 170));
+        tiles.setPreferredSize(new Dimension(360, 170));
+        col.add(tiles);
+        col.add(Box.createVerticalGlue());
+        return col;
     }
 
-    private void atualizarAvatar() {
-        ImageIcon icon = ImagemUtil.carregar(controller.getFotoPerfil(), 110, 110);
-        if (icon != null) {
-            lblAvatar.setIcon(icon);
-            lblAvatar.setText(null);
-        } else {
-            lblAvatar.setIcon(null);
-            lblAvatar.setText("(sem foto)");
+    // ------------------------------------------------------------------ coluna direita
+
+    private JComponent construirColunaVeiculos() {
+        JPanel col = new JPanel(new BorderLayout(0, 18));
+        col.setBackground(EstiloCliente.FUNDO);
+        col.setBorder(BorderFactory.createEmptyBorder(30, 32, 24, 32));
+
+        col.add(EstiloCliente.tituloSecao("Seus veículos"), BorderLayout.NORTH);
+
+        List<Veiculo> veiculos = controller.listarMeusVeiculos();
+        JPanel grade = new JPanel(new GridLayout(0, 3, 18, 18));
+        grade.setOpaque(false);
+        if (veiculos.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhum veículo cadastrado.", SwingConstants.CENTER);
+            vazio.setFont(EstiloCliente.fonte(Font.ITALIC, 14));
+            vazio.setForeground(EstiloCliente.TEXTO_SUAVE);
+            col.add(vazio, BorderLayout.CENTER);
+            return col;
         }
+        for (Veiculo v : veiculos) grade.add(cartaoVeiculo(v));
+
+        // NORTH impede que o GridLayout estique os cartões até o fim da tela.
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.setOpaque(false);
+        topo.add(grade, BorderLayout.NORTH);
+        col.add(EstiloCliente.rolagem(topo), BorderLayout.CENTER);
+        return col;
+    }
+
+    private JComponent cartaoVeiculo(Veiculo v) {
+        EstiloCliente.PainelArredondado card = new EstiloCliente.PainelArredondado(
+                new BorderLayout(0, 10), 12, EstiloCliente.TILE);
+        card.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        card.setToolTipText("Ver detalhes do veículo");
+
+        // Área branca arredondada para a foto, como no protótipo.
+        EstiloCliente.PainelArredondado moldura = new EstiloCliente.PainelArredondado(
+                new BorderLayout(), 10, Color.WHITE);
+        moldura.setPreferredSize(new Dimension(200, 130));
+        JLabel foto = new JLabel("", SwingConstants.CENTER);
+        ImageIcon icon = ImagemUtil.carregar(v.getFoto(), 190, 120);
+        if (icon != null) {
+            foto.setIcon(icon);
+        } else {
+            foto.setIcon(EstiloCliente.recurso("/assets/icons/vveiculos.png", 90, 90));
+        }
+        moldura.add(foto, BorderLayout.CENTER);
+
+        JLabel nome = new JLabel("<html><div style='text-align:center'>" + nomeVeiculo(v) + "</div></html>",
+                SwingConstants.CENTER);
+        nome.setFont(EstiloCliente.fonte(Font.PLAIN, 14));
+        nome.setForeground(EstiloCliente.TEXTO);
+
+        card.add(moldura, BorderLayout.CENTER);
+        card.add(nome, BorderLayout.SOUTH);
+
+        MouseAdapter ma = new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                EstiloCliente.navegar(V_ClientePerfil.this, new V_ClienteDetalhesVeiculo(controller, v));
+            }
+            @Override public void mouseEntered(MouseEvent e) { card.setCor(EstiloCliente.TILE_HOVER); }
+            @Override public void mouseExited(MouseEvent e) {
+                Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), card);
+                if (!card.contains(pt)) card.setCor(EstiloCliente.TILE);
+            }
+        };
+        for (Component c : new Component[]{card, moldura, foto, nome}) c.addMouseListener(ma);
+        return card;
+    }
+
+    private static String nomeVeiculo(Veiculo v) {
+        StringBuilder sb = new StringBuilder();
+        if (v.getModelo() != null) {
+            if (v.getModelo().getMontadora() != null) sb.append(v.getModelo().getMontadora().getNome()).append(' ');
+            sb.append(v.getModelo().getNome());
+            if (v.getModelo().getAno() > 0) sb.append(' ').append(v.getModelo().getAno());
+        }
+        String linha1 = sb.toString().trim().replace("&", "&amp;").replace("<", "&lt;");
+        String placa = v.getPlaca() == null ? "" : v.getPlaca();
+        return (linha1.isEmpty() ? "" : linha1 + "<br>")
+                + "<span style='color:#6B6B6B;font-size:11px'>" + placa + "</span>";
+    }
+
+    // ------------------------------------------------------------------ ações
+
+    private void atualizarAvatar() {
+        Cliente meu = controller.getMeuCliente();
+        lblAvatar.setIcon(EstiloCliente.avatar(controller.getFotoPerfil(),
+                meu != null ? meu.getNome() : "", TAM_AVATAR));
+    }
+
+    private void atualizarCabecalhoJanela() {
+        Window w = SwingUtilities.getWindowAncestor(this);
+        if (w instanceof V_ClienteMain) ((V_ClienteMain) w).atualizarCabecalho();
     }
 
     private void trocarFoto() {
@@ -111,6 +226,7 @@ public class V_ClientePerfil extends JPanel {
         try {
             controller.salvarFotoPerfil(arquivo);
             atualizarAvatar();
+            atualizarCabecalhoJanela();
             DialogoAlerta.sucesso(this, "Foto atualizada com sucesso!", "Sucesso");
         } catch (Exception ex) {
             DialogoAlerta.erro(this, "Erro ao salvar foto: " + ex.getMessage(), "Erro");
@@ -148,14 +264,11 @@ public class V_ClientePerfil extends JPanel {
         try {
             controller.atualizarMeuPerfil(nome, telefone, email);
             lblNome.setText(nome);
+            atualizarAvatar();
+            atualizarCabecalhoJanela();
             DialogoAlerta.sucesso(this, "Informações atualizadas com sucesso!", "Sucesso");
         } catch (Exception ex) {
             DialogoAlerta.erro(this, "Erro ao atualizar: " + ex.getMessage(), "Erro");
         }
-    }
-
-    private void navegar(JPanel pagina) {
-        Window janela = SwingUtilities.getWindowAncestor(this);
-        if (janela instanceof V_ClienteMain) ((V_ClienteMain) janela).atualizarConteudo(pagina);
     }
 }

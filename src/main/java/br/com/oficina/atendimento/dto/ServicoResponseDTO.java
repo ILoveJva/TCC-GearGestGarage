@@ -15,5 +15,5 @@ public record ServicoResponseDTO(
     Long idOrcamento,
     List<ItemView> itens
 ) {
-    public record ItemView(Long id, int etapa, String codigo, String descricao, String status, String tempoGasto, Long idFuncionario) {}
+    public record ItemView(Long id, int etapa, String codigo, String descricao, String status, String tempoGasto, Long idFuncionario, String dataRealizacao) {}
 }

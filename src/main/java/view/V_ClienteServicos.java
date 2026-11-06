@@ -18,11 +18,17 @@ public class V_ClienteServicos extends JPanel {
     private final OficinaController controller;
     private final Map<Long, String> placas = new HashMap<>();
     private JPanel pnlLista;
-    private boolean mostrandoFinalizados = false;
+    private boolean mostrandoFinalizados;
     private JButton btnAndamento, btnFinalizados;
 
     public V_ClienteServicos(OficinaController controller) {
+        this(controller, false);
+    }
+
+    /** @param finalizados abre direto na aba "Finalizados" (atalho "Consultar Serviços Antigos"). */
+    public V_ClienteServicos(OficinaController controller, boolean finalizados) {
         this.controller = controller;
+        this.mostrandoFinalizados = finalizados;
         for (Veiculo v : controller.listarMeusVeiculos()) placas.put(v.getIdVeiculo(), v.getPlaca());
 
         setLayout(new BorderLayout());
@@ -103,7 +109,7 @@ public class V_ClienteServicos extends JPanel {
         if (s.itens() != null && !s.itens().isEmpty()) {
             card.add(Box.createVerticalStrut(6));
             for (var item : s.itens()) {
-                String marca = "CONCLUIDO".equalsIgnoreCase(item.status()) ? "✓" : "○";
+                String marca = etapaConcluida(item.status()) ? "✓" : "○";
                 JLabel linha = new JLabel(marca + " " + item.descricao());
                 linha.setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 linha.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -139,11 +145,16 @@ public class V_ClienteServicos extends JPanel {
             w.println("Checklist:");
             if (s.itens() != null)
                 for (var item : s.itens())
-                    w.println("  [" + ("CONCLUIDO".equalsIgnoreCase(item.status()) ? "x" : " ") + "] " + item.descricao());
+                    w.println("  [" + (etapaConcluida(item.status()) ? "x" : " ") + "] " + item.descricao());
             DialogoAlerta.sucesso(this, "Relatório exportado com sucesso!", "Sucesso");
         } catch (Exception ex) {
             DialogoAlerta.erro(this, "Erro ao exportar: " + ex.getMessage(), "Erro");
         }
+    }
+
+    /** Etapas são gravadas como CONCLUIDO pelo sistema, mas há dados antigos com CONCLUIDA. */
+    private static boolean etapaConcluida(String status) {
+        return "CONCLUIDO".equalsIgnoreCase(status) || "CONCLUIDA".equalsIgnoreCase(status);
     }
 
     private String traduzirStatus(String status) {

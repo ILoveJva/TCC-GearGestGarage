@@ -156,6 +156,12 @@ public class V_ClienteDetalhesVeiculo extends JPanel {
         caixa.setAlignmentX(Component.CENTER_ALIGNMENT);
         caixa.setMaximumSize(new Dimension(Integer.MAX_VALUE, caixa.getPreferredSize().height));
         col.add(caixa);
+        col.add(Box.createVerticalStrut(20));
+
+        JButton btnAbastecimentos = EstiloCliente.botao("Abastecimentos", EstiloCliente.ACENTO, Color.WHITE, 14);
+        btnAbastecimentos.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnAbastecimentos.addActionListener(e -> EstiloCliente.navegar(this, new V_ClienteAbastecimentos(controller, veiculo)));
+        col.add(btnAbastecimentos);
         return col;
     }
 

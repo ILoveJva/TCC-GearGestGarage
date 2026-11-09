@@ -653,8 +653,12 @@ public class OficinaController {
         return out;
     }
 
-    /** Uma peça que falta comprar: nome, sistema do veículo, placa e quantidade em falta. */
-    public record PecaParaComprar(String peca, String sistema, String veiculo, int quantidade) {}
+    /**
+     * Uma peça que falta comprar: nome do catálogo, nome técnico e fabricante (para o pedido de
+     * compra — ex.: "Óleo | 20W50 | Tecfill"), sistema do veículo, placa e quantidade em falta.
+     */
+    public record PecaParaComprar(String peca, String nomeTecnico, String fabricante, String sistema,
+                                  String veiculo, int quantidade) {}
 
     /**
      * Peças vinculadas a OS em aberto cujo estoque atual é insuficiente para atendê-las.
@@ -694,7 +698,8 @@ public class OficinaController {
                 CatalogoPecaEntity cat = bridge.catalogoPecaController.entidade(amostra.getIdCatalogoPeca());
                 String nomePeca = cat != null ? cat.getNomePopular() : amostra.getNomeExibicao();
                 String sistema = cat != null ? cat.getSistemaLabel() : "Outros";
-                out.add(new PecaParaComprar(nomePeca, sistema, veiculo, faltam));
+                out.add(new PecaParaComprar(nomePeca, amostra.getNomeTecnico(), amostra.getFabricante(),
+                    sistema, veiculo, faltam));
             }
         }
         return out;
@@ -972,6 +977,22 @@ public class OficinaController {
 
     public void salvarFotoVeiculo(long idVeiculo, java.io.File arquivo) {
         bridge.veiculoController.salvarFoto(idVeiculo, arquivo);
+    }
+
+    /** Registra um abastecimento do veículo do cliente logado (posto de combustível). */
+    public void registrarAbastecimento(long idVeiculo, String data, double valor, double litros,
+                                       String tipoCombustivel, int quilometragem) {
+        bridge.abastecimentoController.registrar(idVeiculo, data, valor, litros, tipoCombustivel, quilometragem);
+    }
+
+    /** Histórico de abastecimentos de um veículo, mais recente primeiro. */
+    public List<AbastecimentoEntity> listarAbastecimentos(long idVeiculo) {
+        return bridge.abastecimentoController.listarPorVeiculo(idVeiculo);
+    }
+
+    /** Remove um abastecimento registrado por engano. */
+    public void removerAbastecimento(long idAbastecimento) {
+        bridge.abastecimentoController.remover(idAbastecimento);
     }
 
     public void salvarFotoPerfil(java.io.File arquivo) {

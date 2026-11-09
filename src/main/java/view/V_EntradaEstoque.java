@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.ComboPopup;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -23,12 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Compra de peças: seleciona a peça, a quantidade e o valor pago e escolhe o destino —
- * ou entra no estoque geral (uso futuro), ou é usada direto numa OS específica quando a
- * peça não está disponível em estoque (o custo vira parte do orçamento daquela OS).
+ * Compra de peças: ao escolher "Adicionar ao estoque", cada peça (com nome técnico,
+ * fabricante, quantidade e valor) é adicionada a uma lista — várias peças diferentes
+ * entram numa única compra, cada uma gerando sua própria entrada no estoque ao finalizar.
+ * Ao escolher "Usar direto numa OS" (peça fora do estoque), o fluxo continua sendo de
+ * uma peça por vez, já que o custo é somado diretamente ao orçamento daquela OS específica.
  *
- * Visual alinhado ao mesmo acabamento em vidro (glassmorphism) usado em V_CadastrarOrcamento —
- * a lógica de negócio permanece exatamente a mesma.
+ * Visual alinhado ao mesmo acabamento em vidro (glassmorphism) usado em V_CadastrarOrcamento.
  */
 public class V_EntradaEstoque extends JPanel {
 
@@ -47,6 +49,15 @@ public class V_EntradaEstoque extends JPanel {
     private GlassTextArea txt_Observacao;
     private JPanel pnl_OS;
     private JPanel pnl_TecFab;
+    private BotaoAcao btn_Registrar;
+
+    // Lista de peças da compra atual (destino "Adicionar ao estoque").
+    private final List<ItemCompra> itensCompra = new ArrayList<>();
+    private DefaultTableModel mdl_Itens;
+    private JTable tbl_Itens;
+    private JLabel lbl_TotalItens;
+    private JPanel pnl_AdicionarLista;
+    private JPanel pnl_TabelaItens;
 
     // Paleta harmonizada com o mesmo efeito de vidro usado nas demais telas
     // (V_CadastrarOrcamento, V_CadastrarCliente, V_CadastrarVeiculo, ...).
@@ -68,6 +79,15 @@ public class V_EntradaEstoque extends JPanel {
     private static final Color COR_SUCESSO_CLARA = COR_SUCESSO.brighter();
     private static final Color COR_SUCESSO_ESCURA = COR_SUCESSO.darker();
     private static final Color COR_SECUNDARIA    = Color.decode("#6C757D");
+
+    // "+ Adicionar à lista" (azul, para diferenciar do verde de "Finalizar compra")
+    private static final Color COR_ADICIONAR        = Color.decode("#2E86DE");
+    private static final Color COR_ADICIONAR_CLARA  = COR_ADICIONAR.brighter();
+    private static final Color COR_ADICIONAR_ESCURA = COR_ADICIONAR.darker();
+    // "Remover" item da lista (vermelho)
+    private static final Color COR_REMOVER        = Color.decode("#DC3545");
+    private static final Color COR_REMOVER_CLARA  = COR_REMOVER.brighter();
+    private static final Color COR_REMOVER_ESCURA = COR_REMOVER.darker();
 
     // Ajustes rápidos de tipografia/tamanho — mexa só aqui para alterar tudo de uma vez
     private static final int RAIO_COMPONENTE      = 12;
@@ -169,6 +189,59 @@ public class V_EntradaEstoque extends JPanel {
         pnl_FabW.setPreferredSize(new Dimension(200, 58));
         pnl_TecFab.add(pnl_FabW, BorderLayout.EAST);
 
+        // ---- "Adicionar ao estoque": lista de peças da compra atual ----
+        BotaoAcao btn_Adicionar = new BotaoAcao("+ Adicionar à lista", COR_ADICIONAR, COR_ADICIONAR_CLARA, COR_ADICIONAR_ESCURA);
+        btn_Adicionar.setPreferredSize(new Dimension(180, 36));
+        btn_Adicionar.addActionListener(e -> adicionarItemLista());
+        pnl_AdicionarLista = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnl_AdicionarLista.setOpaque(false);
+        pnl_AdicionarLista.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl_AdicionarLista.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+        pnl_AdicionarLista.add(btn_Adicionar);
+
+        String[] colsItens = {"Peça", "Nome Técnico", "Fabricante", "Qtd.", "Valor Unit.", "Subtotal"};
+        mdl_Itens = new DefaultTableModel(colsItens, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tbl_Itens = new JTable(mdl_Itens);
+        tbl_Itens.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tbl_Itens.setRowHeight(24);
+        tbl_Itens.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tbl_Itens.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tbl_Itens.getTableHeader().setReorderingAllowed(false);
+        tbl_Itens.getColumnModel().getColumn(3).setMaxWidth(50);
+        tbl_Itens.getColumnModel().getColumn(4).setMaxWidth(90);
+        tbl_Itens.getColumnModel().getColumn(5).setMaxWidth(90);
+
+        JScrollPane scrollItens = new JScrollPane(tbl_Itens);
+        scrollItens.setPreferredSize(new Dimension(0, 140));
+        ScrollBarPadrao.aplicar(scrollItens);
+
+        JButton btn_Remover = new JButton("Remover selecionado");
+        btn_Remover.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btn_Remover.setForeground(COR_REMOVER);
+        btn_Remover.setContentAreaFilled(false);
+        btn_Remover.setBorderPainted(false);
+        btn_Remover.setFocusPainted(false);
+        btn_Remover.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn_Remover.addActionListener(e -> removerItemSelecionado());
+
+        lbl_TotalItens = new JLabel("Total: R$ 0,00 (0 item(ns))");
+        lbl_TotalItens.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl_TotalItens.setForeground(COR_TITULO);
+
+        JPanel pnl_RodapeItens = new JPanel(new BorderLayout());
+        pnl_RodapeItens.setOpaque(false);
+        pnl_RodapeItens.add(btn_Remover, BorderLayout.WEST);
+        pnl_RodapeItens.add(lbl_TotalItens, BorderLayout.EAST);
+
+        pnl_TabelaItens = new JPanel(new BorderLayout(0, 4));
+        pnl_TabelaItens.setOpaque(false);
+        pnl_TabelaItens.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl_TabelaItens.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
+        pnl_TabelaItens.add(scrollItens, BorderLayout.CENTER);
+        pnl_TabelaItens.add(pnl_RodapeItens, BorderLayout.SOUTH);
+
         JPanel pnl_L5 = linha(200);
         pnl_L5.add(bloco("Observação", txt_Observacao), BorderLayout.CENTER);
 
@@ -183,6 +256,10 @@ public class V_EntradaEstoque extends JPanel {
         form.add(pnl_OS);
         form.add(Box.createVerticalStrut(6));
         form.add(pnl_TecFab);
+        form.add(Box.createVerticalStrut(6));
+        form.add(pnl_AdicionarLista);
+        form.add(Box.createVerticalStrut(10));
+        form.add(pnl_TabelaItens);
         form.add(Box.createVerticalStrut(12));
         form.add(pnl_L5);
 
@@ -192,7 +269,7 @@ public class V_EntradaEstoque extends JPanel {
         scrollForm.getViewport().setOpaque(false);
         ScrollBarPadrao.aplicar(scrollForm);
 
-        BotaoAcao btn_Registrar = new BotaoAcao("REGISTRAR COMPRA", COR_SUCESSO, COR_SUCESSO_CLARA, COR_SUCESSO_ESCURA);
+        btn_Registrar = new BotaoAcao("REGISTRAR COMPRA", COR_SUCESSO, COR_SUCESSO_CLARA, COR_SUCESSO_ESCURA);
         btn_Registrar.setPreferredSize(new Dimension(220, 44));
         btn_Registrar.addActionListener(e -> salvar());
 
@@ -222,8 +299,13 @@ public class V_EntradaEstoque extends JPanel {
     private void atualizarVisibilidadeDestino() {
         boolean direto = rad_OSDireto.isSelected();
         pnl_OS.setVisible(direto);
-        // Nome Técnico e Fabricante agora ficam visíveis nos dois destinos
-        // (antes só apareciam em "Usar direto numa OS").
+        // Nome Técnico e Fabricante ficam visíveis nos dois destinos.
+        // A lista de peças (e o botão para adicionar a ela) só existe para "Adicionar ao estoque";
+        // "Usar direto numa OS" continua sendo uma peça por vez.
+        pnl_AdicionarLista.setVisible(!direto);
+        pnl_TabelaItens.setVisible(!direto);
+        if (btn_Registrar != null)
+            btn_Registrar.setText(direto ? "REGISTRAR COMPRA" : "FINALIZAR COMPRA (" + itensCompra.size() + ")");
         revalidate();
         repaint();
     }
@@ -241,6 +323,12 @@ public class V_EntradaEstoque extends JPanel {
     }
 
     private void salvar() {
+        if (rad_OSDireto.isSelected()) salvarDiretoOS();
+        else salvarListaEstoque();
+    }
+
+    /** "Usar direto numa OS": continua sendo uma peça por vez (o custo entra direto no orçamento daquela OS). */
+    private void salvarDiretoOS() {
         ItemPeca sel = (ItemPeca) cmb_Peca.getSelectedItem();
         if (sel == null || sel.peca == null) {
             DialogoAlerta.aviso(this, "Selecione uma peça.", "Campo Inválido");
@@ -255,53 +343,133 @@ public class V_EntradaEstoque extends JPanel {
             return;
         }
 
-        Double valorUnitario = null;
-        String valorTxt = txt_Valor.getText().trim().replace(",", ".");
-        if (!valorTxt.isEmpty()) {
-            try {
-                valorUnitario = Double.parseDouble(valorTxt);
-                if (valorUnitario < 0) throw new NumberFormatException();
-            } catch (NumberFormatException ex) {
-                DialogoAlerta.aviso(this, "Informe um valor válido (ex: 45.90).", "Campo Inválido");
-                return;
-            }
+        Double valorUnitario = lerValorOpcional();
+        if (valorUnitario == null && !txt_Valor.getText().trim().isEmpty()) {
+            DialogoAlerta.aviso(this, "Informe um valor válido (ex: 45.90).", "Campo Inválido");
+            return;
         }
 
-        String observacao = txt_Observacao.getText().trim();
+        ItemOS osSel = (ItemOS) cmb_OS.getSelectedItem();
+        if (osSel == null || osSel.dto == null) {
+            DialogoAlerta.aviso(this, "Selecione a OS de destino.", "Campo Inválido");
+            return;
+        }
+        if (valorUnitario == null || valorUnitario <= 0) {
+            DialogoAlerta.aviso(this, "Informe o valor unitário cobrado pela peça nessa OS.", "Campo Inválido");
+            return;
+        }
+        try {
+            controller.adicionarPecaDiretoOS(osSel.dto.idOrcamento(), sel.peca.getIdCatalogoPeca(), qtd,
+                    txt_NomeTecnico.getText().trim(), txt_Fabricante.getText().trim(), valorUnitario);
+            DialogoAlerta.sucesso(this, qtd + " unidade(s) de \"" + sel.peca.getNomePopular()
+                    + "\" adicionada(s) direto à " + osSel + " (sem passar pelo estoque).", "Sucesso");
+            limparCampos();
+            carregarPecas();
+            carregarOS();
+        } catch (Exception ex) {
+            DialogoAlerta.erro(this, "Erro ao registrar compra direta: " + ex.getMessage(), "Erro no Sistema");
+        }
+    }
 
-        if (rad_OSDireto.isSelected()) {
-            ItemOS osSel = (ItemOS) cmb_OS.getSelectedItem();
-            if (osSel == null || osSel.dto == null) {
-                DialogoAlerta.aviso(this, "Selecione a OS de destino.", "Campo Inválido");
-                return;
+    /** "Adicionar ao estoque": finaliza a compra inteira, registrando uma entrada por peça da lista. */
+    private void salvarListaEstoque() {
+        if (itensCompra.isEmpty()) {
+            DialogoAlerta.aviso(this, "Adicione ao menos uma peça à lista antes de registrar a compra.", "Lista vazia");
+            return;
+        }
+        String observacao = txt_Observacao.getText().trim();
+        try {
+            int totalUnidades = 0;
+            double totalValor = 0;
+            for (ItemCompra it : itensCompra) {
+                controller.registrarEntradaEstoque(it.peca().getIdCatalogoPeca(), it.quantidade(),
+                        it.valorUnitario(), observacao, it.nomeTecnico(), it.fabricante());
+                totalUnidades += it.quantidade();
+                totalValor += it.subtotal();
             }
-            if (valorUnitario == null || valorUnitario <= 0) {
-                DialogoAlerta.aviso(this, "Informe o valor unitário cobrado pela peça nessa OS.", "Campo Inválido");
-                return;
-            }
-            try {
-                controller.adicionarPecaDiretoOS(osSel.dto.idOrcamento(), sel.peca.getIdCatalogoPeca(), qtd,
-                        txt_NomeTecnico.getText().trim(), txt_Fabricante.getText().trim(), valorUnitario);
-                DialogoAlerta.sucesso(this, qtd + " unidade(s) de \"" + sel.peca.getNomePopular()
-                        + "\" adicionada(s) direto à " + osSel + " (sem passar pelo estoque).", "Sucesso");
-                limparCampos();
-                carregarPecas();
-                carregarOS();
-            } catch (Exception ex) {
-                DialogoAlerta.erro(this, "Erro ao registrar compra direta: " + ex.getMessage(), "Erro no Sistema");
-            }
-        } else {
-            try {
-                controller.registrarEntradaEstoque(sel.peca.getIdCatalogoPeca(), qtd, valorUnitario, observacao,
-                        txt_NomeTecnico.getText().trim(), txt_Fabricante.getText().trim());
-                DialogoAlerta.sucesso(this, "Entrada de " + qtd + " unidade(s) de \"" + sel.peca.getNomePopular()
-                        + "\" registrada no estoque com sucesso!", "Sucesso");
-                limparCampos();
-                carregarPecas();
-                carregarOS();
-            } catch (Exception ex) {
-                DialogoAlerta.erro(this, "Erro ao registrar entrada: " + ex.getMessage(), "Erro no Sistema");
-            }
+            DialogoAlerta.sucesso(this, itensCompra.size() + " peça(s) (" + totalUnidades + " unidade(s), "
+                    + String.format("R$ %.2f", totalValor) + ") registrada(s) no estoque com sucesso!", "Sucesso");
+            itensCompra.clear();
+            atualizarTabelaItens();
+            limparCampos();
+            carregarPecas();
+            carregarOS();
+        } catch (Exception ex) {
+            DialogoAlerta.erro(this, "Erro ao registrar compra: " + ex.getMessage(), "Erro no Sistema");
+        }
+    }
+
+    /** Adiciona a peça atualmente preenchida no formulário à lista da compra em andamento. */
+    private void adicionarItemLista() {
+        ItemPeca sel = (ItemPeca) cmb_Peca.getSelectedItem();
+        if (sel == null || sel.peca == null) {
+            DialogoAlerta.aviso(this, "Selecione uma peça.", "Campo Inválido");
+            return;
+        }
+        int qtd;
+        try {
+            qtd = Integer.parseInt(txt_Quantidade.getText().trim());
+            if (qtd <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            DialogoAlerta.aviso(this, "Informe uma quantidade válida maior que zero.", "Campo Inválido");
+            return;
+        }
+
+        Double valorUnitario = lerValorOpcional();
+        if (valorUnitario == null && !txt_Valor.getText().trim().isEmpty()) {
+            DialogoAlerta.aviso(this, "Informe um valor válido (ex: 45.90).", "Campo Inválido");
+            return;
+        }
+
+        itensCompra.add(new ItemCompra(sel.peca, txt_NomeTecnico.getText().trim(),
+                txt_Fabricante.getText().trim(), qtd, valorUnitario));
+        atualizarTabelaItens();
+
+        txt_Quantidade.setText("");
+        txt_Valor.setText("");
+        txt_NomeTecnico.setText("");
+        txt_Fabricante.setText("");
+    }
+
+    private void removerItemSelecionado() {
+        int row = tbl_Itens.getSelectedRow();
+        if (row < 0 || row >= itensCompra.size()) {
+            DialogoAlerta.aviso(this, "Selecione um item da lista para remover.", "Nenhum selecionado");
+            return;
+        }
+        itensCompra.remove(row);
+        atualizarTabelaItens();
+    }
+
+    private void atualizarTabelaItens() {
+        mdl_Itens.setRowCount(0);
+        double total = 0;
+        for (ItemCompra it : itensCompra) {
+            double subtotal = it.subtotal();
+            total += subtotal;
+            mdl_Itens.addRow(new Object[]{
+                it.peca().getNomePopular(),
+                it.nomeTecnico().isBlank() ? "—" : it.nomeTecnico(),
+                it.fabricante().isBlank() ? "—" : it.fabricante(),
+                it.quantidade(),
+                it.valorUnitario() != null ? String.format("R$ %.2f", it.valorUnitario()) : "—",
+                String.format("R$ %.2f", subtotal)
+            });
+        }
+        lbl_TotalItens.setText("Total: " + String.format("R$ %.2f", total) + "  (" + itensCompra.size() + " item(ns))");
+        if (btn_Registrar != null && rad_Estoque.isSelected())
+            btn_Registrar.setText("FINALIZAR COMPRA (" + itensCompra.size() + ")");
+    }
+
+    /** Lê o campo de valor (opcional): null se vazio, ou null se inválido (chamador decide o aviso). */
+    private Double lerValorOpcional() {
+        String valorTxt = txt_Valor.getText().trim().replace(",", ".");
+        if (valorTxt.isEmpty()) return null;
+        try {
+            double v = Double.parseDouble(valorTxt);
+            return v >= 0 ? v : null;
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 
@@ -442,6 +610,12 @@ public class V_EntradaEstoque extends JPanel {
             String titulo = dto.titulo() != null && !dto.titulo().isBlank() ? dto.titulo() : "(sem título)";
             return "OS #" + dto.idServico() + " — " + titulo;
         }
+    }
+
+    /** Uma peça da lista da compra atual (destino "Adicionar ao estoque"), com todas as informações necessárias. */
+    private record ItemCompra(CatalogoPecaEntity peca, String nomeTecnico, String fabricante,
+                              int quantidade, Double valorUnitario) {
+        double subtotal() { return valorUnitario != null ? valorUnitario * quantidade : 0.0; }
     }
 
     private static class FiltroInteiro extends DocumentFilter {

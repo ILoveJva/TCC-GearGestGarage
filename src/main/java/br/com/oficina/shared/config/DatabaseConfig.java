@@ -132,5 +132,9 @@ public final class DatabaseConfig {
 
         con.registrarTabela(new Tabela("midias_ordemservico", "id_midia",
             "id_midia", "id_servico", "tipo", "nome_arquivo", "caminho", "descricao", "data_upload"));
+
+        con.registrarTabela(new Tabela("abastecimento", "id_abastecimento",
+            "id_abastecimento", "id_veiculo", "data_abastecimento", "valor", "litros",
+            "tipo_combustivel", "quilometragem"));
     }
 }

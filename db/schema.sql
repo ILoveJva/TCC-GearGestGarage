@@ -283,3 +283,17 @@ CREATE TABLE orcamento_peca (
     CONSTRAINT fk_orcpeca_orcamento FOREIGN KEY (id_orcamento) REFERENCES orcamento (id_orcamento),
     CONSTRAINT fk_orcpeca_peca FOREIGN KEY (id_peca) REFERENCES peca (id_peca)
 );
+
+-- Abastecimentos registrados pelo próprio cliente, para acompanhar o consumo de combustível do veículo.
+CREATE TABLE abastecimento (
+    id_abastecimento INT NOT NULL AUTO_INCREMENT,
+    id_veiculo INT NOT NULL,
+    data_abastecimento DATE NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    litros DECIMAL(8,2) NOT NULL,
+    -- GASOLINA | ETANOL | DIESEL | GNV | FLEX | OUTROS
+    tipo_combustivel VARCHAR(20) NOT NULL DEFAULT 'GASOLINA',
+    quilometragem INT NOT NULL,
+    PRIMARY KEY (id_abastecimento),
+    CONSTRAINT fk_abastecimento_veiculo FOREIGN KEY (id_veiculo) REFERENCES veiculo (id_veiculo) ON DELETE CASCADE
+);

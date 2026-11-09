@@ -165,7 +165,16 @@ public class V_Estoque extends JPanel {
     private JPanel criarCardPecasParaComprar() {
         JPanel card = criarCard("Peças a comprar (OS em aberto)");
         JPanel corpo = (JPanel) card.getComponent(1);
-        corpo.setLayout(new BorderLayout());
+        corpo.setLayout(new BorderLayout(0, 8));
+
+        BotaoAcao btn_RelPecas = new BotaoAcao("Relatório de Peças Necessárias", COR_ACAO, COR_RELATORIO_CLARA, COR_RELATORIO_ESCURA);
+        btn_RelPecas.setPreferredSize(new Dimension(230, ALTURA_BOTAO));
+        btn_RelPecas.setToolTipText("Exporta o pedido de compra com o nome do catálogo, nome técnico e fabricante de cada peça (.rtf)");
+        btn_RelPecas.addActionListener(e -> ExportadorEstoque.exportarPecasNecessarias(this, controller));
+        JPanel pnl_BtnRelPecas = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        pnl_BtnRelPecas.setOpaque(false);
+        pnl_BtnRelPecas.add(btn_RelPecas);
+        corpo.add(pnl_BtnRelPecas, BorderLayout.NORTH);
 
         List<controller.OficinaController.PecaParaComprar> pendentes = controller.listarPecasParaComprar();
         if (pendentes.isEmpty()) {

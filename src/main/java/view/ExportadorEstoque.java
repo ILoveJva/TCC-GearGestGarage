@@ -115,6 +115,54 @@ public final class ExportadorEstoque {
     }
 
     // =========================================================================
+    // RELATÓRIO DE PEÇAS NECESSÁRIAS (pedido de compra)
+    // =========================================================================
+
+    public static void exportarPecasNecessarias(Component pai, OficinaController controller) {
+        LocalDateTime agora = LocalDateTime.now();
+        RtfUtil.salvar(pai, "relatorio_pecas_necessarias_" + agora.format(ARQUIVO) + ".rtf",
+            () -> gerarPecasNecessarias(controller, agora));
+    }
+
+    private static String gerarPecasNecessarias(OficinaController controller, LocalDateTime emissao) {
+        StringBuilder rtf = new StringBuilder(PREAMBULO);
+        cabecalho(rtf, controller, "RELATÓRIO DE PEÇAS NECESSÁRIAS", emissao);
+
+        List<controller.OficinaController.PecaParaComprar> pendentes = controller.listarPecasParaComprar();
+        if (pendentes.isEmpty()) {
+            rtf.append(escapar("Nenhuma peça faltando. O estoque atende todas as OS em aberto.")).append("\\par\n");
+            rtf.append(FECHAMENTO);
+            return rtf.toString();
+        }
+
+        int[] larguras = {1700, 1700, 1500, 1191, 1700, 780};
+        tabela(rtf, new String[]{"Nome catálogo", "Nome técnico", "Fabricante", "Sistema", "Veículo", "Qtd."},
+            larguras, true);
+
+        int totalUnidades = 0;
+        for (controller.OficinaController.PecaParaComprar p : pendentes) {
+            tabela(rtf, new String[]{
+                p.peca(),
+                valorOuTraco(p.nomeTecnico()),
+                valorOuTraco(p.fabricante()),
+                p.sistema(),
+                p.veiculo(),
+                String.valueOf(p.quantidade())
+            }, larguras, false);
+            totalUnidades += p.quantidade();
+        }
+        rtf.append("\\pard\\par\n");
+
+        rtf.append("\\b\\fs26 ").append(escapar("Resumo")).append("\\b0\\fs24\\par\n");
+        linha(rtf, "Itens a comprar: ", String.valueOf(pendentes.size()));
+        linha(rtf, "Total de unidades: ", String.valueOf(totalUnidades));
+
+        assinatura(rtf);
+        rtf.append(FECHAMENTO);
+        return rtf.toString();
+    }
+
+    // =========================================================================
     // RELATÓRIO DE MOVIMENTAÇÕES (entradas e saídas)
     // =========================================================================
 

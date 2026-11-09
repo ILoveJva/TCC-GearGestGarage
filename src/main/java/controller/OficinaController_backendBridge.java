@@ -26,6 +26,7 @@ class OficinaController_backendBridge {
     final br.com.oficina.atendimento.MidiaServicoController midiaServicoController;
     final DespesaController despesaController;
     final EstoqueController estoqueController;
+    final AbastecimentoController abastecimentoController;
 
     OficinaController_backendBridge(Conexao con) {
         UsuarioRepository usuarioRepo = new UsuarioRepository(con);
@@ -54,5 +55,7 @@ class OficinaController_backendBridge {
         this.despesaController = new DespesaController(new DespesaService(new DespesaRepository(con)));
         this.estoqueController = new EstoqueController(
             new EstoqueService(pecaRepo, new MovimentacaoEstoqueRepository(con)));
+        this.abastecimentoController = new AbastecimentoController(
+            new AbastecimentoService(new AbastecimentoRepository(con)));
     }
 }

@@ -1,33 +1,17 @@
--- ============================================================
--- Gear Gest Garage - Seed (dados iniciais) - versao completa
--- Requer que db/schema.sql ja tenha sido executado (tabelas vazias).
---
--- Executar:
---   Get-Content db/seed.sql | docker exec -i gear_gest_mysql mysql -u root -proot GearGestGarage
--- ============================================================
 
-USE GearGestGarage;
-
--- ============================================================
--- Oficinas
--- ============================================================
+use GearGestGarage;
 
 INSERT INTO oficina (nome, endereco, telefone, cnpj)
-VALUES ('Garagem Cecconi', 'Rua Itapetinga, 794 - Santa Luzia', '11 1111-1111', '00.000.000/0000-00'),
+VALUES ('Garagem Cecconi', 'Rua Itapetinga, 794 - Santa Luzia', '11 1111-1111', '00.000.000/0000-00');
 
--- ============================================================
--- Usuarios (1-4 originais, 5-9 equipe da oficina 1, 10-13 clientes da oficina 1)
--- ============================================================
 
 INSERT INTO usuario (nome, cpf, email, senha, telefone, id_oficina)
 VALUES
-('Arthur Cecconi', '00000000000', 'oficina@geargest.com', '123456', '(11) 90000-0000', 1),
-
-============================================
+('Arthur Cecconi', '00000000000', 'oficina@geargest.com', '123456', '(11) 90000-0000', 1);
 
 INSERT INTO funcionario (nome, cargo, endereco, id_usuario)
 VALUES
-('Arthur Cecconi', 'Gerente', 'Rua Itapetinga, 800 - Santa Luzia', 1),
+('Arthur Cecconi', 'Gerente', 'Rua Itapetinga, 800 - Santa Luzia', 1);
 
 
 

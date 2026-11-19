@@ -1,7 +1,9 @@
 package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
+import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
+import model.Cliente;
 import model.Oficina;
 import model.Orcamento;
 
@@ -60,7 +62,7 @@ public final class ExportadorOrcamento {
         String codigo = orcamento.getCodigo().isEmpty() ? ("#" + orcamento.getIdOrcamento()) : orcamento.getCodigo();
         rtf.append("\\b ").append(escapar("Orçamento: ")).append("\\b0 ").append(escapar(codigo)).append("\\par\n");
         rtf.append("\\b ").append(escapar("Data: ")).append("\\b0 ").append(escapar(valorOuTraco(orcamento.getDataCriacao()))).append("\\par\n");
-        rtf.append("\\b ").append(escapar("Cliente: ")).append("\\b0 ").append(escapar(valorOuTraco(orcamento.getNomeCliente()))).append("\\par\n");
+        rtf.append("\\b ").append(escapar("Cliente: ")).append("\\b0 ").append(escapar(valorOuTraco(    controller.cliente_id(orcamento.getIdCliente()).getNome())      )).append("\\par\n");
         rtf.append("\\b ").append(escapar("Veículo (placa): ")).append("\\b0 ").append(escapar(valorOuTraco(orcamento.getPlacaVeiculo()))).append("\\par\n");
         rtf.append("\\b ").append(escapar("Responsável: ")).append("\\b0 ").append(escapar(valorOuTraco(orcamento.getResponsavel()))).append("\\par\n");
         rtf.append("\\b ").append(escapar("Status: ")).append("\\b0 ").append(escapar(traduzirStatus(orcamento.getStatus()))).append("\\par\n");

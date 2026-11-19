@@ -10,7 +10,7 @@
 -- Ou recriar o volume Docker do zero (aplica os dois automaticamente):
 --   docker compose down -v && docker compose up -d
 -- ============================================================
-
+SET NAMES utf8mb4;
 DROP DATABASE IF EXISTS GearGestGarage;
 CREATE DATABASE GearGestGarage DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;
 USE GearGestGarage;

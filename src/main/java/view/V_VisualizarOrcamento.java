@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class V_VisualizarOrcamento extends JPanel {
-
     // =========================================================================
     // PALETA E MEDIDAS — mexa só aqui para alterar tudo de uma vez
     // =========================================================================

@@ -1,4 +1,4 @@
-
+SET NAMES utf8mb4;
 use GearGestGarage;
 
 INSERT INTO oficina (nome, endereco, telefone, cnpj)

@@ -1,7 +1,6 @@
 package view;
 
 import controller.OficinaController;
-import model.OrdemDeServico;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
@@ -15,16 +14,21 @@ import java.net.URL;
  * Dados do cabeçalho carregados dinamicamente via Controller e Model Oficina.
  *
  * Camada visual reorganizada com base em princípios de Gestalt:
- * - Proximidade: itens relacionados (ex.: CNPJ + Especialidade, grupos de estatísticas) foram
+ * - Proximidade: itens relacionados (ex.: CNPJ + Especialidade) foram
  *   aproximados entre si e afastados de itens não relacionados.
  * - Similaridade / Unidade Comum: "Consultas" e "Estatísticas do Sistema" passaram a usar o
  *   mesmo padrão de cartão (mesmo cabeçalho, mesma borda), reforçando que são seções do mesmo nível.
  * - Figura-Fundo: feedback de hover foi padronizado em todos os elementos clicáveis.
  * - Fechamento: bordas arredondadas e divisores sutis continuam delimitando cada agrupamento.
- * Nesta rodada: os fundos brancos lisos viraram cards com opacidade (deixam a cor de fundo da
+ * Os fundos brancos lisos viraram cards com opacidade (deixam a cor de fundo da
  * tela "respirar" nos cantos), a scrollbar ganhou estilo e animação próprios, e cada seção
  * passou a ter um ícone garantido — se o PNG em /assets/icons/ ainda não existir, um ícone
  * vetorial equivalente é desenhado na hora (sem depender de nenhum arquivo externo).
+ *
+ * Nesta rodada:
+ * - Os botões de "Consultas / Cadastros" agora são responsivos: ocupam toda a largura disponível
+ *   (colunas de mesmo tamanho) e quebram para uma nova linha quando a janela fica estreita.
+ * - A seção de Estatísticas mostra uma única linha; da parte de OS ficou apenas o total.
  * Nenhuma cor de destaque do tema, dado, chamada de Controller ou fluxo de navegação foi alterado.
  */
 public class V_PaginaInicial extends JPanel {
@@ -42,11 +46,16 @@ public class V_PaginaInicial extends JPanel {
     // ==========================================
     // PADRÃO ÚNICO DE "BOTÃO-CARD" (Similaridade)
     // Usado tanto pelos botões de "Consultas" quanto pelos cards de "Estatísticas",
-    // garantindo que os dois grupos tenham exatamente o mesmo tamanho e ícone.
+    // garantindo que os dois grupos tenham exatamente o mesmo tamanho mínimo e ícone.
+    // Nos botões de Consultas, a largura é apenas a MÍNIMA: o layout responsivo estica
+    // os botões para preencher a linha.
     // ==========================================
     private static final Dimension DIM_BOTAO_CARD    = new Dimension(140, 110);
     private static final int       TAM_ICONE_CARD    = 65;
     private static final int       TAM_ICONE_ESTAT   = 36; // menor que o de Consultas: sobra espaço p/ número + descrição
+
+    // Espaçamento da grade responsiva de Consultas / Cadastros
+    private static final int GAP_CONSULTAS = 16;
 
     // ==========================================
     // DECLARAÇÃO DOS COMPONENTES (Padrão Prefixo)
@@ -155,14 +164,19 @@ public class V_PaginaInicial extends JPanel {
         pnl_Header.add(pnl_ContainerBusca, BorderLayout.EAST);
 
         // --------------------------------------------------------------------
-        // 2. MÓDULO DE SEÇÃO: VISUALIZAR INFORMAÇÕES (Consultas / Os 4 botões)
+        // 2. MÓDULO DE SEÇÃO: VISUALIZAR INFORMAÇÕES (Consultas / Os 5 botões)
         // Princípio da Similaridade / Unidade Comum: usa o MESMO padrão de cartão
         // (título com ícone + borda arredondada) já usado na seção de Estatísticas,
         // deixando claro que as duas são seções de mesmo nível hierárquico.
+        //
+        // RESPONSIVO: em vez de FlowLayout com tamanho fixo, os botões ficam numa
+        // GradeResponsiva — colunas de mesma largura que preenchem a linha e quebram
+        // automaticamente para a linha seguinte quando a janela é estreitada.
         // --------------------------------------------------------------------
         pnl_BotoesVisualizar = criarCard("Consultas / Cadastros", obterIcone("/assets/icons/consultas.png", 18, IconeVetorial.Tipo.LUPA, Color.decode("#FF9900")));
         JPanel corpoConsultas = (JPanel) pnl_BotoesVisualizar.getComponent(1);
-        corpoConsultas.setLayout(new FlowLayout(FlowLayout.LEFT, 24, 18));
+        corpoConsultas.setLayout(new GradeResponsiva(DIM_BOTAO_CARD.width, DIM_BOTAO_CARD.height, GAP_CONSULTAS, GAP_CONSULTAS));
+        corpoConsultas.setBorder(BorderFactory.createEmptyBorder(8, 0, 4, 0));
 
         btn_VisServicos = new JButton("Serviços");
         configurarEstiloBotaoCard(btn_VisServicos, obterIcone("/assets/icons/vservicos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.SERVICO, Color.DARK_GRAY), DIM_BOTAO_CARD);
@@ -205,7 +219,9 @@ public class V_PaginaInicial extends JPanel {
     }
 
     private void layoutComponents() {
-        JPanel pnl_Centro = new JPanel();
+        // Painel central que acompanha a largura da janela (Scrollable) — é isso que permite
+        // à grade de Consultas reorganizar suas colunas quando a janela é redimensionada.
+        JPanel pnl_Centro = new PainelCentroRolavel();
         pnl_Centro.setLayout(new BoxLayout(pnl_Centro, BoxLayout.Y_AXIS));
         pnl_Centro.setOpaque(false);
         pnl_BotoesVisualizar.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -291,6 +307,12 @@ public class V_PaginaInicial extends JPanel {
     // SEÇÃO DE ESTATÍSTICAS
     // ==========================================
 
+    /**
+     * Linha única de estatísticas: catálogo (montadoras, modelos, peças, serviços)
+     * e, ao final, apenas o total de OS. Os cards por status (abertas / em andamento /
+     * concluídas) foram removidos — o detalhamento por status continua disponível
+     * dentro da tela de OS acessada pelo card "OS Total".
+     */
     private JPanel criarSecaoEstatisticas() {
         JPanel card = criarCard("Estatísticas da Oficina", obterIcone("/assets/icons/estatisticas.png", 18, IconeVetorial.Tipo.GRAFICO, Color.decode("#FF9900")));
 
@@ -299,52 +321,19 @@ public class V_PaginaInicial extends JPanel {
         int totalPecas      = controller.listarTodasPecas().size();
         int totalCatalogo   = controller.contarCatalogoServicos();
         int totalOS         = controller.contarOS();
-        int osAbertas       = controller.contarOSPorStatus(OrdemDeServico.Status.ABERTA);
-        int osAndamento     = controller.contarOSPorStatus(OrdemDeServico.Status.EM_ANDAMENTO);
-        int osConcluidas    = controller.contarOSPorStatus(OrdemDeServico.Status.CONCLUIDA);
 
-        JPanel linha1 = new JPanel(new GridLayout(1, 4, 12, 0));
-        linha1.setOpaque(false);
-        linha1.add(criarCardEstat("Montadoras",           totalMontadoras, "#9B59B6", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, () -> navegarPara(new V_VisualizarMontadoras(controller))));
-        linha1.add(criarCardEstat("Modelos",              totalModelos,    "#E67E22", "/assets/icons/modelos.png",    IconeVetorial.Tipo.MODELO,    () -> navegarPara(new V_VisualizarModelos(controller))));
-        linha1.add(criarCardEstat("Peças Cadastradas",    totalPecas,      "#16A085", "/assets/icons/pecas.png",      IconeVetorial.Tipo.PECA,      () -> navegarPara(new V_VisualizarPecas(controller))));
-        linha1.add(criarCardEstat("Serviços Cadastrados", totalCatalogo,   "#8E44AD", "/assets/icons/vservicos.png",  IconeVetorial.Tipo.SERVICO,   () -> navegarPara(new V_VisualizarCatalogoServicos(controller))));
-
-        JPanel linha2 = new JPanel(new GridLayout(1, 4, 12, 0));
-        linha2.setOpaque(false);
-        linha2.add(criarCardEstat("OS Total",     totalOS,      "#34495E", "/assets/icons/os_total.png",     IconeVetorial.Tipo.DOCUMENTO,  () -> navegarPara(new V_VisualizarOSFiltrado(controller, null))));
-        linha2.add(criarCardEstat("OS Abertas",   osAbertas,    "#E74C3C", "/assets/icons/os_aberta.png",    IconeVetorial.Tipo.ABERTA,     () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.ABERTA))));
-        linha2.add(criarCardEstat("Em Andamento", osAndamento,  "#F39C12", "/assets/icons/os_andamento.png", IconeVetorial.Tipo.ANDAMENTO,  () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.EM_ANDAMENTO))));
-        linha2.add(criarCardEstat("Concluídas",   osConcluidas, "#27AE60", "/assets/icons/os_concluida.png", IconeVetorial.Tipo.CONCLUIDA,  () -> navegarPara(new V_VisualizarOSFiltrado(controller, OrdemDeServico.Status.CONCLUIDA))));
-
-        // Princípio da Proximidade + Unidade Comum: os 4 primeiros cards (dados de catálogo)
-        // e os 4 últimos (dados de ordens de serviço) são naturezas diferentes de informação.
-        // Um rótulo discreto (agora com ícone) + espaçamento maior entre os grupos deixa essa
-        // separação óbvia ao olho, sem precisar de nenhuma cor nova ou caixa extra.
-        JLabel lbl_GrupoCatalogo = new JLabel("Catálogo", obterIcone(null, 14, IconeVetorial.Tipo.CATALOGO, Color.decode("#999999")), SwingConstants.LEFT);
-        lbl_GrupoCatalogo.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lbl_GrupoCatalogo.setForeground(Color.decode("#999999"));
-        lbl_GrupoCatalogo.setIconTextGap(6);
-        lbl_GrupoCatalogo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lbl_GrupoCatalogo.setBorder(BorderFactory.createEmptyBorder(0, 2, 6, 0));
-
-        JLabel lbl_GrupoOS = new JLabel("Ordens de Serviço", obterIcone(null, 14, IconeVetorial.Tipo.DOCUMENTO, Color.decode("#999999")), SwingConstants.LEFT);
-        lbl_GrupoOS.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lbl_GrupoOS.setForeground(Color.decode("#999999"));
-        lbl_GrupoOS.setIconTextGap(6);
-        lbl_GrupoOS.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lbl_GrupoOS.setBorder(BorderFactory.createEmptyBorder(0, 2, 6, 0));
-
-        linha1.setAlignmentX(Component.LEFT_ALIGNMENT);
-        linha2.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel linha = new JPanel(new GridLayout(1, 5, 12, 0));
+        linha.setOpaque(false);
+        linha.add(criarCardEstat("Montadoras",           totalMontadoras, "#9B59B6", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, () -> navegarPara(new V_VisualizarMontadoras(controller))));
+        linha.add(criarCardEstat("Modelos",              totalModelos,    "#E67E22", "/assets/icons/modelos.png",    IconeVetorial.Tipo.MODELO,    () -> navegarPara(new V_VisualizarModelos(controller))));
+        linha.add(criarCardEstat("Peças Cadastradas",    totalPecas,      "#16A085", "/assets/icons/pecas.png",      IconeVetorial.Tipo.PECA,      () -> navegarPara(new V_VisualizarPecas(controller))));
+        linha.add(criarCardEstat("Serviços Cadastrados", totalCatalogo,   "#8E44AD", "/assets/icons/vservicos.png",  IconeVetorial.Tipo.SERVICO,   () -> navegarPara(new V_VisualizarCatalogoServicos(controller))));
+        linha.add(criarCardEstat("OS Total",             totalOS,         "#34495E", "/assets/icons/os_total.png",   IconeVetorial.Tipo.DOCUMENTO, () -> navegarPara(new V_VisualizarOSFiltrado(controller, null))));
 
         JPanel corpo = (JPanel) card.getComponent(1);
-        corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
-        corpo.add(lbl_GrupoCatalogo);
-        corpo.add(linha1);
-        corpo.add(Box.createVerticalStrut(20)); // respiro maior = separa os dois grupos (proximidade)
-        corpo.add(lbl_GrupoOS);
-        corpo.add(linha2);
+        corpo.setLayout(new BorderLayout());
+        corpo.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
+        corpo.add(linha, BorderLayout.CENTER);
         return card;
     }
 
@@ -489,6 +478,111 @@ public class V_PaginaInicial extends JPanel {
             g2d.setColor(cor);
             g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
             g2d.dispose();
+        }
+    }
+
+    // ==========================================
+    // LAYOUT RESPONSIVO
+    // ==========================================
+
+    /**
+     * Painel central rolável que acompanha a largura do viewport. Sem isso, o JScrollPane
+     * mantém a largura "preferida" do conteúdo e a grade de Consultas nunca saberia que a
+     * janela foi estreitada (apareceria uma barra horizontal em vez de reorganizar os botões).
+     */
+    private static class PainelCentroRolavel extends JPanel implements Scrollable {
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) { return 24; }
+        @Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return orientation == SwingConstants.VERTICAL ? Math.max(24, visibleRect.height - 24) : Math.max(24, visibleRect.width - 24);
+        }
+        @Override public boolean getScrollableTracksViewportWidth()  { return true; }
+        @Override public boolean getScrollableTracksViewportHeight() { return false; }
+    }
+
+    /**
+     * Grade responsiva: calcula quantas colunas cabem na largura atual (cada uma com no mínimo
+     * {@code larguraMin}), divide a largura igualmente entre elas e quebra para novas linhas
+     * quando necessário. Todas as células têm a mesma altura fixa.
+     * Quando o número de linhas muda, o contêiner é revalidado para que a altura do card
+     * (que depende do número de linhas) seja recalculada pelos pais.
+     */
+    private static class GradeResponsiva implements LayoutManager {
+        private final int larguraMin;
+        private final int altura;
+        private final int gapH;
+        private final int gapV;
+        private int ultimasLinhas = -1;
+
+        GradeResponsiva(int larguraMin, int altura, int gapH, int gapV) {
+            this.larguraMin = larguraMin;
+            this.altura = altura;
+            this.gapH = gapH;
+            this.gapV = gapV;
+        }
+
+        private int colunas(int larguraDisponivel, int n) {
+            int c = (larguraDisponivel + gapH) / (larguraMin + gapH);
+            return Math.max(1, Math.min(Math.max(1, n), c));
+        }
+
+        private int linhas(int n, int colunas) {
+            return n == 0 ? 0 : (n + colunas - 1) / colunas;
+        }
+
+        @Override public void addLayoutComponent(String name, Component comp) {}
+        @Override public void removeLayoutComponent(Component comp) {}
+
+        @Override
+        public Dimension preferredLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Insets in = parent.getInsets();
+                int n = parent.getComponentCount();
+                int larguraTotalLinhaUnica = n * larguraMin + Math.max(0, n - 1) * gapH;
+                int disponivel = parent.getWidth() - in.left - in.right;
+                if (disponivel <= 0) disponivel = larguraTotalLinhaUnica;
+                int cols = colunas(disponivel, n);
+                int rows = linhas(n, cols);
+                int h = rows == 0 ? 0 : rows * altura + (rows - 1) * gapV;
+                return new Dimension(larguraTotalLinhaUnica + in.left + in.right, h + in.top + in.bottom);
+            }
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Insets in = parent.getInsets();
+                Dimension pref = preferredLayoutSize(parent);
+                return new Dimension(larguraMin + in.left + in.right, pref.height);
+            }
+        }
+
+        @Override
+        public void layoutContainer(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Insets in = parent.getInsets();
+                int n = parent.getComponentCount();
+                if (n == 0) return;
+
+                int disponivel = parent.getWidth() - in.left - in.right;
+                int cols = colunas(disponivel, n);
+                int rows = linhas(n, cols);
+                int larguraCelula = Math.max(larguraMin, (disponivel - (cols - 1) * gapH) / cols);
+
+                for (int i = 0; i < n; i++) {
+                    int linha = i / cols;
+                    int coluna = i % cols;
+                    int x = in.left + coluna * (larguraCelula + gapH);
+                    int y = in.top + linha * (altura + gapV);
+                    parent.getComponent(i).setBounds(x, y, larguraCelula, altura);
+                }
+
+                // A altura preferida depende do número de linhas: se mudou, os pais precisam recalcular.
+                if (rows != ultimasLinhas) {
+                    ultimasLinhas = rows;
+                    SwingUtilities.invokeLater(parent::revalidate);
+                }
+            }
         }
     }
 

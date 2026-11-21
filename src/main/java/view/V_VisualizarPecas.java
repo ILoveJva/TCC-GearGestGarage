@@ -13,12 +13,21 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
 public class V_VisualizarPecas extends JPanel {
+
+    // Botão "Voltar" — mesmo padrão (tom cinza em vidro) das telas de Montadoras / Modelos
+    private static final Color COR_VOLTAR         = Color.decode("#6C757D");
+    private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
+    private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
+    private static final int   LARGURA_BOTAO      = 130;
+    private static final int   ALTURA_BOTAO       = 40;
 
     private final OficinaController controller;
     private DefaultTableModel mdl;
@@ -30,12 +39,12 @@ public class V_VisualizarPecas extends JPanel {
     private JComboBox<String> cmb_Sistema;
 
     private static final String[] SISTEMAS_LABEL = {
-        "Todos os sistemas", "Motor", "Transmissão", "Direção",
-        "Suspensão", "Freios", "Arrefecimento", "Elétrica", "Alimentação", "Outros"
+            "Todos os sistemas", "Motor", "Transmissão", "Direção",
+            "Suspensão", "Freios", "Arrefecimento", "Elétrica", "Alimentação", "Outros"
     };
     private static final String[] SISTEMAS_CODE = {
-        null, "MOTOR", "TRANSMISSAO", "DIRECAO",
-        "SUSPENSAO", "FREIOS", "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
+            null, "MOTOR", "TRANSMISSAO", "DIRECAO",
+            "SUSPENSAO", "FREIOS", "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
     };
 
     public V_VisualizarPecas(OficinaController controller) {
@@ -48,7 +57,7 @@ public class V_VisualizarPecas extends JPanel {
 
     private void construir() {
         // ---- Header ----
-        JLabel titulo = new JLabel("Página Inicial > Peças Cadastradas");
+        JLabel titulo = new JLabel("Página Inicial > Estatísticas > Peças Cadastradas");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
 
@@ -124,27 +133,23 @@ public class V_VisualizarPecas extends JPanel {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) { editarSelecionada(); }
         });
 
-        JButton btn_Voltar = new JButton("← Voltar");
-        btn_Voltar.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Voltar.setForeground(Color.WHITE);
-        btn_Voltar.setBackground(Color.decode("#6C757D"));
-        btn_Voltar.setFocusPainted(false);
-        btn_Voltar.setBorderPainted(false);
-        btn_Voltar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Voltar.setPreferredSize(new Dimension(120, 36));
-        btn_Voltar.addActionListener(e -> navegar(new V_Configuracoes(controller)));
+        // Botão "Voltar" no mesmo padrão das telas de Montadoras / Modelos:
+        // vidro cinza (BotaoAcao), 130x40, alinhado à esquerda do rodapé.
+        BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
+        btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
+        btn_Voltar.addActionListener(e -> navegar(new V_PaginaInicial(controller)));
 
         JPanel rodape = new JPanel(new BorderLayout(8, 0));
         rodape.setOpaque(false);
         rodape.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-        rodape.add(lnk_Editar, BorderLayout.WEST);
-        rodape.add(btn_Voltar, BorderLayout.EAST);
+        rodape.add(btn_Voltar, BorderLayout.WEST);
+        rodape.add(lnk_Editar, BorderLayout.EAST);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 0));
         corpo.setBackground(Color.WHITE);
         corpo.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+                new RoundedBorder(10, Color.decode("#E0E0E0")),
+                BorderFactory.createEmptyBorder(16, 20, 16, 20)));
         corpo.add(scroll, BorderLayout.CENTER);
         corpo.add(rodape, BorderLayout.SOUTH);
 
@@ -185,11 +190,11 @@ public class V_VisualizarPecas extends JPanel {
             String tempo = "Não informado".equals(p.getVidaUtilTempo()) ? "—" : (p.getVidaUtilTempo() != null ? p.getVidaUtilTempo() : "—");
             String km    = "Não informado".equals(p.getVidaUtilKm())    ? "—" : (p.getVidaUtilKm()    != null ? p.getVidaUtilKm()    : "—");
             mdl.addRow(new Object[]{
-                String.format("%04d", p.getIdCatalogoPeca()),
-                p.getNomePopular(),
-                p.getSistemaLabel(),
-                tempo,
-                km
+                    String.format("%04d", p.getIdCatalogoPeca()),
+                    p.getNomePopular(),
+                    p.getSistemaLabel(),
+                    tempo,
+                    km
             });
         }
     }
@@ -219,6 +224,60 @@ public class V_VisualizarPecas extends JPanel {
             g2.setColor(cor);
             g2.draw(new RoundRectangle2D.Double(x, y, w - 1, h - 1, raio, raio));
             g2.dispose();
+        }
+    }
+
+    // =========================================================================
+    // BOTÃO DE AÇÃO EM VIDRO — mesmo componente usado em V_VisualizarMontadoras /
+    // V_VisualizarModelos (aqui usado no tom cinza, por ser ação de navegação).
+    // =========================================================================
+    private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            setFont(new Font("Segoe UI", Font.BOLD, 13));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(0, 0, 0, 40));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
+
+            g2.setColor(new Color(255, 255, 255, 45));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE_VIDRO - 5, RAIO_COMPONENTE_VIDRO - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
         }
     }
 

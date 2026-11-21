@@ -31,6 +31,9 @@ public class V_OrdemServico extends JPanel {
     private JLabel lbl_TipoServico;
     private JPanel pnl_Corpo;
 
+    // Botão do topo — oculto quando a OS está CONCLUÍDA
+    private JButton btn_FichaTarefas;
+
     // Campos interativos (modo edição)
     private GlassTextArea txa_Descricao;
     private DefaultTableModel mdl_Checklist;
@@ -91,7 +94,7 @@ public class V_OrdemServico extends JPanel {
         JButton btn_Voltar = botaoLink("← Voltar para Lista", COR_LABEL);
         btn_Voltar.addActionListener(e -> navegar(new V_VisualizarServicos(controller)));
 
-        JButton btn_FichaTarefas = botaoLink("📄 Ficha de Tarefas", COR_AZUL);
+        btn_FichaTarefas = botaoLink("📄 Ficha de Tarefas", COR_AZUL);
         btn_FichaTarefas.addActionListener(e -> {
             if (servico == null) {
                 DialogoAlerta.aviso(this, "Serviço ainda não carregado.", "Aviso");
@@ -159,6 +162,9 @@ public class V_OrdemServico extends JPanel {
         boolean emAndamento = "EM_ANDAMENTO".equalsIgnoreCase(servico.status());
         boolean concluida = "CONCLUIDA".equalsIgnoreCase(servico.status());
         boolean congelada = "CONGELADA".equalsIgnoreCase(servico.status());
+
+        // Ficha de Tarefas não faz sentido numa OS já concluída
+        btn_FichaTarefas.setVisible(!concluida);
 
         if (aberta) lbl_StatusTexto.setCorDestaque(COR_LARANJA);
         else if (emAndamento) lbl_StatusTexto.setCorDestaque(COR_AZUL);

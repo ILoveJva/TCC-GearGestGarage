@@ -14,6 +14,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.*;
@@ -21,6 +23,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class V_VisualizarCatalogoServicos extends JPanel {
+
+    // Botão "Voltar" — mesmo padrão da tela de Montadoras
+    private static final Color COR_VOLTAR         = Color.decode("#6C757D");
+    private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
+    private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
+    private static final int RAIO_COMPONENTE      = 12;
+    private static final int TAMANHO_FONTE_BOTAO  = 13;
+    private static final int LARGURA_BOTAO        = 130;
+    private static final int ALTURA_BOTAO         = 40;
 
     private final OficinaController controller;
     private List<CatalogoServicoEntity> todos = new ArrayList<>();
@@ -31,12 +42,12 @@ public class V_VisualizarCatalogoServicos extends JPanel {
     private JComboBox<String> cmb_Sistema;
 
     private static final String[] SISTEMAS_LABEL = {
-        "Todos os sistemas", "Motor", "Transmissão", "Direção",
-        "Suspensão", "Freios", "Arrefecimento", "Elétrica", "Alimentação", "Outros"
+            "Todos os sistemas", "Motor", "Transmissão", "Direção",
+            "Suspensão", "Freios", "Arrefecimento", "Elétrica", "Alimentação", "Outros"
     };
     private static final String[] SISTEMAS_CODE = {
-        null, "MOTOR", "TRANSMISSAO", "DIRECAO",
-        "SUSPENSAO", "FREIOS", "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
+            null, "MOTOR", "TRANSMISSAO", "DIRECAO",
+            "SUSPENSAO", "FREIOS", "ARREFECIMENTO", "ELETRICA", "ALIMENTACAO", "OUTROS"
     };
 
     public V_VisualizarCatalogoServicos(OficinaController controller) {
@@ -50,7 +61,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
 
     private void construirInterface() {
         // Header: título + filtros
-        JLabel titulo = new JLabel("Página Inicial > Serviços Cadastrados");
+        JLabel titulo = new JLabel("Página Inicial > Estatísticas > Serviços Cadastrados");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
 
@@ -109,6 +120,20 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         ScrollBarPadrao.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
 
+        // Rodapé com botão Voltar (padrão da tela de Montadoras)
+        BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
+        btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
+        btn_Voltar.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_PaginaInicial(controller));
+        });
+
+        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 4));
+        rodape.setOpaque(false);
+        rodape.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        rodape.add(btn_Voltar);
+        add(rodape, BorderLayout.SOUTH);
+
         // Listeners
         DocumentListener dl = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { atualizarCorpo(); }
@@ -129,16 +154,16 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         String sistemaCode = SISTEMAS_CODE[cmb_Sistema.getSelectedIndex()];
 
         List<CatalogoServicoEntity> filtrados = todos.stream()
-            .filter(c -> busca.isEmpty() || c.getNome().toLowerCase().contains(busca))
-            .filter(c -> sistemaCode == null || sistemaCode.equals(c.getSistema()))
-            .collect(Collectors.toList());
+                .filter(c -> busca.isEmpty() || c.getNome().toLowerCase().contains(busca))
+                .filter(c -> sistemaCode == null || sistemaCode.equals(c.getSistema()))
+                .collect(Collectors.toList());
 
         corpo.removeAll();
 
         if (filtrados.isEmpty()) {
             JLabel vazio = new JLabel(todos.isEmpty()
-                ? "Nenhum serviço cadastrado. Use '+ Novo Item de Serviço' para adicionar."
-                : "Nenhum serviço corresponde ao filtro.");
+                    ? "Nenhum serviço cadastrado. Use '+ Novo Item de Serviço' para adicionar."
+                    : "Nenhum serviço corresponde ao filtro.");
             vazio.setFont(new Font("Segoe UI", Font.ITALIC, 13));
             vazio.setForeground(Color.decode("#888888"));
             vazio.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -156,8 +181,8 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         JPanel card = new JPanel(new BorderLayout(0, 12));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(10, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+                new RoundedBorder(10, Color.decode("#E0E0E0")),
+                BorderFactory.createEmptyBorder(16, 20, 16, 20)));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -183,7 +208,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         for (Map.Entry<String, List<CatalogoServicoEntity>> entry : porSistema.entrySet()) {
             if (entry.getValue().isEmpty()) continue;
             String sistemaLabel = new CatalogoServicoEntity(null, "", "", 0,
-                "PADRAO", entry.getKey(), null, null).getSistemaLabel();
+                    "PADRAO", entry.getKey(), null, null).getSistemaLabel();
 
             JLabel lblSist = new JLabel("  ▸  " + sistemaLabel);
             lblSist.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -209,8 +234,8 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             String km  = i.getValidadeKm() != null ? i.getValidadeKm() + " km" : "—";
             String mes = i.getValidadeMeses() != null ? i.getValidadeMeses() + " meses" : "—";
             mdl.addRow(new Object[]{
-                i.getNome(),
-                String.format("R$ %.2f", i.getValor()), km, mes
+                    i.getNome(),
+                    String.format("R$ %.2f", i.getValor()), km, mes
             });
         }
 
@@ -248,7 +273,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             tabela.getColumnModel().getColumn(c).setPreferredWidth(proporcoes[c] * 100);
 
         DefaultTableCellRenderer cabecalhoCentralizado =
-            (DefaultTableCellRenderer) tabela.getTableHeader().getDefaultRenderer();
+                (DefaultTableCellRenderer) tabela.getTableHeader().getDefaultRenderer();
         cabecalhoCentralizado.setHorizontalAlignment(SwingConstants.CENTER);
 
         JScrollPane sp = new JScrollPane(tabela);
@@ -259,32 +284,69 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         sp.setBorder(BorderFactory.createLineBorder(Color.decode("#E8E8E8")));
         ScrollBarPadrao.aplicar(sp);
 
-        JLabel lnk_Editar = new JLabel("<html><u>✎ Editar selecionado</u></html>");
-        lnk_Editar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lnk_Editar.setForeground(Color.decode("#0066CC"));
-        lnk_Editar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        lnk_Editar.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 0));
-        lnk_Editar.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                int row = tabela.getSelectedRow();
-                if (row >= 0 && row < itens.size()) abrirEditor(itens.get(row));
-                else DialogoAlerta.aviso(V_VisualizarCatalogoServicos.this, "Selecione um serviço na tabela para editar.", "Atenção");
-            }
-        });
-
         JPanel wrapper = new JPanel(new BorderLayout(0, 2));
         wrapper.setOpaque(false);
         wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
-        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela + 24));
-        wrapper.setPreferredSize(new Dimension(0, altTabela + 24));
+        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela + 4));
+        wrapper.setPreferredSize(new Dimension(0, altTabela + 4));
         wrapper.add(sp, BorderLayout.CENTER);
-        wrapper.add(lnk_Editar, BorderLayout.SOUTH);
         return wrapper;
     }
 
     private void abrirEditor(CatalogoServicoEntity item) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_EditarItemServico(controller, item));
+    }
+
+    /** Botão de ação em vidro (mesmo da tela de Montadoras): cantos arredondados, sombra, reflexo e hover/clique. */
+    private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private boolean sobreMouse = false;
+        private boolean pressionado = false;
+
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura) {
+            super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
+                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+
+            g2.setColor(new Color(0, 0, 0, 40));
+            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
+            g2.setColor(corPreenchimento);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
+
+            g2.setColor(new Color(255, 255, 255, 30));
+            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private static class RoundedBorder implements javax.swing.border.Border {

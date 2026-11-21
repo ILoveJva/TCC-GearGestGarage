@@ -126,7 +126,7 @@ public class V_VisualizarMontadoras extends JPanel {
         btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
         btn_Voltar.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_Configuracoes(controller));
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_PaginaInicial(controller));
         });
 
         JPanel rodape = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 4));

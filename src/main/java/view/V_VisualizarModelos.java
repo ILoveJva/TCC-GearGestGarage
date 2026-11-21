@@ -5,14 +5,20 @@ import model.Modelo;
 import model.Montadora;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
 
 public class V_VisualizarModelos extends JPanel {
 
@@ -23,6 +29,7 @@ public class V_VisualizarModelos extends JPanel {
     private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
     private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
     private static final Color COR_TITULO       = Color.decode("#4A5568");
+    private static final Color COR_LABEL        = Color.decode("#57626F");
     private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
 
     // Vidro cinza claro estilo Windows 7 (Aero) — usado no cabeçalho da tabela
@@ -44,6 +51,11 @@ public class V_VisualizarModelos extends JPanel {
     private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
     private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
 
+    // Botão "Buscar" — laranja do tema
+    private static final Color COR_BUSCAR         = Color.decode("#FF9900");
+    private static final Color COR_BUSCAR_CLARA   = Color.decode("#FFAD33");
+    private static final Color COR_BUSCAR_ESCURA  = Color.decode("#D98200");
+
     private static final int RAIO_COMPONENTE     = 12;
     private static final int TAMANHO_FONTE_BOTAO = 13;
     private static final int LARGURA_BOTAO       = 130;
@@ -51,8 +63,24 @@ public class V_VisualizarModelos extends JPanel {
     private static final int ALTURA_CABECALHO    = 32;
     private static final int ALTURA_LINHA_TABELA = 28;
 
+    private static final String TODOS_ANOS = "Todos os anos";
+
+    // Ordem das colunas: Tipo, Montadora, Modelo, Ano, Cód. (o usuário pode reordenar arrastando)
+    private static final int COL_TIPO      = 0;
+    private static final int COL_MONTADORA = 1;
+    private static final int COL_MODELO    = 2;
+    private static final int COL_ANO       = 3;
+    private static final int COL_ID        = 4;
+
     private final OficinaController controller;
     private DefaultTableModel mdl;
+
+    private JTextField txtBusca;
+    private JComboBox<String> cmbAno;
+    private boolean atualizandoCombo = false;
+
+    /** Todas as linhas carregadas (sem filtro), na ordem das colunas do modelo. */
+    private final List<Object[]> todasLinhas = new ArrayList<>();
 
     public V_VisualizarModelos(OficinaController controller) {
         this.controller = controller;
@@ -63,7 +91,7 @@ public class V_VisualizarModelos extends JPanel {
 
     private void construir() {
         JPanel card = new PainelGradiente(new BorderLayout(0, 14), COR_CARD_TOPO, COR_CARD_BASE);
-        card.setPreferredSize(new Dimension(680, 520));
+        card.setPreferredSize(new Dimension(760, 560));
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel titulo = new JLabel("Página Inicial > Estatísticas > Modelos");
@@ -83,12 +111,21 @@ public class V_VisualizarModelos extends JPanel {
             if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_CadastrarModelo(controller));
         });
 
-        JPanel pnl_Cabecalho = new JPanel(new BorderLayout());
-        pnl_Cabecalho.setOpaque(false);
-        pnl_Cabecalho.add(titulo, BorderLayout.WEST);
-        pnl_Cabecalho.add(btn_Novo, BorderLayout.EAST);
+        JPanel pnl_Titulo = new JPanel(new BorderLayout());
+        pnl_Titulo.setOpaque(false);
+        pnl_Titulo.add(titulo, BorderLayout.WEST);
+        pnl_Titulo.add(btn_Novo, BorderLayout.EAST);
 
-        String[] cols = {"Cód.", "Modelo", "Ano", "Tipo", "Montadora"};
+        // ---- barra de busca + filtro por ano ----
+        JPanel pnl_Busca = construirBarraBusca();
+
+        JPanel pnl_Cabecalho = new JPanel(new BorderLayout(0, 12));
+        pnl_Cabecalho.setOpaque(false);
+        pnl_Cabecalho.add(pnl_Titulo, BorderLayout.NORTH);
+        pnl_Cabecalho.add(pnl_Busca, BorderLayout.CENTER);
+
+        // ---- tabela ----
+        String[] cols = {"Tipo", "Montadora", "Modelo", "Ano", "Cód."};
         mdl = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -107,13 +144,13 @@ public class V_VisualizarModelos extends JPanel {
         tabela.setSelectionForeground(COR_TEXTO_CAMPO);
         tabela.setFillsViewportHeight(true);
         tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
-        tabela.getColumnModel().getColumn(0).setMaxWidth(60);
-        tabela.getColumnModel().getColumn(2).setMaxWidth(70);
+        tabela.getColumnModel().getColumn(COL_ANO).setMaxWidth(70);
+        tabela.getColumnModel().getColumn(COL_ID).setMaxWidth(60);
 
         JTableHeader cabecalho = tabela.getTableHeader();
         cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
         cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
-        cabecalho.setReorderingAllowed(false);
+        cabecalho.setReorderingAllowed(true); // usuário pode arrastar as colunas para reordenar
         cabecalho.setOpaque(false);
 
         JScrollPane scroll = new JScrollPane(tabela);
@@ -127,7 +164,7 @@ public class V_VisualizarModelos extends JPanel {
         btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
         btn_Voltar.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_Configuracoes(controller));
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_PaginaInicial(controller));
         });
 
         JPanel rodape = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 4));
@@ -148,18 +185,101 @@ public class V_VisualizarModelos extends JPanel {
         carregar();
     }
 
+    private JPanel construirBarraBusca() {
+        txtBusca = new CampoArredondado();
+        txtBusca.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtBusca.setToolTipText("Busque por tipo, montadora, modelo ou código");
+        txtBusca.setPreferredSize(new Dimension(0, 34));
+        txtBusca.addActionListener(e -> aplicarFiltro()); // Enter também busca
+
+        BotaoAcao btn_Buscar = new BotaoAcao("🔍 Buscar", COR_BUSCAR, COR_BUSCAR_CLARA, COR_BUSCAR_ESCURA);
+        btn_Buscar.setPreferredSize(new Dimension(110, 34));
+        btn_Buscar.addActionListener(e -> aplicarFiltro());
+
+        JLabel lblAno = new JLabel("Ano:");
+        lblAno.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblAno.setForeground(COR_LABEL);
+
+        cmbAno = new JComboBox<>();
+        cmbAno.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbAno.setBackground(Color.WHITE);
+        cmbAno.setUI(new ComboArredondadoUI());
+        cmbAno.setOpaque(false);
+        cmbAno.setBorder(BorderFactory.createEmptyBorder(1, 8, 1, 4));
+        cmbAno.setPreferredSize(new Dimension(140, 34));
+        cmbAno.addActionListener(e -> { if (!atualizandoCombo) aplicarFiltro(); });
+
+        BotaoAcao btn_Limpar = new BotaoAcao("Limpar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
+        btn_Limpar.setPreferredSize(new Dimension(90, 34));
+        btn_Limpar.addActionListener(e -> {
+            txtBusca.setText("");
+            atualizandoCombo = true;
+            cmbAno.setSelectedIndex(0);
+            atualizandoCombo = false;
+            aplicarFiltro();
+        });
+
+        JPanel direita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        direita.setOpaque(false);
+        direita.add(btn_Buscar);
+        direita.add(lblAno);
+        direita.add(cmbAno);
+        direita.add(btn_Limpar);
+
+        JPanel barra = new JPanel(new BorderLayout(8, 0));
+        barra.setOpaque(false);
+        barra.add(txtBusca, BorderLayout.CENTER);
+        barra.add(direita, BorderLayout.EAST);
+        return barra;
+    }
+
     private void carregar() {
-        mdl.setRowCount(0);
+        todasLinhas.clear();
+        TreeSet<Integer> anos = new TreeSet<>(java.util.Comparator.reverseOrder());
+
         for (Montadora mont : controller.montadorasComModelos()) {
             for (Modelo mod : mont.listarModelos()) {
-                mdl.addRow(new Object[]{
-                        String.format("%04d", mod.getIdModelo()),
+                if (mod.getAno() > 0) anos.add(mod.getAno());
+                todasLinhas.add(new Object[]{
+                        mod.getTipo(),
+                        mont.getNome(),
                         mod.getNome(),
                         mod.getAno() > 0 ? String.valueOf(mod.getAno()) : "—",
-                        mod.getTipo(),
-                        mont.getNome()
+                        String.format("%04d", mod.getIdModelo())
                 });
             }
+        }
+
+        // Popula o filtro de ano preservando a seleção atual (se ainda existir)
+        Object selecionado = cmbAno.getSelectedItem();
+        atualizandoCombo = true;
+        cmbAno.removeAllItems();
+        cmbAno.addItem(TODOS_ANOS);
+        for (Integer a : anos) cmbAno.addItem(String.valueOf(a));
+        if (selecionado != null) cmbAno.setSelectedItem(selecionado);
+        if (cmbAno.getSelectedItem() == null) cmbAno.setSelectedIndex(0);
+        atualizandoCombo = false;
+
+        aplicarFiltro();
+    }
+
+    /** Aplica o termo digitado + o ano escolhido sobre as linhas carregadas. */
+    private void aplicarFiltro() {
+        String termo = txtBusca != null ? txtBusca.getText().trim() : "";
+        String ano = cmbAno != null ? (String) cmbAno.getSelectedItem() : null;
+        boolean filtraAno = ano != null && !TODOS_ANOS.equals(ano);
+
+        mdl.setRowCount(0);
+        for (Object[] linha : todasLinhas) {
+            if (filtraAno && !ano.equals(linha[COL_ANO])) continue;
+            if (!termo.isEmpty()) {
+                boolean bate = false;
+                for (int c : new int[]{COL_TIPO, COL_MONTADORA, COL_MODELO, COL_ID}) {
+                    if (BuscaUtil.contem(String.valueOf(linha[c]), termo)) { bate = true; break; }
+                }
+                if (!bate) continue;
+            }
+            mdl.addRow(linha);
         }
     }
 
@@ -264,11 +384,95 @@ public class V_VisualizarModelos extends JPanel {
         }
     }
 
+    /** Campo de texto com fundo e borda arredondados; borda laranja quando focado. */
+    private static class CampoArredondado extends JTextField {
+        private static final int RAIO = 14;
+        private boolean focado = false;
+
+        CampoArredondado() {
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(2, 12, 2, 12));
+            addFocusListener(new FocusAdapter() {
+                @Override public void focusGained(FocusEvent e) { focado = true; repaint(); }
+                @Override public void focusLost(FocusEvent e)   { focado = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, RAIO, RAIO));
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(focado ? Color.decode("#FF9900") : Color.decode("#CCCCCC"));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(new RoundRectangle2D.Double(0.5, 0.5, getWidth() - 1, getHeight() - 1, RAIO, RAIO));
+            g2.dispose();
+        }
+    }
+
+    /** UI de combo com cantos arredondados e seta simples. */
+    private static class ComboArredondadoUI extends BasicComboBoxUI {
+        private static final int RAIO = 14;
+
+        @Override
+        protected JButton createArrowButton() {
+            JButton b = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.decode("#666666"));
+                    int cx = getWidth() / 2, cy = getHeight() / 2;
+                    g2.fillPolygon(new int[]{cx - 4, cx + 4, cx}, new int[]{cy - 2, cy - 2, cy + 3}, 3);
+                    g2.dispose();
+                }
+            };
+            b.setContentAreaFilled(false);
+            b.setBorderPainted(false);
+            b.setFocusPainted(false);
+            b.setOpaque(false);
+            b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return b;
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            RoundRectangle2D forma = new RoundRectangle2D.Double(0.5, 0.5, c.getWidth() - 1, c.getHeight() - 1, RAIO, RAIO);
+            g2.setColor(Color.WHITE);
+            g2.fill(forma);
+            g2.setColor(Color.decode("#CCCCCC"));
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(forma);
+            g2.dispose();
+            super.paint(g, c);
+        }
+
+        @Override
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
+            // fundo já pintado em paint(), com cantos arredondados
+        }
+
+        @Override
+        public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
+            super.paintCurrentValue(g, bounds, false); // evita o retângulo azul de seleção
+        }
+    }
+
     /**
      * Botão de ação com a mesma linguagem visual dos campos em vidro das outras
      * telas: cantos arredondados, sombra suave, reflexo no topo e reação a
-     * hover/clique. A cor é configurável (aqui usada em tom cinza, por ser uma
-     * ação secundária de navegação, não a ação principal do formulário).
+     * hover/clique. A cor é configurável (cinza para navegação, laranja para a busca).
      */
     private static class BotaoAcao extends JButton {
         private final Color corBase;

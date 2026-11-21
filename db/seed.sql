@@ -7235,8 +7235,7 @@ VALUES
 INSERT INTO catalogo_peca (nome_popular, sistema, vida_util_tempo, vida_util_km)
 VALUES
 ('Filtro de óleo', 'MOTOR', '6 meses', '10.000 km'),
-('Óleo do motor 5W30 sintético', 'MOTOR', '12 meses', '10.000 km'),
-('Óleo do motor 15W40 mineral', 'MOTOR', '6 meses', '5.000 km'),
+('Óleo do motor', 'MOTOR', '6 meses', '10.000 km'),
 ('Filtro de ar do motor', 'MOTOR', '12 meses', '15.000 km'),
 ('Filtro de combustível', 'MOTOR', '24 meses', '20.000 km'),
 ('Filtro de combustível diesel (separador de água)', 'MOTOR', '12 meses', '10.000 km'),

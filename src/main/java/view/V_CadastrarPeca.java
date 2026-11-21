@@ -31,6 +31,7 @@ public class V_CadastrarPeca extends JPanel {
     private GlassComboBox<SistemaItem> cmb_Sistema;
     private GlassComboBox<ServicoItem> cmb_Servico;
     private BotaoAcao btn_Cadastrar;
+    private BotaoAcao btn_Voltar;
 
     private List<CatalogoServicoEntity> catalogoServicos;
 
@@ -51,6 +52,12 @@ public class V_CadastrarPeca extends JPanel {
     private static final Color COR_ACAO         = Color.decode("#FF9900");
     private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
     private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
+
+    // Botão "Voltar" — tom secundário/cinza, mesmo padrão da tela de Montadoras
+    private static final Color COR_VOLTAR         = Color.decode("#6C757D");
+    private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
+    private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
+    private static final int LARGURA_BOTAO_VOLTAR = 130;
 
     // Ajustes rápidos de tipografia/tamanho — mexa só aqui para alterar tudo de uma vez
     private static final int RAIO_COMPONENTE     = 12;   // arredondamento compartilhado (campos, combos e botão)
@@ -128,15 +135,21 @@ public class V_CadastrarPeca extends JPanel {
 
         btn_Cadastrar = new BotaoAcao("CADASTRAR PEÇA");
         btn_Cadastrar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
+
+        btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA,
+                new Color(0, 0, 0, 40));
+        btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO_VOLTAR, ALTURA_BOTAO));
     }
 
     private void layoutComponents() {
         pnl_CardCentral.add(lbl_TituloPaginacao, BorderLayout.NORTH);
         pnl_CardCentral.add(pnl_Formulario, BorderLayout.CENTER);
 
-        JPanel pnl_BtnContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 10));
+        JPanel pnl_BtnContainer = new JPanel(new BorderLayout());
         pnl_BtnContainer.setOpaque(false);
-        pnl_BtnContainer.add(btn_Cadastrar);
+        pnl_BtnContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        pnl_BtnContainer.add(btn_Voltar, BorderLayout.WEST);
+        pnl_BtnContainer.add(btn_Cadastrar, BorderLayout.EAST);
         pnl_CardCentral.add(pnl_BtnContainer, BorderLayout.SOUTH);
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -170,6 +183,11 @@ public class V_CadastrarPeca extends JPanel {
     // VALIDAÇÃO E TRATAMENTO DE ERROS
     // =========================================================================
     private void vincularAcoes() {
+        btn_Voltar.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_PaginaInicial(controller));
+        });
+
         btn_Cadastrar.addActionListener(e -> {
             limparErro(txt_NomePopular);
             String nomePopular = txt_NomePopular.getText().trim();
@@ -184,10 +202,10 @@ public class V_CadastrarPeca extends JPanel {
             ServicoItem servico = (ServicoItem) cmb_Servico.getSelectedItem();
             try {
                 controller.salvarPeca(nomePopular,
-                    vidaTempo.isEmpty() ? "Não informado" : vidaTempo,
-                    vidaKm.isEmpty()    ? "Não informado" : vidaKm,
-                    sistema != null ? sistema.codigo : "OUTROS",
-                    servico != null && servico.id != null ? servico.id : 0L);
+                        vidaTempo.isEmpty() ? "Não informado" : vidaTempo,
+                        vidaKm.isEmpty()    ? "Não informado" : vidaKm,
+                        sistema != null ? sistema.codigo : "OUTROS",
+                        servico != null && servico.id != null ? servico.id : 0L);
                 DialogoAlerta.sucesso(this, "Peça \"" + nomePopular + "\" cadastrada com sucesso!", "Sucesso");
                 txt_NomePopular.setText("");
                 txt_VidaTempo.setText("");
@@ -383,11 +401,25 @@ public class V_CadastrarPeca extends JPanel {
      * e leve reação a hover/clique. A cor de ação (tema original) é mantida.
      */
     private static class BotaoAcao extends JButton {
+        private final Color corBase;
+        private final Color corClara;
+        private final Color corEscura;
+        private final Color corSombra;
         private boolean sobreMouse = false;
         private boolean pressionado = false;
 
+        /** Botão na cor de ação padrão (laranja). */
         BotaoAcao(String texto) {
+            this(texto, COR_ACAO, COR_ACAO_CLARA, COR_ACAO_ESCURA, new Color(180, 100, 0, 60));
+        }
+
+        /** Botão com cores personalizadas (ex.: "Voltar" em cinza). */
+        BotaoAcao(String texto, Color corBase, Color corClara, Color corEscura, Color corSombra) {
             super(texto);
+            this.corBase = corBase;
+            this.corClara = corClara;
+            this.corEscura = corEscura;
+            this.corSombra = corSombra;
             setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
             setForeground(Color.WHITE);
             setContentAreaFilled(false);
@@ -412,10 +444,10 @@ public class V_CadastrarPeca extends JPanel {
             int h = getHeight();
 
             // Sombra suave, mesma linguagem visual usada nos campos em vidro
-            g2.setColor(new Color(180, 100, 0, 60));
+            g2.setColor(corSombra);
             g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 
-            Color corPreenchimento = pressionado ? COR_ACAO_ESCURA : (sobreMouse ? COR_ACAO_CLARA : COR_ACAO);
+            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
             g2.setColor(corPreenchimento);
             g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
 

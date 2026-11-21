@@ -2,7 +2,6 @@ package view;
 
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import controller.OficinaController;
-import model.Orcamento;
 import model.OrdemDeServico;
 import model.Veiculo;
 
@@ -23,7 +22,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,20 +48,6 @@ public class V_VisualizarServicos extends JPanel {
     private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
     private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
 
-    // Ação secundária: "Gerar OS do selecionado" (tema azul-petróleo original preservado)
-    private static final Color COR_INFO         = Color.decode("#17A2B8");
-    private static final Color COR_INFO_CLARA   = Color.decode("#33B8CC");
-    private static final Color COR_INFO_ESCURA  = Color.decode("#148A9C");
-
-    // Seção "Orçamentos pendentes" — identidade âmbar preservada
-    private static final Color COR_PEND_TEXTO       = Color.decode("#B8860B");
-    private static final Color COR_PEND_BORDA       = Color.decode("#FFD580");
-    private static final Color COR_PEND_CARD_TOPO   = Color.decode("#FFFDF6");
-    private static final Color COR_PEND_CARD_BASE   = Color.decode("#FFF3D6");
-    private static final Color COR_PEND_BTN         = Color.decode("#B8860B");
-    private static final Color COR_PEND_BTN_CLARA   = Color.decode("#C79A2A");
-    private static final Color COR_PEND_BTN_ESCURA  = Color.decode("#9C7209");
-
     // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
     private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
     private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
@@ -89,7 +73,6 @@ public class V_VisualizarServicos extends JPanel {
     private final OficinaController controller;
 
     private List<ServicoResponseDTO> todos = new ArrayList<>();
-    private List<Orcamento> orcamentosPendentes = new ArrayList<>();
     private Map<Long, Veiculo> veicMap = new HashMap<>();
 
     private GlassTextField txt_Busca;
@@ -99,11 +82,6 @@ public class V_VisualizarServicos extends JPanel {
     private JPanel corpo;
     private JScrollPane scroll;
 
-    private DefaultTableModel mdl_Pendentes;
-    private JTable tbl_Pendentes;
-    private JPanel pnl_Pendentes;
-    private JPanel pnl_PendentesCorpo;
-    private BotaoAcao btn_TogglePendentes;
 
     private static final String[] STATUS_LABELS = {"Todos os status", "Aberta", "Em Andamento", "Concluída"};
     private static final String[] STATUS_CODES  = {null, "ABERTA", "EM_ANDAMENTO", "CONCLUIDA"};
@@ -164,71 +142,13 @@ public class V_VisualizarServicos extends JPanel {
         pnl_Filtros.add(Box.createHorizontalStrut(6));
         pnl_Filtros.add(lbl_S); pnl_Filtros.add(cmb_Status);
 
-        // ---- Seção orçamentos pendentes (colapsável) ----
-        pnl_Pendentes = new PainelGradiente(new BorderLayout(0, 6), COR_PEND_CARD_TOPO, COR_PEND_CARD_BASE);
-        pnl_Pendentes.setVisible(false);
-        pnl_Pendentes.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COR_PEND_BORDA),
-                BorderFactory.createEmptyBorder(8, 10, 10, 10)));
-
-        JPanel pnl_PendentesHeader = new JPanel(new BorderLayout());
-        pnl_PendentesHeader.setOpaque(false);
-        JLabel lbl_Pend = new JLabel("⚠  Orçamentos aprovados aguardando OS");
-        lbl_Pend.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl_Pend.setForeground(COR_PEND_TEXTO);
-        btn_TogglePendentes = new BotaoAcao("Mostrar ▾", COR_PEND_BTN, COR_PEND_BTN_CLARA, COR_PEND_BTN_ESCURA);
-        btn_TogglePendentes.setPreferredSize(new Dimension(100, 26));
-        pnl_PendentesHeader.add(lbl_Pend, BorderLayout.WEST);
-        pnl_PendentesHeader.add(btn_TogglePendentes, BorderLayout.EAST);
-
-        pnl_PendentesCorpo = new JPanel(new BorderLayout(0, 4));
-        pnl_PendentesCorpo.setOpaque(false);
-        pnl_PendentesCorpo.setVisible(false);
-
-        String[] colsPend = {"Cód.", "Cliente", "Veículo", "Responsável", "Valor (R$)"};
-        mdl_Pendentes = new DefaultTableModel(colsPend, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        tbl_Pendentes = new JTable(mdl_Pendentes);
-        estilizarTabela(tbl_Pendentes);
-        tbl_Pendentes.setRowHeight(ALTURA_LINHA_TABELA);
-        JScrollPane scp_Pend = new JScrollPane(tbl_Pendentes);
-        scp_Pend.getViewport().setBackground(COR_TABELA_FUNDO);
-        scp_Pend.getViewport().setOpaque(true);
-        scp_Pend.setOpaque(false);
-        scp_Pend.setBorder(BorderFactory.createLineBorder(COR_PEND_BORDA));
-        scp_Pend.setPreferredSize(new Dimension(0, 100));
-        ScrollBarPadrao.aplicar(scp_Pend);
-
-        BotaoAcao btn_GerarOS = new BotaoAcao("Gerar OS do selecionado →", COR_INFO, COR_INFO_CLARA, COR_INFO_ESCURA);
-        btn_GerarOS.setPreferredSize(new Dimension(210, 32));
-        btn_GerarOS.addActionListener(e -> gerarOSDeOrcamento());
-        JPanel pnl_BtnGerar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        pnl_BtnGerar.setOpaque(false);
-        pnl_BtnGerar.add(btn_GerarOS);
-
-        pnl_PendentesCorpo.add(scp_Pend, BorderLayout.CENTER);
-        pnl_PendentesCorpo.add(pnl_BtnGerar, BorderLayout.SOUTH);
-
-        btn_TogglePendentes.addActionListener(e -> {
-            boolean abrir = !pnl_PendentesCorpo.isVisible();
-            pnl_PendentesCorpo.setVisible(abrir);
-            btn_TogglePendentes.setText(abrir ? "Ocultar ▴" : "Mostrar ▾");
-        });
-
-        pnl_Pendentes.add(pnl_PendentesHeader, BorderLayout.NORTH);
-        pnl_Pendentes.add(pnl_PendentesCorpo, BorderLayout.CENTER);
-
-        // ---- Norte: empilha breadcrumb + pendentes + filtros ----
+        // ---- Norte: empilha breadcrumb + filtros ----
         JPanel pnl_Norte = new JPanel();
         pnl_Norte.setLayout(new BoxLayout(pnl_Norte, BoxLayout.Y_AXIS));
         pnl_Norte.setOpaque(false);
         pnl_Linha1.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_Norte.add(pnl_Linha1);
         pnl_Norte.add(Box.createVerticalStrut(10));
-        pnl_Pendentes.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnl_Norte.add(pnl_Pendentes);
-        pnl_Norte.add(Box.createVerticalStrut(8));
         pnl_Filtros.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_Norte.add(pnl_Filtros);
         pnl_Norte.add(Box.createVerticalStrut(10));
@@ -265,19 +185,6 @@ public class V_VisualizarServicos extends JPanel {
 
         // OS
         todos = controller.listarTodosServicos();
-
-        // Orçamentos pendentes
-        orcamentosPendentes = controller.listarOrcamentosAprovadosSemOS();
-        mdl_Pendentes.setRowCount(0);
-        for (Orcamento o : orcamentosPendentes) {
-            String cod = o.getCodigo() != null && !o.getCodigo().isEmpty()
-                    ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
-            mdl_Pendentes.addRow(new Object[]{
-                    cod, o.getNomeCliente(), o.getPlacaVeiculo(),
-                    o.getResponsavel(), String.format("R$ %.2f", o.getValor())
-            });
-        }
-        pnl_Pendentes.setVisible(!orcamentosPendentes.isEmpty());
 
         atualizarCorpo();
     }
@@ -483,61 +390,6 @@ public class V_VisualizarServicos extends JPanel {
         cabecalho.setOpaque(false);
     }
 
-    private void gerarOSDeOrcamento() {
-        int linha = tbl_Pendentes.getSelectedRow();
-        if (linha < 0 || linha >= orcamentosPendentes.size()) {
-            DialogoAlerta.aviso(this, "Selecione um orçamento na tabela.", "Atenção");
-            return;
-        }
-        Orcamento o = orcamentosPendentes.get(linha);
-
-        JTextField txtTitulo = new JTextField();
-        JComboBox<String> cmbTipo = new JComboBox<>();
-        for (OrdemDeServico.TipoServicoOS t : OrdemDeServico.TipoServicoOS.values())
-            cmbTipo.addItem(t.getLabel());
-        JComboBox<String> cmbManut = new JComboBox<>();
-        for (OrdemDeServico.TipoManutencao m : OrdemDeServico.TipoManutencao.values())
-            cmbManut.addItem(m.getLabel());
-        JTextField txtData = new JTextField(LocalDate.now().toString());
-        JTextField txtKm   = new JTextField();
-
-        JPanel form = new JPanel(new GridLayout(0, 1, 0, 4));
-        form.add(new JLabel("Título da OS:"));     form.add(txtTitulo);
-        form.add(new JLabel("Tipo de Serviço:")); form.add(cmbTipo);
-        form.add(new JLabel("Tipo de Manutenção:")); form.add(cmbManut);
-        form.add(new JLabel("Data (AAAA-MM-DD):")); form.add(txtData);
-        form.add(new JLabel("KM atual:"));        form.add(txtKm);
-
-        String codOrc = (o.getCodigo() != null && !o.getCodigo().isEmpty())
-                ? o.getCodigo() : String.format("%04d", o.getIdOrcamento());
-        int res = JOptionPane.showConfirmDialog(this, form,
-                "Gerar OS — Orçamento " + codOrc,
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (res != JOptionPane.OK_OPTION) return;
-
-        String titulo = txtTitulo.getText().trim();
-        if (titulo.length() < 3) {
-            DialogoAlerta.aviso(this, "Título deve ter pelo menos 3 caracteres.", "Atenção"); return;
-        }
-        int km;
-        try {
-            km = Integer.parseInt(txtKm.getText().trim());
-            if (km < 0) throw new NumberFormatException();
-        } catch (NumberFormatException ex) {
-            DialogoAlerta.aviso(this, "Informe um KM válido.", "Atenção"); return;
-        }
-        try {
-            OrdemDeServico.TipoServicoOS tipoEnum = OrdemDeServico.TipoServicoOS.fromLabel((String) cmbTipo.getSelectedItem());
-            OrdemDeServico.TipoManutencao manutEnum = OrdemDeServico.TipoManutencao.fromLabel((String) cmbManut.getSelectedItem());
-            controller.abrirOSDeOrcamento(titulo, tipoEnum.name(), manutEnum.name(),
-                    txtData.getText().trim(), km, o.getIdVeiculo(), o.getIdOrcamento());
-            DialogoAlerta.sucesso(this, "Ordem de Serviço gerada com sucesso!", "Sucesso");
-            carregar();
-        } catch (Exception ex) {
-            DialogoAlerta.erro(this, "Erro ao gerar OS: " + ex.getMessage(), "Erro no Sistema");
-        }
-    }
-
     private String formatarStatus(String raw) {
         if (raw == null) return "—";
         return switch (raw.toUpperCase()) {
@@ -719,8 +571,7 @@ public class V_VisualizarServicos extends JPanel {
     /**
      * Botão de ação com a mesma linguagem visual dos campos em vidro: cantos
      * arredondados, sombra suave, reflexo no topo e reação a hover/clique.
-     * Cor configurável — laranja (ação principal), azul-petróleo (gerar OS)
-     * ou âmbar (mostrar/ocultar pendentes).
+     * Cor configurável (hoje usado na ação principal "+ Criar OS", em laranja).
      */
     private static class BotaoAcao extends JButton {
         private final Color corBase;

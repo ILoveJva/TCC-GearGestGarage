@@ -26,6 +26,12 @@ public class V_VisualizarPecas extends JPanel {
     private static final Color COR_VOLTAR         = Color.decode("#6C757D");
     private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
     private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
+
+    // Botão "+ Nova Peça" — Verde de ação positiva com glassmorphism
+    private static final Color COR_NOVA_BASE    = Color.decode("#28A745");
+    private static final Color COR_NOVA_CLARA   = Color.decode("#3FC464");
+    private static final Color COR_NOVA_ESCURA  = Color.decode("#1E7E34");
+
     private static final int   LARGURA_BOTAO      = 130;
     private static final int   ALTURA_BOTAO       = 40;
 
@@ -61,14 +67,9 @@ public class V_VisualizarPecas extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(Color.decode("#4D4D4D"));
 
-        JButton btn_Nova = new JButton("+ Nova Peça");
-        btn_Nova.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Nova.setForeground(Color.WHITE);
-        btn_Nova.setBackground(Color.decode("#28A745"));
-        btn_Nova.setFocusPainted(false);
-        btn_Nova.setBorderPainted(false);
-        btn_Nova.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Nova.setPreferredSize(new Dimension(130, 34));
+        // Botão "+ Nova Peça" atualizado com glassmorphism
+        BotaoAcao btn_Nova = new BotaoAcao("+ Nova Peça", COR_NOVA_BASE, COR_NOVA_CLARA, COR_NOVA_ESCURA);
+        btn_Nova.setPreferredSize(new Dimension(145, 36));
         btn_Nova.addActionListener(e -> navegar(new V_CadastrarPeca(controller)));
 
         JPanel pnl_TituloBtn = new JPanel(new BorderLayout());
@@ -228,8 +229,7 @@ public class V_VisualizarPecas extends JPanel {
     }
 
     // =========================================================================
-    // BOTÃO DE AÇÃO EM VIDRO — mesmo componente usado em V_VisualizarMontadoras /
-    // V_VisualizarModelos (aqui usado no tom cinza, por ser ação de navegação).
+    // BOTÃO DE AÇÃO EM VIDRO — cantos arredondados, glassmorphism e reflexo.
     // =========================================================================
     private static class BotaoAcao extends JButton {
         private final Color corBase;
@@ -282,12 +282,10 @@ public class V_VisualizarPecas extends JPanel {
     }
 
     // =========================================================================
-    // CAMPOS "DE VIDRO" (glassmorphism) — mesmo padrão visual das páginas de
-    // cadastro (ex.: V_CadastrarPeca), aplicado aqui aos filtros de busca/sistema.
+    // CAMPOS "DE VIDRO" (glassmorphism)
     // =========================================================================
     private static final int RAIO_COMPONENTE_VIDRO = 12;
 
-    /** Campo de texto com efeito de vidro translúcido, borda que reage a foco. */
     private static class GlassTextField extends JTextField {
         private boolean focado = false;
 
@@ -343,7 +341,6 @@ public class V_VisualizarPecas extends JPanel {
         }
     }
 
-    /** JComboBox com o mesmo efeito de vidro do GlassTextField, sem fundo sólido padrão do Swing por cima. */
     private static class GlassComboBox<T> extends JComboBox<T> {
         private boolean focado = false;
 
@@ -353,7 +350,6 @@ public class V_VisualizarPecas extends JPanel {
             setOpaque(false);
             setFont(new Font("Segoe UI", Font.PLAIN, 13));
             setForeground(Color.decode("#2B2E33"));
-            // O BasicComboPopup copia este background para a lista suspensa — não pode ser transparente.
             setBackground(Color.decode("#FFFFFF"));
             setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 4));
             setFocusable(true);
@@ -403,12 +399,9 @@ public class V_VisualizarPecas extends JPanel {
         }
     }
 
-    /** UI mínima para o GlassComboBox: evita fundo sólido do Swing e troca a seta por um triângulo vetorial. */
     private static class GlassComboBoxUI extends BasicComboBoxUI {
         @Override
-        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
-            // Propositalmente vazio — o fundo já é pintado em GlassComboBox.paintComponent().
-        }
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {}
 
         @Override
         @SuppressWarnings("unchecked")
@@ -467,9 +460,7 @@ public class V_VisualizarPecas extends JPanel {
         }
     }
 
-    /** Popup do combo com cantos arredondados e conteúdo sólido/legível. */
     private static class GlassComboPopup extends BasicComboPopup {
-
         GlassComboPopup(JComboBox<Object> combo) {
             super(combo);
         }
@@ -527,9 +518,7 @@ public class V_VisualizarPecas extends JPanel {
                 if (janela != null) {
                     janela.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), RAIO_COMPONENTE_VIDRO, RAIO_COMPONENTE_VIDRO));
                 }
-            } catch (Exception | Error ignorado) {
-                // Sem suporte a formato de janela nesta plataforma.
-            }
+            } catch (Exception | Error ignorado) {}
         }
     }
 }

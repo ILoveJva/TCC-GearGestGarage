@@ -38,7 +38,12 @@ public class V_VisualizarMontadoras extends JPanel {
     private static final Color COR_TABELA_GRADE   = Color.decode("#E3E9F0");
     private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
 
-    // Botão "Voltar" — tom secundário/cinza (preserva o tom original, só aplica o mesmo vidro)
+    // Botão "+ Nova Montadora" — Laranja principal do sistema com glassmorphism
+    private static final Color COR_NOVA_BASE    = Color.decode("#FF9900");
+    private static final Color COR_NOVA_CLARA   = Color.decode("#FFAD33");
+    private static final Color COR_NOVA_ESCURA  = Color.decode("#E68A00");
+
+    // Botão "Voltar" — tom secundário/cinza
     private static final Color COR_VOLTAR         = Color.decode("#6C757D");
     private static final Color COR_VOLTAR_CLARA   = Color.decode("#7C848C");
     private static final Color COR_VOLTAR_ESCURA  = Color.decode("#5A6169");
@@ -69,14 +74,9 @@ public class V_VisualizarMontadoras extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(COR_TITULO);
 
-        JButton btn_Nova = new JButton("+ Nova Montadora");
-        btn_Nova.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn_Nova.setForeground(Color.WHITE);
-        btn_Nova.setBackground(Color.decode("#FF9900"));
-        btn_Nova.setFocusPainted(false);
-        btn_Nova.setBorderPainted(false);
-        btn_Nova.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_Nova.setPreferredSize(new Dimension(160, 34));
+        // Botão "+ Nova Montadora" atualizado utilizando a classe BotaoAcao com glassmorphism
+        BotaoAcao btn_Nova = new BotaoAcao("+ Nova Montadora", COR_NOVA_BASE, COR_NOVA_CLARA, COR_NOVA_ESCURA);
+        btn_Nova.setPreferredSize(new Dimension(170, 36));
         btn_Nova.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
             if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_CadastrarMontadora(controller));
@@ -164,9 +164,7 @@ public class V_VisualizarMontadoras extends JPanel {
     // =========================================================================
 
     /**
-     * Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7):
-     * gradiente claro na metade superior, tom mais escuro na metade inferior,
-     * brilho de vidro no topo, separador entre colunas e linha de base.
+     * Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7).
      */
     private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
 
@@ -236,7 +234,7 @@ public class V_VisualizarMontadoras extends JPanel {
     // INNER CLASSES — COMPONENTES EM VIDRO
     // =========================================================================
 
-    /** Painel com fundo em gradiente suave, harmonizando o cartão com o restante das telas. */
+    /** Painel com fundo em gradiente suave. */
     private static class PainelGradiente extends JPanel {
         private final Color corTopo;
         private final Color corBase;
@@ -261,10 +259,8 @@ public class V_VisualizarMontadoras extends JPanel {
     }
 
     /**
-     * Botão de ação com a mesma linguagem visual dos campos em vidro das outras
-     * telas: cantos arredondados, sombra suave, reflexo no topo e reação a
-     * hover/clique. A cor é configurável (aqui usada em tom cinza, por ser uma
-     * ação secundária de navegação, não a ação principal do formulário).
+     * Botão de ação com cantos arredondados, glassmorphism, sombra suave,
+     * reflexo no topo e reação dinâmica a hover/clique.
      */
     private static class BotaoAcao extends JButton {
         private final Color corBase;

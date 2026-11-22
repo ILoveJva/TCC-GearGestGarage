@@ -203,8 +203,8 @@ public class V_Configuracoes extends JPanel {
                 return;
             }
             boolean confirmado = DialogoConfirmacao.confirmar(this,
-                "Tem certeza que deseja excluir o funcionário \"" + alvo.getNome() + "\"?",
-                "Confirmar exclusão");
+                    "Tem certeza que deseja excluir o funcionário \"" + alvo.getNome() + "\"?",
+                    "Confirmar exclusão");
             if (!confirmado) return;
             try {
                 controller.excluirFuncionario(alvo.getIdFuncionario());
@@ -238,8 +238,8 @@ public class V_Configuracoes extends JPanel {
         mdl_Funcionarios.setRowCount(0);
         for (FuncionarioEntity f : controller.listarFuncionarios()) {
             mdl_Funcionarios.addRow(new Object[]{
-                String.format("%05d", f.getIdFuncionario()),
-                f.getNome(), f.getCargo(), f.getTelefone()
+                    String.format("%05d", f.getIdFuncionario()),
+                    f.getNome(), f.getCargo(), f.getTelefone()
             });
         }
     }
@@ -277,8 +277,8 @@ public class V_Configuracoes extends JPanel {
         int raioCard = 14;
         PainelCartao card = new PainelCartao(new BorderLayout(0, 12), raioCard, COR_CARTAO);
         card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(raioCard, Color.decode("#E0E0E0")),
-            BorderFactory.createEmptyBorder(16, 20, 16, 20)
+                new RoundedBorder(raioCard, Color.decode("#E0E0E0")),
+                BorderFactory.createEmptyBorder(16, 20, 16, 20)
         ));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -329,28 +329,66 @@ public class V_Configuracoes extends JPanel {
     }
 
     /**
-     * Botão quadrado com ícone acima do texto (mesmo padrão dos cards de "Consultas" da Página
-     * Inicial). Usa a imagem PNG de resources/assets/icons quando disponível; se não existir,
-     * cai para o ícone vetorial desenhado na hora.
+     * Botão quadrado com efeito Glassmorphism, cantos arredondados e ícone acima do texto.
      */
     private JButton criarBotaoQuadrado(String texto, String caminhoPng, IconeVetorial.Tipo tipoIcone, String corHex, int largura, int altura) {
-        JButton btn = new JButton(texto);
+        Color corBase = Color.decode(corHex);
+
+        // Cria um JButton personalizado com suporte a glassmorphism (translúcido com cantos arredondados)
+        JButton btn = new JButton(texto) {
+            private boolean hover = false;
+
+            {
+                addMouseListener(new MouseAdapter() {
+                    @Override public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+                    @Override public void mouseExited(MouseEvent e)  { hover = false; repaint(); }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+                int raio = 16; // Raio dos cantos arredondados do botão
+
+                // Cor de fundo translúcida (Glassmorphism): mistura a cor base com transparência (ex: alpha 180)
+                Color corFundoAtual = hover
+                        ? new Color(corBase.getRed(), corBase.getGreen(), corBase.getBlue(), 220)
+                        : new Color(corBase.getRed(), corBase.getGreen(), corBase.getBlue(), 160);
+
+                // Preenchimento translúcido principal do vidro
+                g2.setColor(corFundoAtual);
+                g2.fillRoundRect(0, 0, w, h, raio, raio);
+
+                // Brilho superior translúcido simulando reflexo de vidro
+                g2.setColor(new Color(255, 255, 255, 60));
+                g2.fillRoundRect(1, 1, w - 2, h / 2, raio, raio);
+
+                // Borda sutil de vidro iluminada
+                g2.setColor(new Color(255, 255, 255, 100));
+                g2.draw(new RoundRectangle2D.Double(0, 0, w - 1, h - 1, raio, raio));
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+
         btn.setIcon(obterIcone(caminhoPng, Math.min(largura, altura) - 46, tipoIcone, Color.WHITE));
         btn.setVerticalTextPosition(SwingConstants.BOTTOM);
         btn.setHorizontalTextPosition(SwingConstants.CENTER);
         btn.setIconTextGap(8);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setForeground(Color.WHITE);
-        Color corBase = Color.decode(corHex);
-        btn.setBackground(corBase);
         btn.setPreferredSize(new Dimension(largura, altura));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false); // Desativa o fundo padrão para aplicar o nosso estilo de vidro
+        btn.setOpaque(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(corBase.brighter()); }
-            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(corBase); }
-        });
+
         return btn;
     }
 

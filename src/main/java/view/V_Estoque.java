@@ -97,16 +97,24 @@ public class V_Estoque extends JPanel {
     }
 
     private void construir() {
-        // ---- Cabeçalho: título + botão de entrada ----
+        // ---- Corpo principal da página ----
+        JPanel corpo = new JPanel();
+        corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
+        corpo.setOpaque(false);
+
+        // ---- Título da página ----
         JLabel titulo = new JLabel("Página Inicial > Estoque de Peças");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(COR_TITULO);
+        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        corpo.add(titulo);
+        corpo.add(Box.createVerticalStrut(10)); // Espaço entre o título e os botões do topo
 
+        // ---- Botões de Ação do Topo ----
         BotaoAcao btn_Entrada = new BotaoAcao("+ Comprar Peça", COR_ENTRADA, COR_ENTRADA_CLARA, COR_ENTRADA_ESCURA);
         btn_Entrada.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
         btn_Entrada.addActionListener(e -> navegar(new V_EntradaEstoque(controller)));
 
-        // Relatórios em .rtf: posição atual do estoque e, separado, o histórico de movimentações.
         BotaoAcao btn_RelEstoque = new BotaoAcao("Relatório de Estoque", COR_ACAO, COR_RELATORIO_CLARA, COR_RELATORIO_ESCURA);
         btn_RelEstoque.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
         btn_RelEstoque.setToolTipText("Exporta as peças em estoque com data e hora de emissão (.rtf)");
@@ -117,24 +125,23 @@ public class V_Estoque extends JPanel {
         btn_RelMov.setToolTipText("Exporta o histórico de entradas e saídas do estoque (.rtf)");
         btn_RelMov.addActionListener(e -> ExportadorEstoque.exportarMovimentacoes(this, controller));
 
-        JPanel pnl_Botoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        pnl_Botoes.setOpaque(false);
-        pnl_Botoes.add(btn_RelEstoque);
-        pnl_Botoes.add(btn_RelMov);
-        pnl_Botoes.add(btn_Entrada);
+        JPanel pnl_BotoesTopo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnl_BotoesTopo.setOpaque(false);
+        pnl_BotoesTopo.add(btn_RelEstoque);
+        pnl_BotoesTopo.add(btn_RelMov);
+        pnl_BotoesTopo.add(btn_Entrada);
 
-        JPanel pnl_TituloBtn = new JPanel(new BorderLayout());
-        pnl_TituloBtn.setOpaque(false);
-        pnl_TituloBtn.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
-        pnl_TituloBtn.add(titulo, BorderLayout.WEST);
-        pnl_TituloBtn.add(pnl_Botoes, BorderLayout.EAST);
-        add(pnl_TituloBtn, BorderLayout.NORTH);
+        JPanel pnl_LinhaTopoBotoes = new JPanel(new BorderLayout());
+        pnl_LinhaTopoBotoes.setOpaque(false);
+        pnl_LinhaTopoBotoes.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnl_LinhaTopoBotoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, ALTURA_BOTAO));
+        pnl_LinhaTopoBotoes.add(new JLabel(), BorderLayout.WEST); // Mantém o alinhamento à direita
+        pnl_LinhaTopoBotoes.add(pnl_BotoesTopo, BorderLayout.EAST);
 
-        // ---- Corpo: estoque atual + histórico ----
-        JPanel corpo = new JPanel();
-        corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
-        corpo.setOpaque(false);
+        corpo.add(pnl_LinhaTopoBotoes);
+        corpo.add(Box.createVerticalStrut(16)); // Espaço antes dos cards
 
+        // ---- Cards de Conteúdo ----
         corpo.add(criarCardPecasParaComprar());
         corpo.add(Box.createVerticalStrut(16));
         corpo.add(criarCardEstoqueAtual());
@@ -142,6 +149,7 @@ public class V_Estoque extends JPanel {
         corpo.add(criarCardMovimentacoes());
         corpo.add(Box.createVerticalStrut(16));
 
+        // ---- Botão Voltar ----
         BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
         btn_Voltar.setPreferredSize(new Dimension(120, 38));
         btn_Voltar.addActionListener(e -> navegar(new V_PaginaInicial(controller)));
@@ -151,14 +159,19 @@ public class V_Estoque extends JPanel {
         pnl_Voltar.add(btn_Voltar);
         corpo.add(pnl_Voltar);
 
+        // ---- Adicionando o Scroll principal na tela ----
         JScrollPane scroll = new JScrollPane(corpo);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         ScrollBarPadrao.aplicar(scroll);
-        add(scroll, BorderLayout.CENTER);
-    }
 
+        // Remove qualquer componente anterior do BorderLayout e adiciona o scroll no centro
+        removeAll();
+        add(scroll, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
     // =========================================================================
     // Peças a comprar (baseado nas OS em aberto)
     // =========================================================================
@@ -261,7 +274,6 @@ public class V_Estoque extends JPanel {
         };
         tabelaEstoque.getColumnModel().getColumn(3).setCellRenderer(centro);
 
-        // Colunas "Peça" e "Sistema/Fabricante" — linhas de peça real vêm indentadas/mais claras
         DefaultTableCellRenderer texto = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
@@ -275,7 +287,6 @@ public class V_Estoque extends JPanel {
         tabelaEstoque.getColumnModel().getColumn(1).setCellRenderer(texto);
         tabelaEstoque.getColumnModel().getColumn(2).setCellRenderer(texto);
 
-        // Situação colorida — só preenchida nas linhas-catálogo
         tabelaEstoque.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
@@ -320,7 +331,6 @@ public class V_Estoque extends JPanel {
         return card;
     }
 
-    /** Reconstrói as linhas da tabela de estoque (catálogo + peças reais expandidas), preservando o estado de expansão. */
     private void construirLinhasEstoque() {
         mdlEstoque.setRowCount(0);
         linhasEstoque.clear();
@@ -345,7 +355,6 @@ public class V_Estoque extends JPanel {
         }
     }
 
-    /** Linhas de peça real vêm em itálico/tom mais claro, reforçando a hierarquia catálogo → peça real. */
     private void estilizarLinha(JLabel c, int row) {
         boolean isCatalogo = row >= 0 && row < linhasEstoque.size() && linhasEstoque.get(row).isCatalogo;
         c.setFont(new Font("Segoe UI", isCatalogo ? Font.BOLD : Font.ITALIC, 12));
@@ -356,7 +365,6 @@ public class V_Estoque extends JPanel {
         return ExportadorEstoque.situacao(qtd);
     }
 
-    /** Uma linha da tabela de Estoque: catálogo (id_catalogo_peca) ou peça real (id_peca). */
     private record LinhaEstoque(boolean isCatalogo, long id) {}
 
     // =========================================================================
@@ -404,7 +412,6 @@ public class V_Estoque extends JPanel {
         tabela.getColumnModel().getColumn(4).setMaxWidth(80);
         tabela.getColumnModel().getColumn(5).setMaxWidth(90);
 
-        // Tipo colorido (Entrada verde / Saída vermelho)
         tabela.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
@@ -459,7 +466,6 @@ public class V_Estoque extends JPanel {
         return card;
     }
 
-    /** Aplica o vidro Aero cinza no cabeçalho e fundo branco nas células, igual às demais telas. */
     private void estilizarTabela(JTable tabela) {
         tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tabela.setBackground(COR_TABELA_FUNDO);
@@ -499,12 +505,10 @@ public class V_Estoque extends JPanel {
     }
 
     // =========================================================================
-    // INNER CLASSES — mesmas classes de vidro usadas em V_VisualizarServicos
+    // INNER CLASSES
     // =========================================================================
 
-    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7). */
     private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
-
         CabecalhoVidroClaro() {
             setOpaque(false);
             setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -548,7 +552,6 @@ public class V_Estoque extends JPanel {
         }
     }
 
-    /** Células de dados sempre com fundo branco (e destaque no tom do tema quando selecionadas). */
     private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
         CelulaBrancaRenderer() {
             setOpaque(true);
@@ -567,7 +570,6 @@ public class V_Estoque extends JPanel {
         }
     }
 
-    /** Painel com fundo em gradiente translúcido e cantos arredondados — o "card de vidro". */
     private static class PainelGradiente extends JPanel {
         private final Color corTopo;
         private final Color corBase;
@@ -591,11 +593,6 @@ public class V_Estoque extends JPanel {
         }
     }
 
-    /**
-     * Botão de ação com a mesma linguagem visual dos campos em vidro: cantos
-     * arredondados, sombra suave, reflexo no topo e reação a hover/clique.
-     * Cor configurável — mesma classe usada em todas as outras telas.
-     */
     private static class BotaoAcao extends JButton {
         private final Color corBase;
         private final Color corClara;

@@ -185,18 +185,29 @@ public class V_ClienteAbastecimentos extends JPanel {
     }
 
     private JComponent construirLinhaHistorico(AbastecimentoEntity a) {
-        EstiloCliente.PainelArredondado linha = new EstiloCliente.PainelArredondado(
-                new GridLayout(1, 5, 10, 0), 10, EstiloCliente.TILE);
-        linha.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+        EstiloCliente.PainelArredondado linha =
+                new EstiloCliente.PainelArredondado(
+                        new GridLayout(1, 5, 10, 0),
+                        10,
+                        EstiloCliente.TILE
+                );
+
+        linha.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
         linha.setAlignmentX(Component.LEFT_ALIGNMENT);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, linha.getPreferredSize().height));
 
         linha.add(campoHistorico(EstiloCliente.dataBR(a.getDataAbastecimento())));
         linha.add(campoHistorico(a.getQuilometragem() + " km"));
         linha.add(campoHistorico(String.format("%.1f L", a.getLitros())));
         linha.add(campoHistorico(a.getTipoCombustivelLabel()));
-        linha.add(campoHistorico(EstiloCliente.reais(a.getValor())
-                + " (" + EstiloCliente.reais(a.getValorPorLitro()) + "/L)"));
+
+        linha.add(campoHistorico(
+                EstiloCliente.reais(a.getValor()) +
+                        " (" + EstiloCliente.reais(a.getValorPorLitro()) + "/L)"
+        ));
+
+        linha.setPreferredSize(new Dimension(900, 55));
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
+
         return linha;
     }
 

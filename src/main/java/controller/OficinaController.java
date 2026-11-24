@@ -21,6 +21,7 @@ import model.Montadora;
 import model.OrdemDeServico;
 import model.Veiculo;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -1011,4 +1012,5 @@ public class OficinaController {
         usuarioLogado.setEmail(email);
         usuarioLogado.setTelefone(telefone);
     }
+
 }

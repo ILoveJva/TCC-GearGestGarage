@@ -7,9 +7,6 @@ import controller.OficinaController;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -24,53 +21,31 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Página do Estoque: mostra a quantidade atual de cada peça e o histórico de
- * movimentações (entradas manuais e saídas automáticas geradas pelas OS).
- *
- * Estilo de vidro (cards, cabeçalho Aero das tabelas e botões) unificado com o
- * resto do sistema: mesmas classes e mesma paleta usadas em V_VisualizarServicos
- * (PainelGradiente, BotaoAcao, CabecalhoVidroClaro, CelulaBrancaRenderer).
+ * Página do Estoque refatorada utilizando a nova classe Tabela
+ * separando os 3 tipos visuais nas respectivas seções.
  */
 public class V_Estoque extends JPanel {
 
-    // =========================================================================
-    // PALETA E MEDIDAS — mesmos valores usados nas demais telas (vidro Aero)
-    // =========================================================================
     private static final Color COR_FUNDO_PAGINA = Color.decode("#F5F5F5");
     private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
     private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
     private static final Color COR_TITULO       = Color.decode("#4D4D4D");
     private static final Color COR_ACAO         = Color.decode("#FF9900");
     private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
-
-    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas
-    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
-    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
-    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
-    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
-    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
-    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
-    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
-
-    // Tabela de dados
-    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
+    private static final Color COR_TABELA_FUNDO = Color.WHITE;
     private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
 
-    // Botão "+ Comprar Peça" (ação positiva — verde)
     private static final Color COR_ENTRADA        = Color.decode("#28A745");
     private static final Color COR_ENTRADA_CLARA  = Color.decode("#3FC464");
     private static final Color COR_ENTRADA_ESCURA = Color.decode("#1E7E34");
 
-    // Botão "Relatório de Estoque" (laranja do sistema; base = COR_ACAO)
     private static final Color COR_RELATORIO_CLARA  = Color.decode("#FFAD33");
     private static final Color COR_RELATORIO_ESCURA = Color.decode("#E68A00");
 
-    // Botão "Relatório de Movimentações" (azul)
     private static final Color COR_MOV        = Color.decode("#2E86DE");
     private static final Color COR_MOV_CLARA  = Color.decode("#4A9AE8");
     private static final Color COR_MOV_ESCURA = Color.decode("#1F6FBF");
 
-    // Botão "Voltar" (neutro — cinza)
     private static final Color COR_VOLTAR         = Color.decode("#6C757D");
     private static final Color COR_VOLTAR_CLARA   = Color.decode("#868E96");
     private static final Color COR_VOLTAR_ESCURA  = Color.decode("#545B62");
@@ -78,15 +53,12 @@ public class V_Estoque extends JPanel {
     private static final int RAIO_COMPONENTE     = 12;
     private static final int TAMANHO_FONTE_BOTAO = 12;
     private static final int ALTURA_BOTAO        = 34;
-    private static final int ALTURA_CABECALHO    = 26;
 
     private final OficinaController controller;
 
-    // Estoque atual: mestre-detalhe (catálogo ▸ peças reais). Estado de expansão por id_catalogo_peca.
     private final Set<Long> catalogosExpandidos = new HashSet<>();
     private final List<LinhaEstoque> linhasEstoque = new ArrayList<>();
-    private DefaultTableModel mdlEstoque;
-    private JTable tabelaEstoque;
+    private Tabela tabelaEstoque;
 
     public V_Estoque(OficinaController controller) {
         this.controller = controller;
@@ -97,32 +69,27 @@ public class V_Estoque extends JPanel {
     }
 
     private void construir() {
-        // ---- Corpo principal da página ----
         JPanel corpo = new JPanel();
         corpo.setLayout(new BoxLayout(corpo, BoxLayout.Y_AXIS));
         corpo.setOpaque(false);
 
-        // ---- Título da página ----
         JLabel titulo = new JLabel("Página Inicial > Estoque de Peças");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         titulo.setForeground(COR_TITULO);
         titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
         corpo.add(titulo);
-        corpo.add(Box.createVerticalStrut(10)); // Espaço entre o título e os botões do topo
+        corpo.add(Box.createVerticalStrut(10));
 
-        // ---- Botões de Ação do Topo ----
         BotaoAcao btn_Entrada = new BotaoAcao("+ Comprar Peça", COR_ENTRADA, COR_ENTRADA_CLARA, COR_ENTRADA_ESCURA);
         btn_Entrada.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
         btn_Entrada.addActionListener(e -> navegar(new V_EntradaEstoque(controller)));
 
         BotaoAcao btn_RelEstoque = new BotaoAcao("Relatório de Estoque", COR_ACAO, COR_RELATORIO_CLARA, COR_RELATORIO_ESCURA);
         btn_RelEstoque.setPreferredSize(new Dimension(180, ALTURA_BOTAO));
-        btn_RelEstoque.setToolTipText("Exporta as peças em estoque com data e hora de emissão (.rtf)");
         btn_RelEstoque.addActionListener(e -> ExportadorEstoque.exportarEstoque(this, controller));
 
         BotaoAcao btn_RelMov = new BotaoAcao("Relatório de Movimentações", COR_MOV, COR_MOV_CLARA, COR_MOV_ESCURA);
         btn_RelMov.setPreferredSize(new Dimension(220, ALTURA_BOTAO));
-        btn_RelMov.setToolTipText("Exporta o histórico de entradas e saídas do estoque (.rtf)");
         btn_RelMov.addActionListener(e -> ExportadorEstoque.exportarMovimentacoes(this, controller));
 
         JPanel pnl_BotoesTopo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -135,21 +102,20 @@ public class V_Estoque extends JPanel {
         pnl_LinhaTopoBotoes.setOpaque(false);
         pnl_LinhaTopoBotoes.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnl_LinhaTopoBotoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, ALTURA_BOTAO));
-        pnl_LinhaTopoBotoes.add(new JLabel(), BorderLayout.WEST); // Mantém o alinhamento à direita
+        pnl_LinhaTopoBotoes.add(new JLabel(), BorderLayout.WEST);
         pnl_LinhaTopoBotoes.add(pnl_BotoesTopo, BorderLayout.EAST);
 
         corpo.add(pnl_LinhaTopoBotoes);
-        corpo.add(Box.createVerticalStrut(16)); // Espaço antes dos cards
-
-        // ---- Cards de Conteúdo ----
-        corpo.add(criarCardPecasParaComprar());
-        corpo.add(Box.createVerticalStrut(16));
-        corpo.add(criarCardEstoqueAtual());
-        corpo.add(Box.createVerticalStrut(16));
-        corpo.add(criarCardMovimentacoes());
         corpo.add(Box.createVerticalStrut(16));
 
-        // ---- Botão Voltar ----
+        // Adicionando os cards usando os 3 tipos de tabelas genéricas
+        corpo.add(criarCardPecasParaComprar()); // TIPO 1: SIMPLES
+        corpo.add(Box.createVerticalStrut(16));
+        corpo.add(criarCardEstoqueAtual());     // TIPO 2: AGRUPADA
+        corpo.add(Box.createVerticalStrut(16));
+        corpo.add(criarCardMovimentacoes());    // TIPO 3: FINANCEIRA
+        corpo.add(Box.createVerticalStrut(16));
+
         BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
         btn_Voltar.setPreferredSize(new Dimension(120, 38));
         btn_Voltar.addActionListener(e -> navegar(new V_PaginaInicial(controller)));
@@ -159,21 +125,20 @@ public class V_Estoque extends JPanel {
         pnl_Voltar.add(btn_Voltar);
         corpo.add(pnl_Voltar);
 
-        // ---- Adicionando o Scroll principal na tela ----
         JScrollPane scroll = new JScrollPane(corpo);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         ScrollBarPadrao.aplicar(scroll);
 
-        // Remove qualquer componente anterior do BorderLayout e adiciona o scroll no centro
         removeAll();
         add(scroll, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
+
     // =========================================================================
-    // Peças a comprar (baseado nas OS em aberto)
+    // TIPO 1: Tabela de Listagem Simples (Peças a Comprar)[cite: 4]
     // =========================================================================
     private JPanel criarCardPecasParaComprar() {
         JPanel card = criarCard("Peças a comprar (OS em aberto)");
@@ -182,49 +147,37 @@ public class V_Estoque extends JPanel {
 
         BotaoAcao btn_RelPecas = new BotaoAcao("Relatório de Peças Necessárias", COR_ACAO, COR_RELATORIO_CLARA, COR_RELATORIO_ESCURA);
         btn_RelPecas.setPreferredSize(new Dimension(230, ALTURA_BOTAO));
-        btn_RelPecas.setToolTipText("Exporta o pedido de compra com o nome do catálogo, nome técnico e fabricante de cada peça (.rtf)");
         btn_RelPecas.addActionListener(e -> ExportadorEstoque.exportarPecasNecessarias(this, controller));
         JPanel pnl_BtnRelPecas = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         pnl_BtnRelPecas.setOpaque(false);
         pnl_BtnRelPecas.add(btn_RelPecas);
         corpo.add(pnl_BtnRelPecas, BorderLayout.NORTH);
 
-        List<controller.OficinaController.PecaParaComprar> pendentes = controller.listarPecasParaComprar();
+        List<OficinaController.PecaParaComprar> pendentes = controller.listarPecasParaComprar();
         if (pendentes.isEmpty()) {
             corpo.add(rotuloVazio("Nenhuma peça faltando. O estoque atende todas as OS em aberto."), BorderLayout.CENTER);
             return card;
         }
 
         String[] cols = {"Peça", "Sistema", "Veículo", "Qtd. a comprar"};
-        DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        for (controller.OficinaController.PecaParaComprar p : pendentes)
-            mdl.addRow(new Object[]{ p.peca(), p.sistema(), p.veiculo(), p.quantidade() });
-
-        JTable tabela = new JTable(mdl);
-        estilizarTabela(tabela);
-        tabela.setRowHeight(26);
-        tabela.getColumnModel().getColumn(3).setMaxWidth(110);
+        Tabela tabelaPecas = new Tabela(cols, Tabela.TipoVisual.SIMPLES, 26);
+        tabelaPecas.setMaxWidthColuna(3, 110);
 
         DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
         centro.setHorizontalAlignment(SwingConstants.CENTER);
         centro.setBackground(COR_TABELA_FUNDO);
-        tabela.getColumnModel().getColumn(3).setCellRenderer(centro);
+        tabelaPecas.setRendererColuna(3, centro);
 
-        JScrollPane sc = new JScrollPane(tabela);
-        sc.setPreferredSize(new Dimension(0, 160));
-        sc.getViewport().setBackground(COR_TABELA_FUNDO);
-        sc.getViewport().setOpaque(true);
-        sc.setOpaque(false);
-        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        ScrollBarPadrao.aplicar(sc);
-        corpo.add(sc, BorderLayout.CENTER);
+        for (OficinaController.PecaParaComprar p : pendentes) {
+            tabelaPecas.adicionarLinha(new Object[]{p.peca(), p.sistema(), p.veiculo(), p.quantidade()});
+        }
+
+        corpo.add(tabelaPecas, BorderLayout.CENTER);
         return card;
     }
 
     // =========================================================================
-    // Estoque atual
+    // TIPO 2: Tabela Agrupada / Expansível (Estoque Atual)[cite: 4]
     // =========================================================================
     private JPanel criarCardEstoqueAtual() {
         JPanel card = criarCard("Estoque atual");
@@ -237,19 +190,12 @@ public class V_Estoque extends JPanel {
         }
 
         String[] cols = {"", "Peça", "Sistema / Fabricante", "Qtd.", "Situação"};
-        mdlEstoque = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        construirLinhasEstoque();
+        tabelaEstoque = new Tabela(cols, Tabela.TipoVisual.AGRUPADA, 28);
 
-        tabelaEstoque = new JTable(mdlEstoque);
-        estilizarTabela(tabelaEstoque);
-        tabelaEstoque.setRowHeight(28);
-        tabelaEstoque.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        tabelaEstoque.getColumnModel().getColumn(0).setMaxWidth(24);
-        tabelaEstoque.getColumnModel().getColumn(3).setMaxWidth(70);
+        tabelaEstoque.setMaxWidthColuna(0, 24);
+        tabelaEstoque.setMaxWidthColuna(3, 70);
 
-        tabelaEstoque.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+        tabelaEstoque.setRendererColuna(0, new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
                 c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
@@ -261,33 +207,7 @@ public class V_Estoque extends JPanel {
             }
         });
 
-        DefaultTableCellRenderer centro = new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
-                JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
-                c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
-                c.setForeground(COR_TEXTO_CAMPO);
-                c.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-                c.setHorizontalAlignment(SwingConstants.CENTER);
-                estilizarLinha(c, row);
-                return c;
-            }
-        };
-        tabelaEstoque.getColumnModel().getColumn(3).setCellRenderer(centro);
-
-        DefaultTableCellRenderer texto = new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
-                JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
-                c.setBackground(s ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
-                c.setForeground(COR_TEXTO_CAMPO);
-                c.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-                estilizarLinha(c, row);
-                return c;
-            }
-        };
-        tabelaEstoque.getColumnModel().getColumn(1).setCellRenderer(texto);
-        tabelaEstoque.getColumnModel().getColumn(2).setCellRenderer(texto);
-
-        tabelaEstoque.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
+        tabelaEstoque.setRendererColuna(4, new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
                 c.setHorizontalAlignment(SwingConstants.CENTER);
@@ -308,31 +228,24 @@ public class V_Estoque extends JPanel {
             }
         });
 
-        tabelaEstoque.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
-                int row = tabelaEstoque.rowAtPoint(e.getPoint());
-                if (row < 0 || row >= linhasEstoque.size()) return;
-                LinhaEstoque linha = linhasEstoque.get(row);
-                if (!linha.isCatalogo) return;
-                if (catalogosExpandidos.contains(linha.id)) catalogosExpandidos.remove(linha.id);
-                else catalogosExpandidos.add(linha.id);
-                construirLinhasEstoque();
-            }
+        construirLinhasEstoque();
+
+        tabelaEstoque.aoClicar(e -> {
+            int row = tabelaEstoque.tabela.rowAtPoint(e.getPoint());
+            if (row < 0 || row >= linhasEstoque.size()) return;
+            LinhaEstoque linha = linhasEstoque.get(row);
+            if (!linha.isCatalogo) return;
+            if (catalogosExpandidos.contains(linha.id)) catalogosExpandidos.remove(linha.id);
+            else catalogosExpandidos.add(linha.id);
+            construirLinhasEstoque();
         });
 
-        JScrollPane sc = new JScrollPane(tabelaEstoque);
-        sc.setPreferredSize(new Dimension(0, 220));
-        sc.getViewport().setBackground(COR_TABELA_FUNDO);
-        sc.getViewport().setOpaque(true);
-        sc.setOpaque(false);
-        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        ScrollBarPadrao.aplicar(sc);
-        corpo.add(sc, BorderLayout.CENTER);
+        corpo.add(tabelaEstoque, BorderLayout.CENTER);
         return card;
     }
 
     private void construirLinhasEstoque() {
-        mdlEstoque.setRowCount(0);
+        tabelaEstoque.limpar();
         linhasEstoque.clear();
         for (CatalogoPecaEntity cat : controller.listarEstoque()) {
             long idCat = cat.getIdCatalogoPeca();
@@ -342,23 +255,17 @@ public class V_Estoque extends JPanel {
             boolean expandido = catalogosExpandidos.contains(idCat);
             String seta = reais.isEmpty() ? "" : (expandido ? "v" : ">");
 
-            mdlEstoque.addRow(new Object[]{ seta, cat.getNomePopular(), cat.getSistemaLabel(), qtdTotal, situacao(qtdTotal) });
+            tabelaEstoque.adicionarLinha(new Object[]{ seta, cat.getNomePopular(), cat.getSistemaLabel(), qtdTotal, situacao(qtdTotal) });
             linhasEstoque.add(new LinhaEstoque(true, idCat));
 
             if (expandido) {
                 for (PecaEntity r : reais) {
                     String fabricante = r.getFabricante() == null || r.getFabricante().isBlank() ? "—" : r.getFabricante();
-                    mdlEstoque.addRow(new Object[]{ "", "     " + r.getNomeExibicao(), fabricante, r.getQuantidadeEstoque(), "" });
+                    tabelaEstoque.adicionarLinha(new Object[]{ "", "     " + r.getNomeExibicao(), fabricante, r.getQuantidadeEstoque(), "" });
                     linhasEstoque.add(new LinhaEstoque(false, r.getIdPeca()));
                 }
             }
         }
-    }
-
-    private void estilizarLinha(JLabel c, int row) {
-        boolean isCatalogo = row >= 0 && row < linhasEstoque.size() && linhasEstoque.get(row).isCatalogo;
-        c.setFont(new Font("Segoe UI", isCatalogo ? Font.BOLD : Font.ITALIC, 12));
-        if (!isCatalogo) c.setForeground(Color.decode("#6B7280"));
     }
 
     private String situacao(int qtd) {
@@ -368,7 +275,7 @@ public class V_Estoque extends JPanel {
     private record LinhaEstoque(boolean isCatalogo, long id) {}
 
     // =========================================================================
-    // Movimentações
+    // TIPO 3: Tabela com Células Personalizadas e Valores (Movimentações)[cite: 4]
     // =========================================================================
     private JPanel criarCardMovimentacoes() {
         JPanel card = criarCard("Movimentações");
@@ -386,33 +293,15 @@ public class V_Estoque extends JPanel {
         }
 
         String[] cols = {"Data", "Peça", "Tipo", "Qtd.", "Origem", "Valor", "Observação"};
-        DefaultTableModel mdl = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
+        Tabela tabelaMov = new Tabela(cols, Tabela.TipoVisual.FINANCEIRA, 26);
 
-        List<MovimentacaoEstoqueEntity> movs = controller.listarMovimentacoesEstoque();
-        for (MovimentacaoEstoqueEntity m : movs) {
-            mdl.addRow(new Object[]{
-                    formatarData(m.getDataMovimentacao()),
-                    nomePeca.getOrDefault(m.getIdPeca(), "Peça #" + m.getIdPeca()),
-                    m.getTipoLabel(),
-                    (m.isEntrada() ? "+" : "−") + m.getQuantidade(),
-                    m.getOrigemLabel(),
-                    m.getValorFormatado(),
-                    m.getObservacao()
-            });
-        }
+        tabelaMov.setMaxWidthColuna(0, 90);
+        tabelaMov.setMaxWidthColuna(2, 80);
+        tabelaMov.setMaxWidthColuna(3, 60);
+        tabelaMov.setMaxWidthColuna(4, 80);
+        tabelaMov.setMaxWidthColuna(5, 90);
 
-        JTable tabela = new JTable(mdl);
-        estilizarTabela(tabela);
-        tabela.setRowHeight(26);
-        tabela.getColumnModel().getColumn(0).setMaxWidth(90);
-        tabela.getColumnModel().getColumn(2).setMaxWidth(80);
-        tabela.getColumnModel().getColumn(3).setMaxWidth(60);
-        tabela.getColumnModel().getColumn(4).setMaxWidth(80);
-        tabela.getColumnModel().getColumn(5).setMaxWidth(90);
-
-        tabela.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
+        tabelaMov.setRendererColuna(2, new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int row, int col) {
                 JLabel c = (JLabel) super.getTableCellRendererComponent(t, v, s, f, row, col);
                 c.setHorizontalAlignment(SwingConstants.CENTER);
@@ -423,28 +312,35 @@ public class V_Estoque extends JPanel {
                 return c;
             }
         });
+
         DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
         centro.setHorizontalAlignment(SwingConstants.CENTER);
-        tabela.getColumnModel().getColumn(3).setCellRenderer(centro);
+        tabelaMov.setRendererColuna(3, centro);
 
-        if (mdl.getRowCount() == 0) {
+        List<MovimentacaoEstoqueEntity> movs = controller.listarMovimentacoesEstoque();
+        for (MovimentacaoEstoqueEntity m : movs) {
+            tabelaMov.adicionarLinha(new Object[]{
+                    formatarData(m.getDataMovimentacao()),
+                    nomePeca.getOrDefault(m.getIdPeca(), "Peça #" + m.getIdPeca()),
+                    m.getTipoLabel(),
+                    (m.isEntrada() ? "+" : "−") + m.getQuantidade(),
+                    m.getOrigemLabel(),
+                    m.getValorFormatado(),
+                    m.getObservacao()
+            });
+        }
+
+        if (movs.isEmpty()) {
             corpo.add(rotuloVazio("Nenhuma movimentação ainda. As entradas aparecem aqui e as saídas são geradas ao concluir OS com peças."), BorderLayout.CENTER);
             return card;
         }
 
-        JScrollPane sc = new JScrollPane(tabela);
-        sc.setPreferredSize(new Dimension(0, 220));
-        sc.getViewport().setBackground(COR_TABELA_FUNDO);
-        sc.getViewport().setOpaque(true);
-        sc.setOpaque(false);
-        sc.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        ScrollBarPadrao.aplicar(sc);
-        corpo.add(sc, BorderLayout.CENTER);
+        corpo.add(tabelaMov, BorderLayout.CENTER);
         return card;
     }
 
     // =========================================================================
-    // Helpers
+    // Helpers Gerais
     // =========================================================================
     private JPanel criarCard(String tituloTxt) {
         JPanel card = new PainelGradiente(new BorderLayout(0, 12), COR_CARD_TOPO, COR_CARD_BASE);
@@ -466,25 +362,6 @@ public class V_Estoque extends JPanel {
         return card;
     }
 
-    private void estilizarTabela(JTable tabela) {
-        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tabela.setBackground(COR_TABELA_FUNDO);
-        tabela.setForeground(COR_TEXTO_CAMPO);
-        tabela.setOpaque(true);
-        tabela.setShowGrid(false);
-        tabela.setIntercellSpacing(new Dimension(0, 0));
-        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabela.setSelectionBackground(COR_TABELA_SELECAO);
-        tabela.setSelectionForeground(COR_TEXTO_CAMPO);
-        tabela.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
-
-        JTableHeader cabecalho = tabela.getTableHeader();
-        cabecalho.setDefaultRenderer(new CabecalhoVidroClaro());
-        cabecalho.setPreferredSize(new Dimension(cabecalho.getPreferredSize().width, ALTURA_CABECALHO));
-        cabecalho.setReorderingAllowed(false);
-        cabecalho.setOpaque(false);
-    }
-
     private JComponent rotuloVazio(String texto) {
         JLabel l = new JLabel(texto);
         l.setFont(new Font("Segoe UI", Font.ITALIC, 13));
@@ -502,72 +379,6 @@ public class V_Estoque extends JPanel {
     private void navegar(JPanel destino) {
         Window w = SwingUtilities.getWindowAncestor(this);
         if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(destino);
-    }
-
-    // =========================================================================
-    // INNER CLASSES
-    // =========================================================================
-
-    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
-        CabecalhoVidroClaro() {
-            setOpaque(false);
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
-            setForeground(COR_AERO_TEXTO);
-            setHorizontalAlignment(SwingConstants.LEFT);
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            setText(value == null ? "" : value.toString());
-            return this;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int w = getWidth();
-            int h = getHeight();
-            int meio = h / 2;
-
-            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
-            g2.fillRect(0, 0, w, meio);
-
-            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
-            g2.fillRect(0, meio, w, h - meio);
-
-            g2.setColor(new Color(255, 255, 255, 90));
-            g2.fillRect(0, 0, w, Math.max(1, h / 6));
-
-            g2.setColor(COR_AERO_SEPARA);
-            g2.drawLine(w - 1, 3, w - 1, h - 4);
-
-            g2.setColor(COR_AERO_BORDA);
-            g2.drawLine(0, h - 1, w, h - 1);
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
-        CelulaBrancaRenderer() {
-            setOpaque(true);
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
-            setForeground(COR_TEXTO_CAMPO);
-            setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-            return this;
-        }
     }
 
     private static class PainelGradiente extends JPanel {

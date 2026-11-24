@@ -94,7 +94,7 @@ public class V_OrdemServico extends JPanel {
         JButton btn_Voltar = botaoLink("← Voltar para Lista", COR_LABEL);
         btn_Voltar.addActionListener(e -> navegar(new V_VisualizarServicos(controller)));
 
-        btn_FichaTarefas = botaoLink("📄 Ficha de Tarefas", COR_AZUL);
+        btn_FichaTarefas = botaoLink("Ficha de Tarefas", COR_AZUL);
         btn_FichaTarefas.addActionListener(e -> {
             if (servico == null) {
                 DialogoAlerta.aviso(this, "Serviço ainda não carregado.", "Aviso");

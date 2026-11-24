@@ -2,7 +2,6 @@ package view;
 
 import controller.OficinaController;
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -10,107 +9,51 @@ import java.awt.geom.RoundRectangle2D;
 import java.net.URL;
 
 /**
- * Painel de Conteúdo da Página Inicial.
- * Dados do cabeçalho carregados dinamicamente via Controller e Model Oficina.
- *
- * Camada visual reorganizada com base em princípios de Gestalt:
- * - Proximidade: itens relacionados (ex.: CNPJ + Especialidade) foram
- *   aproximados entre si e afastados de itens não relacionados.
- * - Similaridade / Unidade Comum: "Consultas" e "Estatísticas do Sistema" passaram a usar o
- *   mesmo padrão de cartão (mesmo cabeçalho, mesma borda), reforçando que são seções do mesmo nível.
- * - Figura-Fundo: feedback de hover foi padronizado em todos os elementos clicáveis.
- * - Fechamento: bordas arredondadas e divisores sutis continuam delimitando cada agrupamento.
- * Os fundos brancos lisos viraram cards com opacidade (deixam a cor de fundo da
- * tela "respirar" nos cantos), a scrollbar ganhou estilo e animação próprios, e cada seção
- * passou a ter um ícone garantido — se o PNG em /assets/icons/ ainda não existir, um ícone
- * vetorial equivalente é desenhado na hora (sem depender de nenhum arquivo externo).
- *
- * Nesta rodada:
- * - Os botões de "Consultas / Cadastros" agora são responsivos: ocupam toda a largura disponível
- *   (colunas de mesmo tamanho) e quebram para uma nova linha quando a janela fica estreita.
- * - A seção de Estatísticas mostra uma única linha; da parte de OS ficou apenas o total.
- * Nenhuma cor de destaque do tema, dado, chamada de Controller ou fluxo de navegação foi alterado.
+ * Painel de Conteúdo da Página Inicial (Limpo e Otimizado).
  */
 public class V_PaginaInicial extends JPanel {
 
-    // ==========================================
-    // PALETA DO "FUNDO BRANCO" DOS CARDS
-    // Antes era Color.WHITE liso. Agora é um branco levemente amarelado e com opacidade,
-    // pintado por dentro (PainelCartao) para permitir cantos realmente arredondados.
-    // ==========================================
-    private static final Color COR_CARTAO              = new Color(255, 253, 248, 235);
-    private static final Color COR_CARTAO_HOVER         = new Color(255, 248, 235, 245);
-    private static final Color COR_CARTAO_OPACA          = new Color(255, 253, 248); // versão 100% opaca p/ JButton
-    private static final Color COR_CARTAO_OPACA_HOVER    = new Color(255, 248, 235);
-
-    // ==========================================
-    // PADRÃO ÚNICO DE "BOTÃO-CARD" (Similaridade)
-    // Usado tanto pelos botões de "Consultas" quanto pelos cards de "Estatísticas",
-    // garantindo que os dois grupos tenham exatamente o mesmo tamanho mínimo e ícone.
-    // Nos botões de Consultas, a largura é apenas a MÍNIMA: o layout responsivo estica
-    // os botões para preencher a linha.
-    // ==========================================
-    private static final Dimension DIM_BOTAO_CARD    = new Dimension(140, 110);
-    private static final int       TAM_ICONE_CARD    = 65;
-    private static final int       TAM_ICONE_ESTAT   = 36; // menor que o de Consultas: sobra espaço p/ número + descrição
-
-    // Espaçamento da grade responsiva de Consultas / Cadastros
+    private static final Color COR_CARTAO = new Color(255, 253, 248, 235);
+    private static final int TAM_ICONE_CARD = 65;
+    private static final int TAM_ICONE_ESTAT = 36;
     private static final int GAP_CONSULTAS = 16;
 
-    // ==========================================
-    // DECLARAÇÃO DOS COMPONENTES (Padrão Prefixo)
-    // ==========================================
     private JPanel pnl_Header;
     private JPanel pnl_BotoesVisualizar;
-
-    // Elementos do Cabeçalho
     private JLabel lbl_NomeGaragem;
     private JLabel lbl_CnpjGaragem;
     private JLabel lbl_Especialidade;
     private JButton btn_Configuracoes;
 
-    // Botões de Visualização
-    private JButton btn_VisServicos;
-    private JButton btn_VisOrcamentos;
-    private JButton btn_VisClientes;
-    private JButton btn_VisVeiculos;
-    private JButton btn_Estoque;
+    private Botoes.CardNavegacao btn_VisServicos;
+    private Botoes.CardNavegacao btn_VisOrcamentos;
+    private Botoes.CardNavegacao btn_VisClientes;
+    private Botoes.CardNavegacao btn_VisVeiculos;
+    private Botoes.CardNavegacao btn_Estoque;
 
-    // Referência do Controller do Sistema
     private OficinaController controller;
 
-    /**
-     * Construtor Corrigido: Recebe o Controller e remove o Hardcode.
-     */
     public V_PaginaInicial(OficinaController controller) {
         this.controller = controller;
 
-        // Configura o fundo cinza claro idêntico ao protótipo para destacar os cards brancos
         setBackground(Color.decode("#F5F5F5"));
         setLayout(new BorderLayout(20, 20));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         initComponents();
-        preencherDadosDinamicos(); // Alimenta o cabeçalho com os dados do Model
+        preencherDadosDinamicos();
         layoutComponents();
         vincularAcoesBotoes();
     }
 
     private void initComponents() {
-        // --------------------------------------------------------------------
-        // 1. MÓDULO DO CABEÇALHO (Informações do Topo)
-        // --------------------------------------------------------------------
         pnl_Header = new PainelCartao(new BorderLayout(20, 10), 14, COR_CARTAO);
         pnl_Header.setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
 
-        // Princípio da Proximidade: o Nome fica com maior respiro acima, enquanto CNPJ e
-        // Especialidade (informações secundárias, do mesmo "tipo") ficam coladas entre si,
-        // sinalizando visualmente que pertencem ao mesmo grupo de metadados.
         JPanel pnl_TextoHeader = new JPanel();
         pnl_TextoHeader.setLayout(new BoxLayout(pnl_TextoHeader, BoxLayout.Y_AXIS));
         pnl_TextoHeader.setOpaque(false);
 
-        // Inicializados vazios; serão preenchidos pelo método preencherDadosDinamicos()
         lbl_NomeGaragem = new JLabel();
         lbl_NomeGaragem.setFont(new Font("Arial", Font.BOLD, 20));
         lbl_NomeGaragem.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -126,14 +69,11 @@ public class V_PaginaInicial extends JPanel {
         lbl_Especialidade.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         pnl_TextoHeader.add(lbl_NomeGaragem);
-        pnl_TextoHeader.add(Box.createVerticalStrut(6));   // separa o "grupo principal" do "grupo secundário"
+        pnl_TextoHeader.add(Box.createVerticalStrut(6));
         pnl_TextoHeader.add(lbl_CnpjGaragem);
-        pnl_TextoHeader.add(Box.createVerticalStrut(2));   // aproxima CNPJ e Especialidade (mesmo grupo)
+        pnl_TextoHeader.add(Box.createVerticalStrut(2));
         pnl_TextoHeader.add(lbl_Especialidade);
 
-        // Ícone de identidade da garagem: dá um ponto focal (imagem) ao cabeçalho.
-        // Tenta o PNG do projeto; se ainda não existir, desenha um ícone vetorial equivalente
-        // na hora — a imagem SEMPRE aparece, não depende de nenhum arquivo externo.
         JLabel lbl_AvatarGaragem = new JLabel(obterIcone("/assets/icons/oficina.png", 52, IconeVetorial.Tipo.GARAGEM, Color.decode("#FF9900")));
         lbl_AvatarGaragem.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
 
@@ -142,8 +82,6 @@ public class V_PaginaInicial extends JPanel {
         pnl_Identidade.add(lbl_AvatarGaragem, BorderLayout.WEST);
         pnl_Identidade.add(pnl_TextoHeader, BorderLayout.CENTER);
 
-        // O botão do topo (Configurações) usa o novo botão de
-        // "vidro 3D" (BotaoVidro3D) em vez do fundo amarelado (COR_CARTAO_OPACA).
         btn_Configuracoes = new BotaoVidro3D();
         ImageIcon icoConfig = carregarERedimensionarIcone("/assets/icons/config.png", 50, 50);
         if (icoConfig != null) {
@@ -163,40 +101,17 @@ public class V_PaginaInicial extends JPanel {
         pnl_Header.add(pnl_Identidade, BorderLayout.CENTER);
         pnl_Header.add(pnl_ContainerBusca, BorderLayout.EAST);
 
-        // --------------------------------------------------------------------
-        // 2. MÓDULO DE SEÇÃO: VISUALIZAR INFORMAÇÕES (Consultas / Os 5 botões)
-        // Princípio da Similaridade / Unidade Comum: usa o MESMO padrão de cartão
-        // (título com ícone + borda arredondada) já usado na seção de Estatísticas,
-        // deixando claro que as duas são seções de mesmo nível hierárquico.
-        //
-        // RESPONSIVO: em vez de FlowLayout com tamanho fixo, os botões ficam numa
-        // GradeResponsiva — colunas de mesma largura que preenchem a linha e quebram
-        // automaticamente para a linha seguinte quando a janela é estreitada.
-        // --------------------------------------------------------------------
+        // Seção de Consultas / Cadastros
         pnl_BotoesVisualizar = criarCard("Consultas / Cadastros", obterIcone("/assets/icons/consultas.png", 18, IconeVetorial.Tipo.LUPA, Color.decode("#FF9900")));
         JPanel corpoConsultas = (JPanel) pnl_BotoesVisualizar.getComponent(1);
-        corpoConsultas.setLayout(new GradeResponsiva(DIM_BOTAO_CARD.width, DIM_BOTAO_CARD.height, GAP_CONSULTAS, GAP_CONSULTAS));
+        corpoConsultas.setLayout(new GradeResponsiva(Botoes.DIM_CARD.width, Botoes.DIM_CARD.height, GAP_CONSULTAS, GAP_CONSULTAS));
         corpoConsultas.setBorder(BorderFactory.createEmptyBorder(8, 0, 4, 0));
 
-        btn_VisServicos = new JButton("Serviços");
-        configurarEstiloBotaoCard(btn_VisServicos, obterIcone("/assets/icons/vservicos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.SERVICO, Color.DARK_GRAY), DIM_BOTAO_CARD);
-        btn_VisServicos.setToolTipText("Ver serviços cadastrados");
-
-        btn_VisOrcamentos = new JButton("Orçamentos");
-        configurarEstiloBotaoCard(btn_VisOrcamentos, obterIcone("/assets/icons/vorcamentos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.DOCUMENTO, Color.DARK_GRAY), DIM_BOTAO_CARD);
-        btn_VisOrcamentos.setToolTipText("Aprovar orçamentos");
-
-        btn_VisClientes = new JButton("Clientes");
-        configurarEstiloBotaoCard(btn_VisClientes, obterIcone("/assets/icons/vclientes.png", TAM_ICONE_CARD, IconeVetorial.Tipo.PESSOA, Color.DARK_GRAY), DIM_BOTAO_CARD);
-        btn_VisClientes.setToolTipText("Ver clientes cadastrados");
-
-        btn_VisVeiculos = new JButton("Veículos");
-        configurarEstiloBotaoCard(btn_VisVeiculos, obterIcone("/assets/icons/vveiculos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.MODELO, Color.DARK_GRAY), DIM_BOTAO_CARD);
-        btn_VisVeiculos.setToolTipText("Ver veículos cadastrados");
-
-        btn_Estoque = new JButton("Estoque");
-        configurarEstiloBotaoCard(btn_Estoque, obterIcone("/assets/icons/estoque.png", TAM_ICONE_CARD, IconeVetorial.Tipo.PECA, Color.DARK_GRAY), DIM_BOTAO_CARD);
-        btn_Estoque.setToolTipText("Controlar estoque de peças");
+        btn_VisServicos = new Botoes.CardNavegacao("Serviços", obterIcone("/assets/icons/vservicos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.SERVICO, Color.DARK_GRAY));
+        btn_VisOrcamentos = new Botoes.CardNavegacao("Orçamentos", obterIcone("/assets/icons/vorcamentos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.DOCUMENTO, Color.DARK_GRAY));
+        btn_VisClientes = new Botoes.CardNavegacao("Clientes", obterIcone("/assets/icons/vclientes.png", TAM_ICONE_CARD, IconeVetorial.Tipo.PESSOA, Color.DARK_GRAY));
+        btn_VisVeiculos = new Botoes.CardNavegacao("Veículos", obterIcone("/assets/icons/vveiculos.png", TAM_ICONE_CARD, IconeVetorial.Tipo.MODELO, Color.DARK_GRAY));
+        btn_Estoque = new Botoes.CardNavegacao("Estoque", obterIcone("/assets/icons/estoque.png", TAM_ICONE_CARD, IconeVetorial.Tipo.PECA, Color.DARK_GRAY));
 
         corpoConsultas.add(btn_VisServicos);
         corpoConsultas.add(btn_VisOrcamentos);
@@ -205,9 +120,6 @@ public class V_PaginaInicial extends JPanel {
         corpoConsultas.add(btn_Estoque);
     }
 
-    /**
-     * Remove o hardcode injetando as variáveis vindas da classe Oficina (Model).
-     */
     private void preencherDadosDinamicos() {
         if (controller != null) {
             lbl_NomeGaragem.setText(controller.getOficina().getNome());
@@ -219,8 +131,6 @@ public class V_PaginaInicial extends JPanel {
     }
 
     private void layoutComponents() {
-        // Painel central que acompanha a largura da janela (Scrollable) — é isso que permite
-        // à grade de Consultas reorganizar suas colunas quando a janela é redimensionada.
         JPanel pnl_Centro = new PainelCentroRolavel();
         pnl_Centro.setLayout(new BoxLayout(pnl_Centro, BoxLayout.Y_AXIS));
         pnl_Centro.setOpaque(false);
@@ -241,13 +151,8 @@ public class V_PaginaInicial extends JPanel {
         add(scroll, BorderLayout.CENTER);
     }
 
-    /**
-     * Vincula os cliques de navegação repassando o "controller" para as novas instâncias.
-     */
     private void vincularAcoesBotoes() {
         btn_Configuracoes.addActionListener(e -> navegarPara(new V_Configuracoes(this.controller)));
-
-        // Fluxos de Visualização / Consulta
         btn_VisServicos.addActionListener(e -> navegarPara(new V_VisualizarServicos(this.controller)));
         btn_VisOrcamentos.addActionListener(e -> navegarPara(new V_AprovarOrcamento(this.controller)));
         btn_VisClientes.addActionListener(e -> navegarPara(new V_VisualizarClientes(this.controller)));
@@ -255,37 +160,21 @@ public class V_PaginaInicial extends JPanel {
         btn_Estoque.addActionListener(e -> navegarPara(new V_Estoque(this.controller)));
     }
 
-    /**
-     * Captura o Frame Principal (V_Main) e atualiza o painel central dinamicamente.
-     */
     private void navegarPara(JPanel novoPainelCentral) {
         Window window = SwingUtilities.getWindowAncestor(this);
         if (window instanceof V_Main) {
-            V_Main mainFrame = (V_Main) window;
-            mainFrame.atualizarConteudo(novoPainelCentral);
+            ((V_Main) window).atualizarConteudo(novoPainelCentral);
         } else {
             System.err.println("Erro: V_Main não encontrado como ancestral.");
         }
     }
 
-    // ==========================================
-    // SEÇÃO DE AGENDA / CALENDÁRIO
-    // ==========================================
-
-    /**
-     * Segunda seção da Página Inicial: um calendário simples com as OS já
-     * cadastradas (por data do serviço) e espaço reservado para os prazos de
-     * orçamentos (recurso ainda não implementado — ver {@link PainelCalendario}).
-     */
     private JPanel criarSecaoCalendario() {
         JPanel card = criarCard("Agenda de Serviços e Prazos",
                 obterIcone("/assets/icons/calendario.png", 18, IconeVetorial.Tipo.CALENDARIO, Color.decode("#FF9900")));
 
         PainelCalendario painelCalendario = new PainelCalendario(controller);
 
-        // Os botões de modo (Dia/Semana/Mês/3 Meses/Ano) saem de dentro do calendário
-        // e passam a viver na mesma linha do título do card, alinhados à direita —
-        // o texto do título permanece à esquerda, sem alterar o padrão dos outros cards.
         JPanel pnl_TituloCard = (JPanel) card.getComponent(0);
         JPanel pnl_TituloTexto = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pnl_TituloTexto.setOpaque(false);
@@ -303,32 +192,16 @@ public class V_PaginaInicial extends JPanel {
         return card;
     }
 
-    // ==========================================
-    // SEÇÃO DE ESTATÍSTICAS
-    // ==========================================
-
-    /**
-     * Linha única de estatísticas: catálogo (montadoras, modelos, peças, serviços)
-     * e, ao final, apenas o total de OS. Os cards por status (abertas / em andamento /
-     * concluídas) foram removidos — o detalhamento por status continua disponível
-     * dentro da tela de OS acessada pelo card "OS Total".
-     */
     private JPanel criarSecaoEstatisticas() {
         JPanel card = criarCard("Estatísticas da Oficina", obterIcone("/assets/icons/estatisticas.png", 18, IconeVetorial.Tipo.GRAFICO, Color.decode("#FF9900")));
 
-        int totalMontadoras = controller.contarMontadoras();
-        int totalModelos    = controller.contarModelos();
-        int totalPecas      = controller.listarTodasPecas().size();
-        int totalCatalogo   = controller.contarCatalogoServicos();
-        int totalOS         = controller.contarOS();
-
         JPanel linha = new JPanel(new GridLayout(1, 5, 12, 0));
         linha.setOpaque(false);
-        linha.add(criarCardEstat("Montadoras",           totalMontadoras, "#9B59B6", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, () -> navegarPara(new V_VisualizarMontadoras(controller))));
-        linha.add(criarCardEstat("Modelos",              totalModelos,    "#E67E22", "/assets/icons/modelos.png",    IconeVetorial.Tipo.MODELO,    () -> navegarPara(new V_VisualizarModelos(controller))));
-        linha.add(criarCardEstat("Peças Cadastradas",    totalPecas,      "#16A085", "/assets/icons/pecas.png",      IconeVetorial.Tipo.PECA,      () -> navegarPara(new V_VisualizarPecas(controller))));
-        linha.add(criarCardEstat("Serviços Cadastrados", totalCatalogo,   "#8E44AD", "/assets/icons/vservicos.png",  IconeVetorial.Tipo.SERVICO,   () -> navegarPara(new V_VisualizarCatalogoServicos(controller))));
-        linha.add(criarCardEstat("OS Total",             totalOS,         "#34495E", "/assets/icons/os_total.png",   IconeVetorial.Tipo.DOCUMENTO, () -> navegarPara(new V_VisualizarOSFiltrado(controller, null))));
+        linha.add(criarCardEstat("Montadoras", controller.contarMontadoras(), "#9B59B6", "/assets/icons/montadoras.png", IconeVetorial.Tipo.MONTADORA, () -> navegarPara(new V_VisualizarMontadoras(controller))));
+        linha.add(criarCardEstat("Modelos", controller.contarModelos(), "#E67E22", "/assets/icons/modelos.png", IconeVetorial.Tipo.MODELO, () -> navegarPara(new V_VisualizarModelos(controller))));
+        linha.add(criarCardEstat("Peças Cadastradas", controller.listarTodasPecas().size(), "#16A085", "/assets/icons/pecas.png", IconeVetorial.Tipo.PECA, () -> navegarPara(new V_VisualizarPecas(controller))));
+        linha.add(criarCardEstat("Serviços Cadastrados", controller.contarCatalogoServicos(), "#8E44AD", "/assets/icons/vservicos.png", IconeVetorial.Tipo.SERVICO, () -> navegarPara(new V_VisualizarCatalogoServicos(controller))));
+        linha.add(criarCardEstat("OS Total", controller.contarOS(), "#34495E", "/assets/icons/os_total.png", IconeVetorial.Tipo.DOCUMENTO, () -> navegarPara(new V_VisualizarOSFiltrado(controller, null))));
 
         JPanel corpo = (JPanel) card.getComponent(1);
         corpo.setLayout(new BorderLayout());
@@ -337,15 +210,6 @@ public class V_PaginaInicial extends JPanel {
         return card;
     }
 
-    private JPanel criarCard(String titulo) {
-        return criarCard(titulo, null);
-    }
-
-    /**
-     * Mesmo card padrão, agora com fundo em PainelCartao (cor com opacidade, cantos de verdade)
-     * e um pequeno ícone opcional antes do título — a imagem é resolvida por obterIcone(),
-     * então SEMPRE aparece algo (PNG do projeto ou vetor de fallback).
-     */
     private JPanel criarCard(String titulo, Icon icone) {
         int raioCard = 14;
         PainelCartao card = new PainelCartao(new BorderLayout(0, 12), raioCard, COR_CARTAO);
@@ -361,9 +225,7 @@ public class V_PaginaInicial extends JPanel {
         pnl_TituloCard.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#F0F0F0")));
         pnl_TituloCard.setPreferredSize(new Dimension(0, 30));
 
-        if (icone != null) {
-            pnl_TituloCard.add(new JLabel(icone));
-        }
+        if (icone != null) pnl_TituloCard.add(new JLabel(icone));
 
         JLabel lbl = new JLabel(titulo);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -379,44 +241,37 @@ public class V_PaginaInicial extends JPanel {
         return card;
     }
 
-    private JButton criarCardEstat(String rotulo, int valor, String corHex, Runnable aoClicar) {
-        return criarCardEstat(rotulo, valor, corHex, null, null, aoClicar);
-    }
-
-    /**
-     * Card de estatística no MESMO padrão visual dos botões de "Consultas"
-     * (ícone em cima, mesma dimensão DIM_BOTAO_CARD, mesmo hover) — Princípio da Similaridade.
-     * Mostra o número (destaque, na cor já usada por essa categoria) E a descrição da categoria
-     * logo abaixo — o ícone foi reduzido (TAM_ICONE_ESTAT) para sobrar espaço para as duas linhas.
-     */
-    private JButton criarCardEstat(String rotulo, int valor, String corHex, String caminhoIconePng, IconeVetorial.Tipo tipoIconeFallback, Runnable aoClicar) {
+    private Botoes.CardEstatistica criarCardEstat(String rotulo, int valor, String corHex, String caminhoIconePng, IconeVetorial.Tipo tipoIconeFallback, Runnable aoClicar) {
         Icon icone = (tipoIconeFallback != null)
                 ? obterIcone(caminhoIconePng, TAM_ICONE_ESTAT, tipoIconeFallback, Color.decode(corHex))
                 : (caminhoIconePng != null ? carregarERedimensionarIcone(caminhoIconePng, TAM_ICONE_ESTAT, TAM_ICONE_ESTAT) : null);
 
-        // HTML dentro do próprio JButton: mantém "ícone em cima + conteúdo embaixo" (mesmo padrão),
-        // só que agora o "conteúdo embaixo" tem duas linhas — número (cor da categoria) e descrição.
-        String textoHtml = "<html><body style='text-align:center; margin:0; padding:0;'>"
-                + "<div style='font-size:20px; font-weight:bold; color:" + corHex + ";'>" + valor + "</div>"
-                + "<div style='font-size:10px; color:#666666; margin-top:1px;'>" + rotulo + "</div>"
-                + "</body></html>";
-
-        JButton btn = new JButton(textoHtml);
-        configurarEstiloBotaoCard(btn, icone, DIM_BOTAO_CARD);
-        btn.setIconTextGap(6);
+        Botoes.CardEstatistica btn = new Botoes.CardEstatistica(rotulo, valor, corHex, icone);
         btn.addActionListener(e -> aoClicar.run());
         return btn;
     }
 
-    /**
-     * Botão de "vidro 3D": substitui o fundo amarelado (COR_CARTAO_OPACA) dos dois
-     * botões do topo (Pesquisar e Configurações) por um vidro translúcido azulado,
-     * com gradiente vertical de profundidade, reflexo superior e sombra suave.
-     * Estados de hover e clique têm brilho/elevação distintos (a "animação" pedida).
-     */
+    private ImageIcon carregarERedimensionarIcone(String caminho, int larguraAlvo, int alturaAlvo) {
+        URL url = getClass().getResource(caminho);
+        if (url == null) {
+            url = Thread.currentThread().getContextClassLoader().getResource(caminho.startsWith("/") ? caminho.substring(1) : caminho);
+        }
+        if (url != null) {
+            return new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(larguraAlvo, alturaAlvo, Image.SCALE_SMOOTH));
+        }
+        return null;
+    }
+
+    private Icon obterIcone(String caminhoPng, int tamanho, IconeVetorial.Tipo tipoFallback, Color corFallback) {
+        if (caminhoPng != null) {
+            ImageIcon png = carregarERedimensionarIcone(caminhoPng, tamanho, tamanho);
+            if (png != null) return png;
+        }
+        return new IconeVetorial(tipoFallback, corFallback, tamanho);
+    }
+
     private static class BotaoVidro3D extends JButton {
-        private boolean hover = false;
-        private boolean pressionado = false;
+        private boolean hover = false, pressionado = false;
 
         BotaoVidro3D() {
             setContentAreaFilled(false);
@@ -425,9 +280,9 @@ public class V_PaginaInicial extends JPanel {
             setOpaque(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e)  { hover = true;  repaint(); }
+                @Override public void mouseEntered(MouseEvent e)  { hover = true; repaint(); }
                 @Override public void mouseExited(MouseEvent e)   { hover = false; repaint(); }
-                @Override public void mousePressed(MouseEvent e)  { pressionado = true;  repaint(); }
+                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
                 @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
             });
         }
@@ -438,25 +293,16 @@ public class V_PaginaInicial extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int raio = 20;
-            int elevacao = pressionado ? 1 : (hover ? 3 : 2);
-            int topo = pressionado ? 2 : 0; // "afunda" levemente ao clicar
-
-            // Sombra suave: dá a sensação de profundidade/elevação do vidro
+            int raio = 20, elevacao = pressionado ? 1 : (hover ? 3 : 2), topo = pressionado ? 2 : 0;
             g2.setColor(new Color(0, 0, 0, hover ? 45 : 28));
             g2.fillRoundRect(2, 2 + elevacao, w - 4, h - 4, raio, raio);
 
-            // Corpo do vidro: gradiente vertical translúcido (claro em cima, azulado embaixo)
-            Color corTopo = hover ? new Color(255, 255, 255, 235) : new Color(255, 255, 255, 215);
-            Color corBase = hover ? new Color(206, 221, 236, 215) : new Color(198, 212, 228, 195);
-            g2.setPaint(new GradientPaint(0, topo, corTopo, 0, h - 4, corBase));
+            g2.setPaint(new GradientPaint(0, topo, hover ? new Color(255, 255, 255, 235) : new Color(255, 255, 255, 215), 0, h - 4, hover ? new Color(206, 221, 236, 215) : new Color(198, 212, 228, 195)));
             g2.fillRoundRect(1, topo, w - 4, h - 4 - topo, raio, raio);
 
-            // Reflexo superior: faixa de brilho característica do efeito de vidro
             g2.setColor(new Color(255, 255, 255, hover ? 165 : 130));
             g2.fillRoundRect(4, topo + 2, w - 10, Math.max(4, (h - 4) / 3), raio - 6, raio - 6);
 
-            // Borda sutil, como uma quina de vidro pegando luz
             g2.setColor(new Color(255, 255, 255, 170));
             g2.setStroke(new BasicStroke(1.2f));
             g2.drawRoundRect(1, topo, w - 5, h - 5 - topo, raio, raio);
@@ -476,206 +322,64 @@ public class V_PaginaInicial extends JPanel {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(cor);
-            g2d.draw(new RoundRectangle2D.Double(x, y, w-1, h-1, raio, raio));
+            g2d.draw(new RoundRectangle2D.Double(x, y, w - 1, h - 1, raio, raio));
             g2d.dispose();
         }
     }
 
-    // ==========================================
-    // LAYOUT RESPONSIVO
-    // ==========================================
-
-    /**
-     * Painel central rolável que acompanha a largura do viewport. Sem isso, o JScrollPane
-     * mantém a largura "preferida" do conteúdo e a grade de Consultas nunca saberia que a
-     * janela foi estreitada (apareceria uma barra horizontal em vez de reorganizar os botões).
-     */
     private static class PainelCentroRolavel extends JPanel implements Scrollable {
         @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
         @Override public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) { return 24; }
-        @Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-            return orientation == SwingConstants.VERTICAL ? Math.max(24, visibleRect.height - 24) : Math.max(24, visibleRect.width - 24);
-        }
+        @Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) { return Math.max(24, visibleRect.height - 24); }
         @Override public boolean getScrollableTracksViewportWidth()  { return true; }
         @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
 
-    /**
-     * Grade responsiva: calcula quantas colunas cabem na largura atual (cada uma com no mínimo
-     * {@code larguraMin}), divide a largura igualmente entre elas e quebra para novas linhas
-     * quando necessário. Todas as células têm a mesma altura fixa.
-     * Quando o número de linhas muda, o contêiner é revalidado para que a altura do card
-     * (que depende do número de linhas) seja recalculada pelos pais.
-     */
     private static class GradeResponsiva implements LayoutManager {
-        private final int larguraMin;
-        private final int altura;
-        private final int gapH;
-        private final int gapV;
+        private final int larguraMin, altura, gapH, gapV;
         private int ultimasLinhas = -1;
 
         GradeResponsiva(int larguraMin, int altura, int gapH, int gapV) {
-            this.larguraMin = larguraMin;
-            this.altura = altura;
-            this.gapH = gapH;
-            this.gapV = gapV;
+            this.larguraMin = larguraMin; this.altura = altura; this.gapH = gapH; this.gapV = gapV;
         }
 
-        private int colunas(int larguraDisponivel, int n) {
-            int c = (larguraDisponivel + gapH) / (larguraMin + gapH);
-            return Math.max(1, Math.min(Math.max(1, n), c));
-        }
-
-        private int linhas(int n, int colunas) {
-            return n == 0 ? 0 : (n + colunas - 1) / colunas;
-        }
+        private int colunas(int disp, int n) { return Math.max(1, Math.min(Math.max(1, n), (disp + gapH) / (larguraMin + gapH))); }
+        private int linhas(int n, int cols) { return n == 0 ? 0 : (n + cols - 1) / cols; }
 
         @Override public void addLayoutComponent(String name, Component comp) {}
         @Override public void removeLayoutComponent(Component comp) {}
-
-        @Override
-        public Dimension preferredLayoutSize(Container parent) {
-            synchronized (parent.getTreeLock()) {
-                Insets in = parent.getInsets();
-                int n = parent.getComponentCount();
-                int larguraTotalLinhaUnica = n * larguraMin + Math.max(0, n - 1) * gapH;
-                int disponivel = parent.getWidth() - in.left - in.right;
-                if (disponivel <= 0) disponivel = larguraTotalLinhaUnica;
-                int cols = colunas(disponivel, n);
-                int rows = linhas(n, cols);
-                int h = rows == 0 ? 0 : rows * altura + (rows - 1) * gapV;
-                return new Dimension(larguraTotalLinhaUnica + in.left + in.right, h + in.top + in.bottom);
-            }
+        @Override public Dimension preferredLayoutSize(Container parent) {
+            int n = parent.getComponentCount(), disp = parent.getWidth();
+            if (disp <= 0) disp = n * larguraMin;
+            int cols = colunas(disp, n), rows = linhas(n, cols);
+            return new Dimension(parent.getWidth(), rows == 0 ? 0 : rows * altura + (rows - 1) * gapV);
         }
+        @Override public Dimension minimumLayoutSize(Container parent) { return preferredLayoutSize(parent); }
+        @Override public void layoutContainer(Container parent) {
+            int n = parent.getComponentCount();
+            if (n == 0) return;
+            int disp = parent.getWidth(), cols = colunas(disp, n), rows = linhas(n, cols);
+            int larguraCelula = Math.max(larguraMin, (disp - (cols - 1) * gapH) / cols);
 
-        @Override
-        public Dimension minimumLayoutSize(Container parent) {
-            synchronized (parent.getTreeLock()) {
-                Insets in = parent.getInsets();
-                Dimension pref = preferredLayoutSize(parent);
-                return new Dimension(larguraMin + in.left + in.right, pref.height);
+            for (int i = 0; i < n; i++) {
+                parent.getComponent(i).setBounds((i % cols) * (larguraCelula + gapH), (i / cols) * (altura + gapV), larguraCelula, altura);
             }
-        }
-
-        @Override
-        public void layoutContainer(Container parent) {
-            synchronized (parent.getTreeLock()) {
-                Insets in = parent.getInsets();
-                int n = parent.getComponentCount();
-                if (n == 0) return;
-
-                int disponivel = parent.getWidth() - in.left - in.right;
-                int cols = colunas(disponivel, n);
-                int rows = linhas(n, cols);
-                int larguraCelula = Math.max(larguraMin, (disponivel - (cols - 1) * gapH) / cols);
-
-                for (int i = 0; i < n; i++) {
-                    int linha = i / cols;
-                    int coluna = i % cols;
-                    int x = in.left + coluna * (larguraCelula + gapH);
-                    int y = in.top + linha * (altura + gapV);
-                    parent.getComponent(i).setBounds(x, y, larguraCelula, altura);
-                }
-
-                // A altura preferida depende do número de linhas: se mudou, os pais precisam recalcular.
-                if (rows != ultimasLinhas) {
-                    ultimasLinhas = rows;
-                    SwingUtilities.invokeLater(parent::revalidate);
-                }
+            if (rows != ultimasLinhas) {
+                ultimasLinhas = rows;
+                SwingUtilities.invokeLater(parent::revalidate);
             }
         }
     }
 
-    // ==========================================
-    // MÉTODOS AUXILIARES DE ESTILIZAÇÃO E MÍDIA
-    // ==========================================
-
-    /**
-     * Configura o botão no formato de Card (Ícone acima do texto, fundo clean na nova paleta)
-     */
-    private void configurarEstiloBotaoCard(JButton btn, Icon icone, Dimension dimensao) {
-        if (icone != null) {
-            btn.setIcon(icone);
-        }
-
-        // Força o texto para baixo e centraliza o ícone
-        btn.setVerticalTextPosition(SwingConstants.BOTTOM);
-        btn.setHorizontalTextPosition(SwingConstants.CENTER);
-
-        // Estilização visual limpa (Clean flat design)
-        btn.setPreferredSize(dimensao);
-        btn.setFont(new Font("Arial", Font.BOLD, 14));
-        btn.setForeground(Color.DARK_GRAY);
-        btn.setBackground(COR_CARTAO_OPACA); // Fundo do Card (nova paleta, era branco puro)
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Adiciona um pequeno espaçamento entre o ícone e o texto
-        btn.setIconTextGap(10);
-
-        // Princípio da Figura-Fundo: mesmo tom já usado nos demais hovers da tela,
-        // dando feedback consistente ao passar o mouse.
-        btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(COR_CARTAO_OPACA_HOVER); }
-            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(COR_CARTAO_OPACA); }
-        });
-    }
-
-    /**
-     * Método idêntico ao do Menu Lateral para buscar os recursos de imagem de forma segura.
-     */
-    private ImageIcon carregarERedimensionarIcone(String caminho, int larguraAlvo, int alturaAlvo) {
-        URL url = getClass().getResource(caminho);
-        if (url == null) {
-            String caminhoLimpo = caminho.startsWith("/") ? caminho.substring(1) : caminho;
-            url = Thread.currentThread().getContextClassLoader().getResource(caminhoLimpo);
-        }
-
-        if (url != null) {
-            ImageIcon imagemOriginal = new ImageIcon(url);
-            Image imgEscalada = imagemOriginal.getImage().getScaledInstance(larguraAlvo, alturaAlvo, Image.SCALE_SMOOTH);
-            return new ImageIcon(imgEscalada);
-        }
-        return null;
-    }
-
-    /**
-     * Resolve um ícone para qualquer seção da tela: tenta o PNG do projeto primeiro;
-     * se não existir (ou o caminho for null), desenha um ícone vetorial equivalente na hora.
-     * Garante que TODA seção tenha uma imagem, mesmo antes de os assets finais existirem.
-     */
-    private Icon obterIcone(String caminhoPng, int tamanho, IconeVetorial.Tipo tipoFallback, Color corFallback) {
-        if (caminhoPng != null) {
-            ImageIcon png = carregarERedimensionarIcone(caminhoPng, tamanho, tamanho);
-            if (png != null) return png;
-        }
-        return new IconeVetorial(tipoFallback, corFallback, tamanho);
-    }
-
-    // ==========================================
-    // FUNDO DOS CARDS (COR + OPACIDADE, CANTOS REAIS)
-    // ==========================================
-
-    /**
-     * JPanel que pinta seu próprio fundo como um retângulo arredondado com opacidade,
-     * substituindo o antigo Color.WHITE liso e opaco. Como só a área arredondada é
-     * pintada, os "cantos quadrados" que apareciam atrás da borda arredondada somem —
-     * o que sobra nos cantos é a cor real de fundo da tela (#F5F5F5), visível por trás.
-     */
     private static class PainelCartao extends JPanel {
         private final int raio;
-        private Color corFundo;
+        private final Color corFundo;
 
-        PainelCartao(LayoutManager layout, int raio, Color corFundoInicial) {
+        PainelCartao(LayoutManager layout, int raio, Color corFundo) {
             super(layout);
             this.raio = raio;
-            this.corFundo = corFundoInicial;
+            this.corFundo = corFundo;
             setOpaque(false);
-        }
-
-        void definirCorFundo(Color nova) {
-            this.corFundo = nova;
-            repaint();
         }
 
         @Override
@@ -689,28 +393,13 @@ public class V_PaginaInicial extends JPanel {
         }
     }
 
-    // ==========================================
-    // ÍCONES VETORIAIS (FALLBACK SEM ARQUIVOS EXTERNOS)
-    // ==========================================
-
-    /**
-     * Ícone desenhado por código (Graphics2D), sem depender de nenhum arquivo PNG.
-     * Usado como fallback em obterIcone() para garantir que toda seção tenha uma imagem
-     * própria mesmo antes de a pasta /assets/icons ter os arquivos finais.
-     */
     private static class IconeVetorial implements Icon {
-        enum Tipo { GARAGEM, LUPA, GRAFICO, MONTADORA, MODELO, PECA, SERVICO, CATALOGO, DOCUMENTO, PESSOA, ABERTA, ANDAMENTO, CONCLUIDA, CALENDARIO }
-
+        enum Tipo { GARAGEM, LUPA, GRAFICO, MONTADORA, MODELO, PECA, SERVICO, CATALOGO, DOCUMENTO, PESSOA, CALENDARIO }
         private final Tipo tipo;
         private final Color cor;
         private final int tam;
 
-        IconeVetorial(Tipo tipo, Color cor, int tam) {
-            this.tipo = tipo;
-            this.cor = cor;
-            this.tam = tam;
-        }
-
+        IconeVetorial(Tipo tipo, Color cor, int tam) { this.tipo = tipo; this.cor = cor; this.tam = tam; }
         @Override public int getIconWidth()  { return tam; }
         @Override public int getIconHeight() { return tam; }
 
@@ -722,28 +411,23 @@ public class V_PaginaInicial extends JPanel {
             g2.setColor(cor);
             g2.setStroke(new BasicStroke(Math.max(1.4f, tam / 11f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-            int s = tam;
-            int pad = Math.max(2, s / 7);
-            int area = s - pad * 2;
-
+            int s = tam, pad = Math.max(2, s / 7), area = s - pad * 2;
             switch (tipo) {
                 case GARAGEM:
                     g2.drawPolyline(new int[]{pad, s / 2, s - pad}, new int[]{pad + area / 3, pad, pad + area / 3}, 3);
                     g2.drawRect(pad, pad + area / 3, area, area - area / 3);
                     break;
-                case LUPA: {
+                case LUPA:
                     int d = (int) (area * 0.68);
                     g2.drawOval(pad, pad, d, d);
                     g2.drawLine(pad + d - 2, pad + d - 2, s - pad, s - pad);
                     break;
-                }
-                case GRAFICO: {
-                    int larguraBarra = Math.max(2, area / 4);
-                    g2.fillRoundRect(pad, s - pad - area / 3, larguraBarra, area / 3, 2, 2);
-                    g2.fillRoundRect(pad + larguraBarra + 3, s - pad - (int) (area * 0.62), larguraBarra, (int) (area * 0.62), 2, 2);
-                    g2.fillRoundRect(pad + (larguraBarra + 3) * 2, s - pad - area, larguraBarra, area, 2, 2);
+                case GRAFICO:
+                    int bWidth = Math.max(2, area / 4);
+                    g2.fillRoundRect(pad, s - pad - area / 3, bWidth, area / 3, 2, 2);
+                    g2.fillRoundRect(pad + bWidth + 3, s - pad - (int) (area * 0.62), bWidth, (int) (area * 0.62), 2, 2);
+                    g2.fillRoundRect(pad + (bWidth + 3) * 2, s - pad - area, bWidth, area, 2, 2);
                     break;
-                }
                 case MONTADORA:
                     g2.drawRect(pad, pad + area / 4, area, area - area / 4);
                     g2.drawRect(pad + area / 6, pad, area / 4, area / 4);
@@ -755,70 +439,36 @@ public class V_PaginaInicial extends JPanel {
                     g2.fillOval(pad + area / 8, pad + area * 2 / 3, Math.max(3, area / 5), Math.max(3, area / 5));
                     g2.fillOval(pad + area * 5 / 8, pad + area * 2 / 3, Math.max(3, area / 5), Math.max(3, area / 5));
                     break;
-                case PECA: {
-                    int[] xs = new int[6];
-                    int[] ys = new int[6];
-                    double raioHex = area / 2.0;
-                    double cx = s / 2.0, cy = s / 2.0;
+                case PECA:
+                    int[] xs = new int[6], ys = new int[6];
+                    double rHex = area / 2.0, cx = s / 2.0, cy = s / 2.0;
                     for (int i = 0; i < 6; i++) {
-                        double ang = Math.toRadians(60 * i - 90);
-                        xs[i] = (int) (cx + raioHex * Math.cos(ang));
-                        ys[i] = (int) (cy + raioHex * Math.sin(ang));
+                        xs[i] = (int) (cx + rHex * Math.cos(Math.toRadians(60 * i - 90)));
+                        ys[i] = (int) (cy + rHex * Math.sin(Math.toRadians(60 * i - 90)));
                     }
                     g2.drawPolygon(xs, ys, 6);
                     g2.drawOval(s / 2 - area / 6, s / 2 - area / 6, Math.max(3, area / 3), Math.max(3, area / 3));
                     break;
-                }
                 case SERVICO:
                     g2.drawLine(pad + 2, s - pad - 2, s - pad - 2, pad + 2);
                     g2.drawOval(pad, s - pad - area / 4, Math.max(3, area / 4), Math.max(3, area / 4));
                     g2.drawOval(s - pad - area / 4, pad, Math.max(3, area / 4), Math.max(3, area / 4));
                     break;
-                case CATALOGO: {
-                    int q = Math.max(3, area / 2 - 2);
-                    g2.fillRoundRect(pad, pad, q, q, 3, 3);
-                    g2.fillRoundRect(pad + q + 4, pad, q, q, 3, 3);
-                    g2.fillRoundRect(pad, pad + q + 4, q, q, 3, 3);
-                    g2.fillRoundRect(pad + q + 4, pad + q + 4, q, q, 3, 3);
-                    break;
-                }
                 case DOCUMENTO:
                     g2.drawRoundRect(pad, pad, area, area, 4, 4);
-                    for (int i = 1; i <= 3; i++) {
-                        int ly = pad + (area * i) / 4;
-                        g2.drawLine(pad + area / 5, ly, s - pad - area / 5, ly);
-                    }
+                    for (int i = 1; i <= 3; i++) g2.drawLine(pad + area / 5, pad + (area * i) / 4, s - pad - area / 5, pad + (area * i) / 4);
                     break;
                 case PESSOA:
                     g2.drawOval(s / 2 - area / 5, pad, area * 2 / 5, area * 2 / 5);
                     g2.drawArc(pad, pad + area / 2, area, area / 2, 0, 180);
-                    break;
-                case ABERTA: {
-                    int[] xs = { pad, pad + area / 4, s - pad, s - pad - area / 5 };
-                    int[] ys = { s - pad, pad + area / 3, pad + area / 3, s - pad };
-                    g2.drawPolygon(xs, ys, 4);
-                    g2.drawLine(pad, pad + area / 3, pad + area / 3, pad);
-                    g2.drawLine(pad + area / 3, pad, pad + area / 2, pad + area / 3);
-                    break;
-                }
-                case ANDAMENTO:
-                    g2.drawOval(pad, pad, area, area);
-                    g2.drawLine(s / 2, s / 2, s / 2, pad + area / 4);
-                    g2.drawLine(s / 2, s / 2, s / 2 + area / 4, s / 2);
-                    break;
-                case CONCLUIDA:
-                    g2.drawOval(pad, pad, area, area);
-                    g2.drawPolyline(
-                            new int[]{pad + area / 4, s / 2 - 1, s - pad - area / 6},
-                            new int[]{s / 2, s - pad - area / 3, pad + area / 3},
-                            3
-                    );
                     break;
                 case CALENDARIO:
                     g2.drawRoundRect(pad, pad + area / 6, area, area - area / 6, 4, 4);
                     g2.drawLine(pad, pad + area / 6 + area / 4, s - pad, pad + area / 6 + area / 4);
                     g2.drawLine(pad + area / 4, pad, pad + area / 4, pad + area / 3);
                     g2.drawLine(pad + area * 3 / 4, pad, pad + area * 3 / 4, pad + area / 3);
+                    break;
+                default:
                     break;
             }
             g2.dispose();

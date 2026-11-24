@@ -185,7 +185,7 @@ public class V_CadastrarPeca extends JPanel {
     private void vincularAcoes() {
         btn_Voltar.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
-            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_PaginaInicial(controller));
+            if (w instanceof V_Main) ((V_Main) w).atualizarConteudo(new V_VisualizarPecas(controller));
         });
 
         btn_Cadastrar.addActionListener(e -> {

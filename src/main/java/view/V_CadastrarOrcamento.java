@@ -14,8 +14,6 @@ import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.ComboPopup;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -47,8 +45,7 @@ public class V_CadastrarOrcamento extends JPanel {
     private GlassComboBox<SistemaItem> cmb_FiltroSistema;
     private GlassTextField txt_BuscaServico;
     private final List<CatalogoServicoEntity> todosItens = new ArrayList<>();
-    private DefaultTableModel mdl_ItensSelecionados;
-    private JTable tbl_ItensSelecionados;
+    private Tabela tabelaItensSelecionados;
     private JLabel lbl_Total;
     private final List<CatalogoServicoEntity> itensSelecionados = new ArrayList<>();
     private final List<Double> valoresItensSelecionados = new ArrayList<>();
@@ -60,20 +57,16 @@ public class V_CadastrarOrcamento extends JPanel {
     private GlassTextField txt_NomeTecnicoPeca;
     private GlassTextField txt_FabricantePeca;
     private GlassTextField txt_QuantidadePeca;
-    private DefaultTableModel mdl_PecasSelecionadas;
-    private JTable tbl_PecasSelecionadas;
+    private Tabela tabelaPecasSelecionadas;
     private final List<Long> pecasSelecionadas = new ArrayList<>();
     private final List<Double> valoresPecasSelecionadas = new ArrayList<>();
     private final List<String> nomesTecnicosPecas = new ArrayList<>();
     private final List<String> fabricantesPecas = new ArrayList<>();
     private final List<Integer> quantidadesPecas = new ArrayList<>();
 
-    private BotaoAcao btn_Cadastrar;
+    private JButton btn_Cadastrar;
 
-    // Paleta harmonizada com o mesmo efeito de vidro usado nas demais telas
-    // (V_CadastrarCliente, V_CadastrarVeiculo, V_CadastrarMontadora, V_CadastrarModelo),
-    // com o tom acinzentado/corporativo trazido de V_VisualizarServicos para um
-    // acabamento mais sério e profissional.
+    // Paleta visual unificada
     private static final Color COR_FUNDO_PAGINA = Color.decode("#FAFBFC");
     private static final Color COR_CARD_TOPO    = Color.decode("#EFF1F4");
     private static final Color COR_CARD_BASE    = Color.decode("#DFE4EA");
@@ -83,46 +76,26 @@ public class V_CadastrarOrcamento extends JPanel {
     private static final Color COR_TEXTO_CAMPO  = Color.decode("#2B2E33");
     private static final Color COR_BORDA_SUAVE  = new Color(160, 175, 195, 130);
 
-    // Cores do popup da lista suspensa — precisa ser SÓLIDO (o vidro é só na caixa fechada)
+    // Cores do popup da lista suspensa
     private static final Color COR_POPUP_FUNDO   = Color.decode("#FFFFFF");
     private static final Color COR_POPUP_SELECAO = Color.decode("#FFE4BF");
     private static final Color COR_POPUP_BORDA   = Color.decode("#C3CDDA");
 
-    // Vidro cinza claro estilo Windows 7 (Aero) — cabeçalho das tabelas, igual à V_VisualizarServicos
-    private static final Color COR_AERO_TOPO_A  = Color.decode("#FBFBFC");
-    private static final Color COR_AERO_TOPO_B  = Color.decode("#ECEEF1");
-    private static final Color COR_AERO_BASE_A  = Color.decode("#DADDE2");
-    private static final Color COR_AERO_BASE_B  = Color.decode("#EFF1F3");
-    private static final Color COR_AERO_BORDA   = Color.decode("#B6BCC4");
-    private static final Color COR_AERO_SEPARA  = Color.decode("#CCD1D8");
-    private static final Color COR_AERO_TEXTO   = Color.decode("#3A4149");
-
-    // Tabela de dados
-    private static final Color COR_TABELA_FUNDO   = Color.WHITE;
-    private static final Color COR_TABELA_SELECAO = Color.decode("#FFE4BF");
-
-    // Cor de ação primária (tema original preservado)
-    private static final Color COR_ACAO         = Color.decode("#FF9900");
-    private static final Color COR_ACAO_CLARA   = Color.decode("#FFAD33");
-    private static final Color COR_ACAO_ESCURA  = Color.decode("#E68A00");
-
-    // Cores de apoio para as ações secundárias (adicionar item / adicionar peça / remover)
+    // Cores de apoio para ações secundárias
     private static final Color COR_SUCESSO = Color.decode("#28A745");
     private static final Color COR_INFO    = Color.decode("#17A2B8");
     private static final Color COR_PERIGO  = Color.decode("#D63A44");
 
-    // Ajustes rápidos de tipografia/tamanho — mexa só aqui para alterar tudo de uma vez
+    // Ajustes de tipografia e tamanho
     private static final int RAIO_COMPONENTE      = 12;
     private static final int TAMANHO_FONTE_TITULO = 14;
     private static final int TAMANHO_FONTE_SECAO  = 15;
     private static final int TAMANHO_FONTE_LABEL  = 13;
     private static final int TAMANHO_FONTE_CAMPO  = 14;
     private static final int ALTURA_CAMPO         = 34;
-    private static final int TAMANHO_FONTE_BOTAO  = 16;
     private static final int LARGURA_BOTAO        = 260;
     private static final int ALTURA_BOTAO         = 52;
     private static final int TAMANHO_ICONE_BOTAO  = 24;
-    private static final int ALTURA_CABECALHO     = 26;
 
     public V_CadastrarOrcamento(OficinaController controller) {
         this.controller = controller;
@@ -218,8 +191,8 @@ public class V_CadastrarOrcamento extends JPanel {
         form.add(Box.createVerticalStrut(16));
         form.add(criarSecaoPecas());
 
-        btn_Cadastrar = new BotaoAcao("CRIAR ORÇAMENTO", new IconeOrcamento(TAMANHO_ICONE_BOTAO, Color.WHITE),
-                COR_ACAO, COR_ACAO_CLARA, COR_ACAO_ESCURA);
+        // Botão principal refatorado usando Botoes.AcaoPrincipal[cite: 8]
+        btn_Cadastrar = new Botoes.AcaoPrincipal("CRIAR ORÇAMENTO", new IconeOrcamento(TAMANHO_ICONE_BOTAO, Color.WHITE));
         btn_Cadastrar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
@@ -299,7 +272,9 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_BuscaRow.add(txt_BuscaServico, BorderLayout.CENTER);
         BuscaUtil.aoDigitar(txt_BuscaServico, this::filtrarCatalogo);
 
-        JButton btn_Add = botaoAcao("+ Adicionar", COR_SUCESSO);
+        // Botão usando Botoes.LinkTexto[cite: 8]
+        JButton btn_Add = new Botoes.LinkTexto("+ Adicionar", new Botoes.Paleta[]{Botoes.Paleta.LARANJA, Botoes.Paleta.CINZA, Botoes.Paleta.VERMELHO}[0]);
+        btn_Add.setPreferredSize(new Dimension(120, 34));
         btn_Add.addActionListener(e -> adicionarItem());
 
         JPanel pnl_AddRow = new JPanel(new BorderLayout(8, 0));
@@ -314,41 +289,43 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_NorteRows.add(pnl_AddRow);
 
         String[] cols = {"Serviço", "Tipo", "Valor (R$)"};
-        mdl_ItensSelecionados = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) { return c == 2; }
-        };
-        mdl_ItensSelecionados.addTableModelListener(ev -> {
+        // Tabela refatorada usando a classe padrão Tabela[cite: 10]
+        tabelaItensSelecionados = new Tabela(cols, Tabela.TipoVisual.FINANCEIRA, 26);
+        DefaultTableModel mdl_ItensSelecionados = (DefaultTableModel) tabelaItensSelecionados.tabela.getModel();
+
+        // Ajuste para permitir edição da coluna de valor conforme lógica original
+        // Note: DefaultTableModel criado dentro de Tabela pode ter isCellEditable customizado se sobrescrito,
+        // ou podemos atualizar os valores diretamente pelo modelo.
+        tabelaItensSelecionados.tabela.getModel().addTableModelListener(ev -> {
             if (ev.getType() != TableModelEvent.UPDATE || ev.getColumn() != 2) return;
             int row = ev.getFirstRow();
             if (row < 0 || row >= valoresItensSelecionados.size()) return;
             try {
-                String txt = String.valueOf(mdl_ItensSelecionados.getValueAt(row, 2)).replace(",", ".");
+                String txt = String.valueOf(tabelaItensSelecionados.tabela.getValueAt(row, 2)).replace(",", ".");
                 double novoValor = Double.parseDouble(txt);
                 valoresItensSelecionados.set(row, novoValor);
             } catch (NumberFormatException ex) {
                 valoresItensSelecionados.set(row, itensSelecionados.get(row).getValor());
-                mdl_ItensSelecionados.setValueAt(
+                tabelaItensSelecionados.tabela.setValueAt(
                         String.format("%.2f", itensSelecionados.get(row).getValor()), row, 2);
             }
             atualizarTotal();
         });
-        tbl_ItensSelecionados = criarTabela(mdl_ItensSelecionados);
-        JScrollPane scroll = scrollTabela(tbl_ItensSelecionados, 100);
 
         JButton btn_Rem = botaoLink("Remover selecionado", COR_PERIGO);
         btn_Rem.addActionListener(e -> {
-            int row = tbl_ItensSelecionados.getSelectedRow();
+            int row = tabelaItensSelecionados.getLinhaSelecionada();
             if (row >= 0) {
                 itensSelecionados.remove(row);
                 valoresItensSelecionados.remove(row);
-                mdl_ItensSelecionados.removeRow(row);
+                ((DefaultTableModel) tabelaItensSelecionados.tabela.getModel()).removeRow(row);
                 atualizarTotal();
             }
         });
 
         lbl_Total = new JLabel("Total: R$ 0,00");
         lbl_Total.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lbl_Total.setForeground(COR_ACAO_ESCURA);
+        lbl_Total.setForeground(Color.decode("#E68A00"));
         lbl_Total.setHorizontalAlignment(SwingConstants.RIGHT);
 
         JPanel pnl_Rodape = new JPanel(new BorderLayout());
@@ -359,7 +336,7 @@ public class V_CadastrarOrcamento extends JPanel {
         JPanel corpo = new JPanel(new BorderLayout(0, 8));
         corpo.setOpaque(false);
         corpo.add(pnl_NorteRows, BorderLayout.NORTH);
-        corpo.add(scroll, BorderLayout.CENTER);
+        corpo.add(tabelaItensSelecionados, BorderLayout.CENTER);
         corpo.add(pnl_Rodape, BorderLayout.SOUTH);
 
         sec.add(lbl, BorderLayout.NORTH);
@@ -415,7 +392,9 @@ public class V_CadastrarOrcamento extends JPanel {
         txt_QuantidadePeca.setText("1");
         txt_QuantidadePeca.setToolTipText("Quantas unidades desta peça serão trocadas nesta OS");
 
-        JButton btn_AddPeca = botaoAcao("+ Adicionar", COR_INFO);
+        // Botão usando Botoes.LinkTexto[cite: 8]
+        JButton btn_AddPeca = new Botoes.LinkTexto("+ Adicionar", Botoes.Paleta.CINZA);
+        btn_AddPeca.setPreferredSize(new Dimension(120, 34));
         btn_AddPeca.addActionListener(e -> adicionarPeca());
 
         JPanel pnl_Row = new JPanel(new BorderLayout(8, 0));
@@ -442,53 +421,51 @@ public class V_CadastrarOrcamento extends JPanel {
         pnl_Quantidade.add(txt_QuantidadePeca, BorderLayout.CENTER);
 
         String[] cols = {"Peça (Popular)", "Nome Técnico", "Fabricante", "Qtd.", "Valor Unit. (R$)"};
-        mdl_PecasSelecionadas = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) { return c >= 1; }
-        };
-        mdl_PecasSelecionadas.addTableModelListener(ev -> {
+        // Tabela refatorada usando a classe padrão Tabela[cite: 10]
+        tabelaPecasSelecionadas = new Tabela(cols, Tabela.TipoVisual.FINANCEIRA, 26);
+        tabelaPecasSelecionadas.setMaxWidthColuna(3, 60);
+
+        tabelaPecasSelecionadas.tabela.getModel().addTableModelListener(ev -> {
             if (ev.getType() != TableModelEvent.UPDATE) return;
             int row = ev.getFirstRow();
             int col = ev.getColumn();
             if (row < 0) return;
             if (col == 4 && row < valoresPecasSelecionadas.size()) {
                 try {
-                    String txt = String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 4)).replace(",", ".");
+                    String txt = String.valueOf(tabelaPecasSelecionadas.tabela.getValueAt(row, 4)).replace(",", ".");
                     valoresPecasSelecionadas.set(row, Double.parseDouble(txt));
                 } catch (NumberFormatException ex) {
                     valoresPecasSelecionadas.set(row, 0.0);
-                    mdl_PecasSelecionadas.setValueAt("0.00", row, 4);
+                    tabelaPecasSelecionadas.tabela.setValueAt("0.00", row, 4);
                 }
                 atualizarTotal();
             } else if (col == 3 && row < quantidadesPecas.size()) {
                 try {
-                    int qtd = Integer.parseInt(String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 3)).trim());
+                    int qtd = Integer.parseInt(String.valueOf(tabelaPecasSelecionadas.tabela.getValueAt(row, 3)).trim());
                     if (qtd <= 0) throw new NumberFormatException();
                     quantidadesPecas.set(row, qtd);
                 } catch (NumberFormatException ex) {
                     quantidadesPecas.set(row, 1);
-                    mdl_PecasSelecionadas.setValueAt(1, row, 3);
+                    tabelaPecasSelecionadas.tabela.setValueAt(1, row, 3);
                 }
                 atualizarTotal();
             } else if (col == 1 && row < nomesTecnicosPecas.size()) {
-                nomesTecnicosPecas.set(row, String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 1)));
+                nomesTecnicosPecas.set(row, String.valueOf(tabelaPecasSelecionadas.tabela.getValueAt(row, 1)));
             } else if (col == 2 && row < fabricantesPecas.size()) {
-                fabricantesPecas.set(row, String.valueOf(mdl_PecasSelecionadas.getValueAt(row, 2)));
+                fabricantesPecas.set(row, String.valueOf(tabelaPecasSelecionadas.tabela.getValueAt(row, 2)));
             }
         });
-        tbl_PecasSelecionadas = criarTabela(mdl_PecasSelecionadas);
-        tbl_PecasSelecionadas.getColumnModel().getColumn(3).setMaxWidth(60);
-        JScrollPane scroll = scrollTabela(tbl_PecasSelecionadas, 260);
 
         JButton btn_RemPeca = botaoLink("Remover selecionada", COR_PERIGO);
         btn_RemPeca.addActionListener(e -> {
-            int row = tbl_PecasSelecionadas.getSelectedRow();
+            int row = tabelaPecasSelecionadas.getLinhaSelecionada();
             if (row >= 0) {
                 pecasSelecionadas.remove(row);
                 valoresPecasSelecionadas.remove(row);
                 nomesTecnicosPecas.remove(row);
                 fabricantesPecas.remove(row);
                 quantidadesPecas.remove(row);
-                mdl_PecasSelecionadas.removeRow(row);
+                ((DefaultTableModel) tabelaPecasSelecionadas.tabela.getModel()).removeRow(row);
                 atualizarTotal();
             }
         });
@@ -513,7 +490,7 @@ public class V_CadastrarOrcamento extends JPanel {
         JPanel corpo = new JPanel(new BorderLayout(0, 8));
         corpo.setOpaque(false);
         corpo.add(pnl_Norte, BorderLayout.NORTH);
-        corpo.add(scroll, BorderLayout.CENTER);
+        corpo.add(tabelaPecasSelecionadas, BorderLayout.CENTER);
         corpo.add(pnl_Rodape, BorderLayout.SOUTH);
 
         sec.add(pnl_Header, BorderLayout.NORTH);
@@ -521,7 +498,7 @@ public class V_CadastrarOrcamento extends JPanel {
         return sec;
     }
 
-    // ---- Carregamento de dados (lógica original — não alterada) ----
+    // ---- Carregamento de dados ----
     private void carregarClientes() {
         cmb_Cliente.removeAllItems();
         for (Cliente c : controller.listarClientes()) {
@@ -576,7 +553,6 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /** Peças são genéricas (não dependem de veículo/modelo) — o valor é definido no próprio orçamento. */
     private void carregarPecas() {
         todasPecasCatalogo.clear();
         todasPecasCatalogo.addAll(controller.listarTodasPecas());
@@ -602,9 +578,9 @@ public class V_CadastrarOrcamento extends JPanel {
         itensSelecionados.add(item);
         valoresItensSelecionados.add(item.getValor());
         String tipo = "REVISAO".equals(item.getTipo()) ? "Revisão" : "Padrão";
-        mdl_ItensSelecionados.addRow(new Object[]{item.getNome(), tipo, String.format("%.2f", item.getValor())});
+        DefaultTableModel mdlItens = (DefaultTableModel) tabelaItensSelecionados.tabela.getModel();
+        mdlItens.addRow(new Object[]{item.getNome(), tipo, String.format("%.2f", item.getValor())});
 
-        // Auto-adicionar peças associadas a este item do catálogo
         List<CatalogoPecaEntity> pecasDoItem = controller.listarPecasDoCatalogoItem(item.getIdCatalogoServico());
         for (CatalogoPecaEntity p : pecasDoItem) {
             pecasSelecionadas.add(p.getIdCatalogoPeca());
@@ -612,7 +588,8 @@ public class V_CadastrarOrcamento extends JPanel {
             nomesTecnicosPecas.add("");
             fabricantesPecas.add("");
             quantidadesPecas.add(1);
-            mdl_PecasSelecionadas.addRow(new Object[]{
+            DefaultTableModel mdlPecas = (DefaultTableModel) tabelaPecasSelecionadas.tabela.getModel();
+            mdlPecas.addRow(new Object[]{
                     p.getNomeExibicao() + " (automático)", "", "", 1, "0.00"
             });
         }
@@ -639,7 +616,8 @@ public class V_CadastrarOrcamento extends JPanel {
         nomesTecnicosPecas.add(nomeTecnico);
         fabricantesPecas.add(fabricante);
         quantidadesPecas.add(quantidade);
-        mdl_PecasSelecionadas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, quantidade, "0.00"});
+        DefaultTableModel mdlPecas = (DefaultTableModel) tabelaPecasSelecionadas.tabela.getModel();
+        mdlPecas.addRow(new Object[]{sel.peca.getNomeExibicao(), nomeTecnico, fabricante, quantidade, "0.00"});
         txt_NomeTecnicoPeca.setText("");
         txt_FabricantePeca.setText("");
         txt_QuantidadePeca.setText("1");
@@ -662,7 +640,6 @@ public class V_CadastrarOrcamento extends JPanel {
             ItemFuncionario resp = (ItemFuncionario) cmb_Responsavel.getSelectedItem();
             String reclamacao  = txt_Reclamacao.getText().trim();
 
-            // Resolve proprietário
             long idCliente;
             if (rdb_PropFuncionario != null && rdb_PropFuncionario.isSelected()) {
                 ItemFuncionario funcProp = (ItemFuncionario) cmb_FuncionarioProprietario.getSelectedItem();
@@ -701,13 +678,13 @@ public class V_CadastrarOrcamento extends JPanel {
                 txt_Reclamacao.setText("");
                 itensSelecionados.clear();
                 valoresItensSelecionados.clear();
-                mdl_ItensSelecionados.setRowCount(0);
+                ((DefaultTableModel) tabelaItensSelecionados.tabela.getModel()).setRowCount(0);
                 pecasSelecionadas.clear();
                 valoresPecasSelecionadas.clear();
                 nomesTecnicosPecas.clear();
                 fabricantesPecas.clear();
                 quantidadesPecas.clear();
-                mdl_PecasSelecionadas.setRowCount(0);
+                ((DefaultTableModel) tabelaPecasSelecionadas.tabela.getModel()).setRowCount(0);
                 lbl_Total.setText("Total: R$ 0,00");
 
             } catch (Exception ex) {
@@ -720,7 +697,7 @@ public class V_CadastrarOrcamento extends JPanel {
         DialogoAlerta.aviso(this, msg, "Campo Inválido");
     }
 
-    // ===== inner classes (modelo de dados — não alteradas) =====
+    // ===== inner classes (modelo de dados) =====
     private static class ItemCliente {
         final Cliente cliente;
         ItemCliente(Cliente c) { this.cliente = c; }
@@ -830,7 +807,6 @@ public class V_CadastrarOrcamento extends JPanel {
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
         lbl.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
         if (indice == -1) {
-            // valor exibido na própria caixa: mantém transparente para revelar o vidro de fundo
             lbl.setOpaque(false);
             lbl.setForeground(COR_TEXTO_CAMPO);
         } else if (selecionado) {
@@ -844,10 +820,6 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    private JButton botaoAcao(String texto, Color cor) {
-        return new BotaoAcaoPequeno(texto, cor);
-    }
-
     private JButton botaoLink(String texto, Color cor) {
         JButton btn = new JButton(texto);
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -859,109 +831,7 @@ public class V_CadastrarOrcamento extends JPanel {
         return btn;
     }
 
-    private JTable criarTabela(DefaultTableModel model) {
-        JTable tbl = new JTable(model);
-        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tbl.setForeground(COR_TEXTO_CAMPO);
-        tbl.setBackground(COR_TABELA_FUNDO);
-        tbl.setOpaque(true);
-        tbl.setRowHeight(26);
-        tbl.setShowGrid(false);
-        tbl.setIntercellSpacing(new Dimension(0, 0));
-        tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tbl.setSelectionBackground(COR_TABELA_SELECAO);
-        tbl.setSelectionForeground(COR_TEXTO_CAMPO);
-        tbl.setDefaultRenderer(Object.class, new CelulaBrancaRenderer());
-
-        JTableHeader header = tbl.getTableHeader();
-        header.setDefaultRenderer(new CabecalhoVidroClaro());
-        header.setPreferredSize(new Dimension(header.getPreferredSize().width, ALTURA_CABECALHO));
-        header.setReorderingAllowed(false);
-        header.setOpaque(false);
-        return tbl;
-    }
-
-    private JScrollPane scrollTabela(JTable tbl, int altura) {
-        JScrollPane scp = new JScrollPane(tbl);
-        scp.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        scp.setOpaque(false);
-        scp.getViewport().setBackground(COR_TABELA_FUNDO);
-        scp.getViewport().setOpaque(true);
-        scp.setPreferredSize(new Dimension(0, altura));
-        ScrollBarPadrao.aplicar(scp);
-        return scp;
-    }
-
-    /** Cabeçalho de coluna com vidro cinza claro no estilo Aero (Windows 7), igual à V_VisualizarServicos. */
-    private static class CabecalhoVidroClaro extends JLabel implements TableCellRenderer {
-
-        CabecalhoVidroClaro() {
-            setOpaque(false);
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
-            setForeground(COR_AERO_TEXTO);
-            setHorizontalAlignment(SwingConstants.LEFT);
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            setText(value == null ? "" : value.toString());
-            return this;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int w = getWidth();
-            int h = getHeight();
-            int meio = h / 2;
-
-            g2.setPaint(new GradientPaint(0, 0, COR_AERO_TOPO_A, 0, meio, COR_AERO_TOPO_B));
-            g2.fillRect(0, 0, w, meio);
-
-            g2.setPaint(new GradientPaint(0, meio, COR_AERO_BASE_A, 0, h, COR_AERO_BASE_B));
-            g2.fillRect(0, meio, w, h - meio);
-
-            g2.setColor(new Color(255, 255, 255, 140));
-            g2.fillRect(0, 0, w, Math.max(1, h / 5));
-
-            g2.setColor(COR_AERO_SEPARA);
-            g2.drawLine(w - 1, 3, w - 1, h - 4);
-
-            g2.setColor(COR_AERO_BORDA);
-            g2.drawLine(0, h - 1, w, h - 1);
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    /** Células de dados sempre com fundo branco (e destaque âmbar quando selecionadas), igual à V_VisualizarServicos. */
-    private static class CelulaBrancaRenderer extends DefaultTableCellRenderer {
-        CelulaBrancaRenderer() {
-            setOpaque(true);
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            setBackground(isSelected ? COR_TABELA_SELECAO : COR_TABELA_FUNDO);
-            setForeground(COR_TEXTO_CAMPO);
-            setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-            return this;
-        }
-    }
-
-    /**
-     * Campo de texto com efeito de vidro translúcido (glassmorphism), no mesmo
-     * padrão visual usado em V_CadastrarCliente / V_CadastrarVeiculo. Não altera
-     * nenhuma regra de negócio — apenas a pintura do componente.
-     */
+    // ===== Componentes de Vidro e Customizados =====
     private static class GlassTextField extends JTextField {
         private boolean focado = false;
         private boolean erro = false;
@@ -1024,10 +894,6 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /**
-     * Variante em "vidro" do JTextArea, usada no campo de Reclamação/Relato,
-     * seguindo exatamente a mesma linguagem visual do GlassTextField.
-     */
     private static class GlassTextArea extends JTextArea {
         private boolean focado = false;
 
@@ -1088,12 +954,6 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /**
-     * ComboBox com o mesmo acabamento em vidro dos demais campos: pintura própria
-     * do fundo/gradiente/borda, com o botão de seta redesenhado via GlassComboBoxUI.
-     * A lista de itens/renderer de cada combo continua controlada externamente,
-     * preservando toda a lógica de carregamento e seleção original.
-     */
     private static class GlassComboBox<T> extends JComboBox<T> {
         private boolean focado = false;
 
@@ -1101,8 +961,6 @@ public class V_CadastrarOrcamento extends JPanel {
             setOpaque(false);
             setFont(new Font("Segoe UI", Font.PLAIN, TAMANHO_FONTE_CAMPO));
             setForeground(COR_TEXTO_CAMPO);
-            // Não usar cor transparente: o BasicComboPopup copia este background
-            // para a lista suspensa, e um alpha 0 deixaria o popup transparente.
             setBackground(COR_POPUP_FUNDO);
             setFocusable(true);
             setUI(new GlassComboBoxUI());
@@ -1154,17 +1012,9 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /**
-     * UI do GlassComboBox: impede que o Swing pinte fundo sólido (inclusive o
-     * azul de seleção quando em foco) por cima do vidro, troca a seta padrão
-     * por um triângulo vetorial e usa um popup arredondado — igual à
-     * V_VisualizarServicos, corrigindo o bug de pintura em estados de foco.
-     */
     private static class GlassComboBoxUI extends BasicComboBoxUI {
         @Override
-        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {
-            // Vazio de propósito — o fundo já é pintado em GlassComboBox.paintComponent().
-        }
+        public void paintCurrentValueBackground(Graphics g, Rectangle bounds, boolean hasFocus) {}
 
         @Override
         @SuppressWarnings("unchecked")
@@ -1223,12 +1073,8 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /** Popup do combo com cantos arredondados e conteúdo sólido/legível, igual à V_VisualizarServicos. */
     private static class GlassComboPopup extends BasicComboPopup {
-
-        GlassComboPopup(JComboBox<Object> combo) {
-            super(combo);
-        }
+        GlassComboPopup(JComboBox<Object> combo) { super(combo); }
 
         @Override
         protected void configurePopup() {
@@ -1283,20 +1129,12 @@ public class V_CadastrarOrcamento extends JPanel {
                 if (janela != null) {
                     janela.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), RAIO_COMPONENTE, RAIO_COMPONENTE));
                 }
-            } catch (Exception | Error ignorado) {
-                // Sem suporte a formato de janela nesta plataforma.
-            }
+            } catch (Exception | Error ignorado) {}
         }
     }
 
-    /**
-     * Painel com fundo em gradiente suave, usado para harmonizar o cartão
-     * central com a translucidez dos campos em vidro.
-     */
     private static class PainelGradiente extends JPanel {
-        private final Color corTopo;
-        private final Color corBase;
-
+        private final Color corTopo, corBase;
         PainelGradiente(LayoutManager layout, Color corTopo, Color corBase) {
             super(layout);
             this.corTopo = corTopo;
@@ -1316,16 +1154,8 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /**
-     * Painel "cartão" leve e semitransparente, usado para agrupar visualmente
-     * cada subseção do formulário (Itens de Serviço / Peças a Substituir),
-     * reforçando a hierarquia dentro do cartão principal.
-     */
     private static class PainelSecao extends JPanel {
-        PainelSecao(LayoutManager layout) {
-            super(layout);
-            setOpaque(false);
-        }
+        PainelSecao(LayoutManager layout) { super(layout); setOpaque(false); }
 
         @Override
         protected void paintComponent(Graphics g) {
@@ -1346,119 +1176,6 @@ public class V_CadastrarOrcamento extends JPanel {
         }
     }
 
-    /**
-     * Botão de ação principal com a mesma linguagem visual dos campos em vidro:
-     * cantos arredondados, sombra suave, reflexo no topo e reação a hover/clique.
-     * As cores são parametrizadas para permitir reaproveitar a classe em outras
-     * ações (aqui, apenas o botão "CRIAR ORÇAMENTO" usa este estilo grande).
-     */
-    private static class BotaoAcao extends JButton {
-        private final Color corBase, corClara, corEscura;
-        private boolean sobreMouse = false;
-        private boolean pressionado = false;
-
-        BotaoAcao(String texto, Icon icone, Color corBase, Color corClara, Color corEscura) {
-            super(texto, icone);
-            this.corBase = corBase;
-            this.corClara = corClara;
-            this.corEscura = corEscura;
-            setFont(new Font("Segoe UI", Font.BOLD, TAMANHO_FONTE_BOTAO));
-            setForeground(Color.WHITE);
-            setIconTextGap(10);
-            setContentAreaFilled(false);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setBorder(BorderFactory.createEmptyBorder(8, 22, 8, 22));
-            addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
-                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
-                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
-            });
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int w = getWidth();
-            int h = getHeight();
-
-            g2.setColor(new Color(0, 0, 0, 45));
-            g2.fill(new RoundRectangle2D.Double(1.5, 3, w - 3, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
-
-            Color corPreenchimento = pressionado ? corEscura : (sobreMouse ? corClara : corBase);
-            g2.setColor(corPreenchimento);
-            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, RAIO_COMPONENTE, RAIO_COMPONENTE));
-
-            g2.setColor(new Color(255, 255, 255, 45));
-            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), RAIO_COMPONENTE - 5, RAIO_COMPONENTE - 5));
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    /**
-     * Versão compacta do BotaoAcao, usada nos botões "+ Adicionar" das seções de
-     * Itens de Serviço e Peças. A cor de hover/clique é derivada automaticamente
-     * da cor base (brighter()/darker()), então basta uma única cor por chamada.
-     */
-    private static class BotaoAcaoPequeno extends JButton {
-        private final Color corBase;
-        private boolean sobreMouse = false;
-        private boolean pressionado = false;
-
-        BotaoAcaoPequeno(String texto, Color corBase) {
-            super(texto);
-            this.corBase = corBase;
-            setFont(new Font("Segoe UI", Font.BOLD, 13));
-            setForeground(Color.WHITE);
-            setContentAreaFilled(false);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setBorder(BorderFactory.createEmptyBorder(6, 16, 6, 16));
-            setPreferredSize(new Dimension(120, 34));
-            addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e)  { sobreMouse = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)   { sobreMouse = false; repaint(); }
-                @Override public void mousePressed(MouseEvent e)  { pressionado = true; repaint(); }
-                @Override public void mouseReleased(MouseEvent e) { pressionado = false; repaint(); }
-            });
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int w = getWidth();
-            int h = getHeight();
-            int raio = RAIO_COMPONENTE - 2;
-
-            g2.setColor(new Color(0, 0, 0, 35));
-            g2.fill(new RoundRectangle2D.Double(1, 2, w - 2, h - 2, raio, raio));
-
-            Color corPreenchimento = pressionado ? corBase.darker() : (sobreMouse ? corBase.brighter() : corBase);
-            g2.setColor(corPreenchimento);
-            g2.fill(new RoundRectangle2D.Double(0.5, 0.5, w - 2, h - 3, raio, raio));
-
-            g2.setColor(new Color(255, 255, 255, 40));
-            g2.fill(new RoundRectangle2D.Double(2, 2, w - 4, Math.max(0, (h - 4) * 0.4), raio - 3, raio - 3));
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    /**
-     * Ícone vetorial (prancheta com check) desenhado via Java2D, seguindo a
-     * mesma técnica do IconeAdicionarUsuario usado em V_CadastrarCliente —
-     * escala perfeitamente para qualquer tamanho de botão, sem arquivo externo.
-     */
     private static class IconeOrcamento implements Icon {
         private final int tamanho;
         private final Color cor;
@@ -1481,17 +1198,11 @@ public class V_CadastrarOrcamento extends JPanel {
             g2.setColor(cor);
             g2.setStroke(new BasicStroke(2.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-            // Prancheta / documento
             g2.draw(new RoundRectangle2D.Double(3.5, 1.5, 15, 20, 3, 3));
-
-            // Clipe no topo
             g2.draw(new RoundRectangle2D.Double(8.5, 0.2, 5, 3, 1.5, 1.5));
-
-            // Linhas de texto do orçamento
             g2.draw(new Line2D.Double(7, 8, 15, 8));
             g2.draw(new Line2D.Double(7, 12, 13, 12));
 
-            // Check de aprovação
             Path2D check = new Path2D.Double();
             check.moveTo(7.5, 16.3);
             check.lineTo(10, 18.6);

@@ -5,6 +5,7 @@ import controller.OficinaController;
 import br.com.oficina.veiculo.DetalhesVeiculoEntity;
 import model.Cliente;
 import model.Veiculo;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -304,7 +305,7 @@ public class V_DetalhesVeiculo extends JPanel {
         scrollServicos.setPreferredSize(new Dimension(0, 140));
         scrollServicos.getViewport().setBackground(COR_TABELA_FUNDO);
         scrollServicos.getViewport().setOpaque(true);
-        ScrollBarPadrao.aplicar(scrollServicos);
+        ScrollBar.aplicar(scrollServicos);
         scrollServicos.setOpaque(false);
         scrollServicos.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
         pnlAreaServicos.add(scrollServicos, BorderLayout.CENTER);

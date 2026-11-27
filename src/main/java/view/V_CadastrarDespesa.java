@@ -2,6 +2,7 @@ package view;
 
 import br.com.oficina.financeiro.DespesaEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
@@ -218,7 +219,7 @@ public class V_CadastrarDespesa extends JPanel {
                 "Despesas registradas",
                 0, 0, new Font("Segoe UI", Font.BOLD, 12), COR_LABEL));
         scroll.setPreferredSize(new Dimension(0, 180));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         JButton btn_Excluir = new JButton("Excluir selecionada");
         btn_Excluir.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -738,7 +739,7 @@ public class V_CadastrarDespesa extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

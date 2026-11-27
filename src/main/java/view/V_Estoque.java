@@ -4,6 +4,9 @@ import br.com.oficina.estoque.CatalogoPecaEntity;
 import br.com.oficina.estoque.MovimentacaoEstoqueEntity;
 import br.com.oficina.estoque.PecaEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
+import view.design.Tabela;
+import view.paginas.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -109,11 +112,11 @@ public class V_Estoque extends JPanel {
         corpo.add(Box.createVerticalStrut(16));
 
         // Adicionando os cards usando os 3 tipos de tabelas genéricas
-        corpo.add(criarCardPecasParaComprar()); // TIPO 1: SIMPLES
+        corpo.add(criarCardPecasParaComprar()); // TIPO 1: SIMPLES[cite: 4]
         corpo.add(Box.createVerticalStrut(16));
-        corpo.add(criarCardEstoqueAtual());     // TIPO 2: AGRUPADA
+        corpo.add(criarCardEstoqueAtual());     // TIPO 2: AGRUPADA[cite: 4]
         corpo.add(Box.createVerticalStrut(16));
-        corpo.add(criarCardMovimentacoes());    // TIPO 3: FINANCEIRA
+        corpo.add(criarCardMovimentacoes());    // TIPO 3: FINANCEIRA[cite: 4]
         corpo.add(Box.createVerticalStrut(16));
 
         BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
@@ -129,7 +132,7 @@ public class V_Estoque extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         removeAll();
         add(scroll, BorderLayout.CENTER);

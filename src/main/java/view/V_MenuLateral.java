@@ -1,6 +1,9 @@
 package view;
 
 import controller.OficinaController;
+import view.paginas.V_PaginaInicial;
+import view.paginas.V_VisualizarServicos;
+
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;

@@ -4,10 +4,11 @@ import br.com.oficina.atendimento.CatalogoServicoEntity;
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
+import view.paginas.V_VisualizarServicos;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
@@ -135,7 +136,7 @@ public class V_OrdemServico extends JPanel {
         scp.setBorder(BorderFactory.createEmptyBorder());
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scp);
+        ScrollBar.aplicar(scp);
 
         JPanel pnl_Central = new JPanel(new BorderLayout());
         pnl_Central.setOpaque(false);
@@ -895,7 +896,7 @@ public class V_OrdemServico extends JPanel {
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
         scp.setBorder(BorderFactory.createEmptyBorder());
-        ScrollBarPadrao.aplicar(scp);
+        ScrollBar.aplicar(scp);
         return scp;
     }
 

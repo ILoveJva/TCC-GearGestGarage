@@ -1,6 +1,8 @@
 package view;
 
 import controller.OficinaController;
+import view.paginas.V_PaginaInicial;
+
 import javax.swing.*;
 import java.awt.*;
 

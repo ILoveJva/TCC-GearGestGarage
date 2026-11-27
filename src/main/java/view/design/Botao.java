@@ -1,4 +1,4 @@
-package view;
+package view.design;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,9 +35,9 @@ import java.awt.geom.RoundRectangle2D;
  *   new Botoes.AcaoPrincipal("CADASTRAR CLIENTE", icone, 280, 50);
  *   botao.setTamanho(200, 40);
  */
-public final class Botoes {
+public final class Botao {
 
-    private Botoes() {}
+    private Botao() {}
 
     // =========================================================================
     // MEDIDAS E CORES COMPARTILHADAS — mexa só aqui para alterar tudo de uma vez

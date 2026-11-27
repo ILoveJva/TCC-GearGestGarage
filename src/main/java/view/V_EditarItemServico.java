@@ -3,6 +3,7 @@ package view;
 import br.com.oficina.atendimento.CatalogoServicoEntity;
 import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -14,7 +15,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.RoundRectangle2D;
-import java.util.List;
 import java.util.Map;
 
 public class V_EditarItemServico extends JPanel {
@@ -150,7 +150,7 @@ public class V_EditarItemServico extends JPanel {
         card.add(titulo, BorderLayout.NORTH);
         card.add(new JScrollPane(form) {{
             setBorder(null); setOpaque(false); getViewport().setOpaque(false);
-            ScrollBarPadrao.aplicar(this);
+            view.design.ScrollBar.aplicar(this);
         }}, BorderLayout.CENTER);
         card.add(pnl_Btn, BorderLayout.SOUTH);
 
@@ -209,7 +209,7 @@ public class V_EditarItemServico extends JPanel {
         scrollPecas.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
         scrollPecas.setOpaque(false);
         scrollPecas.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollPecas);
+        ScrollBar.aplicar(scrollPecas);
 
         JPanel corpo = new JPanel(new BorderLayout(0, 6));
         corpo.setOpaque(false);

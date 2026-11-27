@@ -6,13 +6,13 @@ import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
 import model.Cliente;
 import model.Veiculo;
+import view.design.*;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.ComboPopup;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
@@ -192,7 +192,7 @@ public class V_CadastrarOrcamento extends JPanel {
         form.add(criarSecaoPecas());
 
         // Botão principal refatorado usando Botoes.AcaoPrincipal[cite: 8]
-        btn_Cadastrar = new Botoes.AcaoPrincipal("CRIAR ORÇAMENTO", new IconeOrcamento(TAMANHO_ICONE_BOTAO, Color.WHITE));
+        btn_Cadastrar = new Botao.AcaoPrincipal("CRIAR ORÇAMENTO", new IconeOrcamento(TAMANHO_ICONE_BOTAO, Color.WHITE));
         btn_Cadastrar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));
 
         JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
@@ -203,7 +203,7 @@ public class V_CadastrarOrcamento extends JPanel {
         scrollForm.setBorder(null);
         scrollForm.setOpaque(false);
         scrollForm.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollForm);
+        ScrollBar.aplicar(scrollForm);
 
         card.add(titulo, BorderLayout.NORTH);
         card.add(scrollForm, BorderLayout.CENTER);
@@ -273,7 +273,7 @@ public class V_CadastrarOrcamento extends JPanel {
         BuscaUtil.aoDigitar(txt_BuscaServico, this::filtrarCatalogo);
 
         // Botão usando Botoes.LinkTexto[cite: 8]
-        JButton btn_Add = new Botoes.LinkTexto("+ Adicionar", new Botoes.Paleta[]{Botoes.Paleta.LARANJA, Botoes.Paleta.CINZA, Botoes.Paleta.VERMELHO}[0]);
+        JButton btn_Add = new Botao.LinkTexto("+ Adicionar", new Botao.Paleta[]{Botao.Paleta.LARANJA, Botao.Paleta.CINZA, Botao.Paleta.VERMELHO}[0]);
         btn_Add.setPreferredSize(new Dimension(120, 34));
         btn_Add.addActionListener(e -> adicionarItem());
 
@@ -393,7 +393,7 @@ public class V_CadastrarOrcamento extends JPanel {
         txt_QuantidadePeca.setToolTipText("Quantas unidades desta peça serão trocadas nesta OS");
 
         // Botão usando Botoes.LinkTexto[cite: 8]
-        JButton btn_AddPeca = new Botoes.LinkTexto("+ Adicionar", Botoes.Paleta.CINZA);
+        JButton btn_AddPeca = new Botao.LinkTexto("+ Adicionar", Botao.Paleta.CINZA);
         btn_AddPeca.setPreferredSize(new Dimension(120, 34));
         btn_AddPeca.addActionListener(e -> adicionarPeca());
 
@@ -788,7 +788,7 @@ public class V_CadastrarOrcamento extends JPanel {
         scp.setOpaque(false);
         scp.getViewport().setOpaque(false);
         scp.setBorder(BorderFactory.createEmptyBorder());
-        ScrollBarPadrao.aplicar(scp);
+        ScrollBar.aplicar(scp);
         return scp;
     }
 
@@ -1100,7 +1100,7 @@ public class V_CadastrarOrcamento extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

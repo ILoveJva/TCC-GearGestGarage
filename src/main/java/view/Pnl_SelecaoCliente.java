@@ -2,14 +2,12 @@ package view;
 
 import controller.OficinaController;
 import model.Cliente;
+import view.design.ScrollBar;
+
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Painel Modular de Listagem de Clientes.
@@ -60,7 +58,7 @@ public class Pnl_SelecaoCliente extends JPanel {
 
         scp_ScrollClientes = new JScrollPane(tbl_Clientes);
         scp_ScrollClientes.setBorder(BorderFactory.createLineBorder(Color.decode("#4D4D4D")));
-        ScrollBarPadrao.aplicar(scp_ScrollClientes);
+        ScrollBar.aplicar(scp_ScrollClientes);
 
         add(scp_ScrollClientes, BorderLayout.CENTER);
     }

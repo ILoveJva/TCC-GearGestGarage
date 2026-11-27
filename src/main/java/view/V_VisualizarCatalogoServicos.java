@@ -2,6 +2,8 @@ package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
+import view.paginas.V_PaginaInicial;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -117,7 +119,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
 
         // Rodapé com botão Voltar (padrão da tela de Montadoras)
@@ -282,7 +284,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, altTabela));
         sp.setPreferredSize(new Dimension(0, altTabela));
         sp.setBorder(BorderFactory.createLineBorder(Color.decode("#E8E8E8")));
-        ScrollBarPadrao.aplicar(sp);
+        ScrollBar.aplicar(sp);
 
         JPanel wrapper = new JPanel(new BorderLayout(0, 2));
         wrapper.setOpaque(false);
@@ -580,7 +582,7 @@ public class V_VisualizarCatalogoServicos extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

@@ -2,6 +2,8 @@ package view;
 
 import controller.OficinaController;
 import model.Montadora;
+import view.design.ScrollBar;
+
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -636,7 +638,7 @@ public class V_CadastrarModelo extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

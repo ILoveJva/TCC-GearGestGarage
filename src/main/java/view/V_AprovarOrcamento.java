@@ -2,6 +2,7 @@ package view;
 
 import controller.OficinaController;
 import model.Orcamento;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -83,7 +84,7 @@ public class V_AprovarOrcamento extends JPanel {
 
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
 
         JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));

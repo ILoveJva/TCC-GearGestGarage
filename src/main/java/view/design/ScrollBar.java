@@ -1,4 +1,4 @@
-package view;
+package view.design;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
@@ -11,7 +11,7 @@ import java.awt.event.MouseEvent;
  * praticamente invisível e "thumb" arredondado na cor de destaque laranja
  * (#FF9900), que cresce e ganha opacidade ao passar o mouse.
  */
-public class ScrollBarPadrao extends BasicScrollBarUI {
+public class ScrollBar extends BasicScrollBarUI {
 
     private static final Color COR_THUMB = Color.decode("#FF9900");
     private static final int LARGURA_MIN = 5;
@@ -31,7 +31,7 @@ public class ScrollBarPadrao extends BasicScrollBarUI {
     /** Aplica o estilo padrão a uma barra de rolagem individual. */
     public static void aplicar(JScrollBar barra) {
         if (barra == null) return;
-        barra.setUI(new ScrollBarPadrao());
+        barra.setUI(new ScrollBar());
         barra.setUnitIncrement(14);
         barra.setOpaque(false);
         barra.setPreferredSize(new Dimension(10, 10));

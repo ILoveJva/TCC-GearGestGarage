@@ -1,8 +1,6 @@
 package view;
 
 import controller.OficinaController;
-import model.Cliente;
-import model.Oficina;
 
 import javax.swing.*;
 import java.awt.*;

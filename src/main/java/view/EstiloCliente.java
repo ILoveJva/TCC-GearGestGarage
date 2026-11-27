@@ -1,5 +1,7 @@
 package view;
 
+import view.design.ScrollBar;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -266,7 +268,7 @@ final class EstiloCliente {
         sc.setBorder(null);
         sc.getViewport().setBackground(FUNDO);
         sc.getVerticalScrollBar().setUnitIncrement(18);
-        ScrollBarPadrao.aplicar(sc);
+        ScrollBar.aplicar(sc);
         return sc;
     }
 

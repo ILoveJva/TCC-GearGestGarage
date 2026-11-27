@@ -3,6 +3,7 @@ package view;
 import br.com.oficina.financeiro.DespesaEntity;
 import controller.OficinaController;
 import controller.OficinaController.Ganho;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -10,7 +11,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.List;
@@ -107,7 +107,7 @@ public class V_RelatorioFinanceiro extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -176,7 +176,7 @@ public class V_RelatorioFinanceiro extends JPanel {
         JScrollPane sc = new JScrollPane(tabela);
         sc.setPreferredSize(new Dimension(0, 200));
         sc.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
-        ScrollBarPadrao.aplicar(sc);
+        ScrollBar.aplicar(sc);
         return sc;
     }
 

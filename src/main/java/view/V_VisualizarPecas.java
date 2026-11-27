@@ -2,6 +2,8 @@ package view;
 
 import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
+import view.paginas.V_PaginaInicial;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -124,7 +126,7 @@ public class V_VisualizarPecas extends JPanel {
 
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         JLabel lnk_Editar = new JLabel("<html><u>✎ Editar selecionada</u></html>");
         lnk_Editar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -489,7 +491,7 @@ public class V_VisualizarPecas extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

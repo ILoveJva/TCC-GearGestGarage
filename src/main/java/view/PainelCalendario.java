@@ -4,6 +4,7 @@ import br.com.oficina.atendimento.CatalogoServicoEntity;
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import controller.OficinaController;
 import model.Veiculo;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import java.awt.*;
@@ -133,9 +134,6 @@ public class PainelCalendario extends JPanel {
         JPanel barra = new JPanel(new BorderLayout(8, 0));
         barra.setOpaque(false);
 
-        // Os botões de modo (Dia/Semana/Mês/3 Meses/Ano) NÃO ficam mais aqui: agora
-        // vivem na mesma linha do título do card "Agenda de Serviços e Prazos"
-        // (ver getPainelModos(), usado por V_PaginaInicial.criarSecaoCalendario()).
         pnl_Modos = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         pnl_Modos.setOpaque(false);
         for (Modo m : Modo.values()) {
@@ -149,9 +147,9 @@ public class PainelCalendario extends JPanel {
         lbl_Periodo.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lbl_Periodo.setForeground(COR_TEXTO);
 
-        JButton btnAnt = botaoBarra("◀");
+        JButton btnAnt = botaoBarra("<-");
         JButton btnHoje = botaoBarra("Hoje");
-        JButton btnProx = botaoBarra("▶");
+        JButton btnProx = botaoBarra("->");
         btnAnt.addActionListener(e -> navegar(-1));
         btnProx.addActionListener(e -> navegar(1));
         btnHoje.addActionListener(e -> { dataReferencia = LocalDate.now(); renderizar(); });
@@ -162,9 +160,6 @@ public class PainelCalendario extends JPanel {
         nav.add(btnHoje);
         nav.add(btnProx);
 
-        // Espaçador invisível do mesmo tamanho de "nav": sem os botões de modo aqui
-        // para equilibrar o lado esquerdo, o rótulo do período ficaria puxado para a
-        // esquerda. Este espelho garante que "lbl_Periodo" fique realmente centralizado.
         JPanel espacadorEsquerda = new JPanel();
         espacadorEsquerda.setOpaque(false);
         espacadorEsquerda.setPreferredSize(nav.getPreferredSize());
@@ -175,11 +170,7 @@ public class PainelCalendario extends JPanel {
         return barra;
     }
 
-    /**
-     * Painel com os botões de modo (Dia/Semana/Mês/3 Meses/Ano), para ser embutido
-     * na mesma linha do título do card pelo chamador (V_PaginaInicial).
-     */
-    JComponent getPainelModos() {
+    public JComponent getPainelModos() {
         return pnl_Modos;
     }
 
@@ -270,22 +261,9 @@ public class PainelCalendario extends JPanel {
                     corStatus(dto.status()), id, EventoAgenda.Tipo.SERVICO));
         }
 
-        // Prazos de orçamento — recurso ainda não implementado (ver método abaixo).
         eventos.addAll(carregarPrazosOrcamento());
     }
 
-    // ---------------------------------------------------------------- modo cliente
-
-    /**
-     * Todas as datas conhecidas de cada processo do cliente logado:
-     * <ul>
-     *   <li>solicitação do orçamento ({@code orcamento.data_criacao});</li>
-     *   <li>início da OS ({@code servico.data_servico});</li>
-     *   <li>cada etapa concluída ({@code item_servico.data_realizacao});</li>
-     *   <li>próxima revisão <i>estimada</i>: data da OS (ou da última etapa, se já
-     *       concluída) + {@code validade_meses} de cada serviço do catálogo do orçamento.</li>
-     * </ul>
-     */
     private void carregarEventosCliente() {
         statusOS.clear();
         Map<Long, Veiculo> veic = new HashMap<>();
@@ -294,7 +272,6 @@ public class PainelCalendario extends JPanel {
         for (model.Oficina o : controller.listarTodas()) oficinas.put(o.getIdOficina(), o.getNome());
         DateTimeFormatter br = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        // 1. Orçamentos
         for (model.Orcamento o : controller.listarMeusOrcamentos()) {
             LocalDate d = parseData(o.getDataCriacao());
             if (d == null) continue;
@@ -316,7 +293,6 @@ public class PainelCalendario extends JPanel {
                     EventoAgenda.Tipo.ORCAMENTO, det));
         }
 
-        // 2. Serviços (OS), suas etapas e a revisão estimada
         for (ServicoResponseDTO s : controller.listarMeusServicos()) {
             LocalDate inicio = parseData(s.dataServico());
             String nomeOS = (s.titulo() != null && !s.titulo().isBlank()) ? s.titulo() : "OS #" + s.idServico();
@@ -369,7 +345,6 @@ public class PainelCalendario extends JPanel {
                         "Concluída", COR_ETAPA, idOS, EventoAgenda.Tipo.ETAPA, detEtapa));
             }
 
-            // Revisão estimada: só faz sentido para OS que não estão congeladas nem canceladas.
             if (s.idOrcamento() == null || "CONGELADA".equalsIgnoreCase(s.status())
                     || "CANCELADA".equalsIgnoreCase(s.status())) continue;
             boolean concluida = "CONCLUIDA".equalsIgnoreCase(s.status());
@@ -384,7 +359,7 @@ public class PainelCalendario extends JPanel {
                 detRev.add("<b>Serviço de referência:</b> " + esc(c.getNome()));
                 detRev.add("<b>Validade:</b> " + meses + " mes(es)"
                         + (c.getValidadeKm() != null && c.getValidadeKm() > 0
-                           ? String.format(PT_BR, " ou %,d km (o que vier primeiro)", c.getValidadeKm()) : ""));
+                        ? String.format(PT_BR, " ou %,d km (o que vier primeiro)", c.getValidadeKm()) : ""));
                 detRev.add((concluida ? "<b>Realizado em:</b> " : "<b>Calculado a partir do início da OS:</b> ")
                         + base.format(br));
                 detRev.add("<b>Veículo:</b> " + esc(veiculo));
@@ -406,7 +381,6 @@ public class PainelCalendario extends JPanel {
         return sb.toString();
     }
 
-    /** Etapas são gravadas como CONCLUIDO pelo sistema, mas há dados antigos com CONCLUIDA. */
     private static boolean etapaConcluida(String status) {
         return "CONCLUIDO".equalsIgnoreCase(status) || "CONCLUIDA".equalsIgnoreCase(status);
     }
@@ -438,18 +412,11 @@ public class PainelCalendario extends JPanel {
         if (s == null) return COR_ABERTA;
         return switch (s.toUpperCase()) {
             case "EM_ANDAMENTO" -> COR_ANDAMENTO;
-            case "CONCLUIDA" -> COR_CONCLUIDA;
             case "CONGELADA", "CANCELADA" -> COR_CONGELADA;
             default -> COR_ABERTA;
         };
     }
 
-    /**
-     * Ponto de extensão para o futuro recurso de "prazos de orçamentos".
-     * Quando o orçamento passar a ter uma data-limite, monte aqui os
-     * {@link EventoAgenda} do tipo {@code PRAZO_ORCAMENTO} (cor {@link #COR_PRAZO})
-     * e eles aparecerão automaticamente em todos os modos do calendário.
-     */
     private List<EventoAgenda> carregarPrazosOrcamento() {
         return new ArrayList<>();
     }
@@ -546,7 +513,7 @@ public class PainelCalendario extends JPanel {
     }
 
     private LocalDate inicioSemana(LocalDate d) {
-        return d.minusDays(d.getDayOfWeek().getValue() % 7); // domingo
+        return d.minusDays(d.getDayOfWeek().getValue() % 7);
     }
 
     // =========================================================================
@@ -561,7 +528,7 @@ public class PainelCalendario extends JPanel {
         List<EventoAgenda> evs = eventosOrdenados(dataReferencia);
         if (evs.isEmpty()) {
             lista.add(rotuloVazio(modoCliente ? "Nenhum evento neste dia."
-                                              : "Nenhum serviço agendado para este dia."));
+                    : "Nenhum serviço agendado para este dia."));
         } else {
             for (EventoAgenda ev : evs) {
                 lista.add(linhaEventoDia(ev));
@@ -572,7 +539,7 @@ public class PainelCalendario extends JPanel {
         JScrollPane sc = new JScrollPane(lista);
         sc.setBorder(BorderFactory.createLineBorder(COR_BORDA));
         sc.getViewport().setBackground(Color.WHITE);
-        ScrollBarPadrao.aplicar(sc);
+        ScrollBar.aplicar(sc);
         return sc;
     }
 
@@ -614,10 +581,6 @@ public class PainelCalendario extends JPanel {
         return linha;
     }
 
-    /**
-     * Linha do modo "Dia" no calendário do cliente: clicar alterna entre recolhido
-     * (título + status) e expandido (todas as datas e informações do processo).
-     */
     private JComponent linhaEventoExpansivel(EventoAgenda ev) {
         boolean aberto = ev == eventoExpandido;
 
@@ -632,7 +595,7 @@ public class PainelCalendario extends JPanel {
         cab.setOpaque(false);
         cab.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JLabel seta = new JLabel(aberto ? "▾" : "▸");
+        JLabel seta = new JLabel(aberto ? "<" : ">");
         seta.setFont(new Font("Segoe UI", Font.BOLD, 14));
         seta.setForeground(COR_SUAVE);
 
@@ -690,7 +653,6 @@ public class PainelCalendario extends JPanel {
         return linha;
     }
 
-    /** Atalho para a tela do portal relacionada ao evento expandido. */
     private JComponent acaoDoEvento(EventoAgenda ev) {
         String texto;
         Runnable acao;
@@ -723,7 +685,7 @@ public class PainelCalendario extends JPanel {
         sc.setBorder(null);
         sc.setOpaque(false);
         sc.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(sc);
+        ScrollBar.aplicar(sc);
         return sc;
     }
 
@@ -756,7 +718,7 @@ public class PainelCalendario extends JPanel {
     }
 
     // =========================================================================
-    // VIEW: MÊS
+    // VIEW: MÊS (Com remoção da última linha excedente e células quadradas)
     // =========================================================================
     private JComponent viewMes() {
         JPanel cont = new JPanel(new BorderLayout());
@@ -777,9 +739,14 @@ public class PainelCalendario extends JPanel {
         LocalDate primeiro = ym.atDay(1);
         LocalDate inicio = primeiro.minusDays(primeiro.getDayOfWeek().getValue() % 7);
 
-        JPanel grid = new JPanel(new GridLayout(6, 7));
+        // Oculta a última linha se o mês couber perfeitamente em 5 semanas[cite: 4]
+        LocalDate ultimoDiaMes = ym.atEndOfMonth();
+        int diasTotaisGrid = (int) java.time.temporal.ChronoUnit.DAYS.between(inicio, ultimoDiaMes) + 1;
+        int totalLinhas = (diasTotaisGrid <= 35) ? 5 : 6;
+
+        JPanel grid = new JPanel(new GridLayout(totalLinhas, 7));
         grid.setOpaque(false);
-        for (int i = 0; i < 42; i++) {
+        for (int i = 0; i < (totalLinhas * 7); i++) {
             LocalDate d = inicio.plusDays(i);
             grid.add(celulaMes(d, YearMonth.from(d).equals(ym)));
         }
@@ -792,8 +759,10 @@ public class PainelCalendario extends JPanel {
         JPanel cel = new JPanel();
         cel.setLayout(new BoxLayout(cel, BoxLayout.Y_AXIS));
         cel.setBackground(doMes ? Color.WHITE : Color.decode("#FAFAFA"));
+
+        // Células com borda reta e limpa (estilo quadrado)[cite: 4]
         cel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(COR_BORDA),
+                BorderFactory.createLineBorder(COR_BORDA, 1),
                 BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 
         JLabel num = new JLabel(String.valueOf(dia.getDayOfMonth()));
@@ -817,7 +786,6 @@ public class PainelCalendario extends JPanel {
             cel.add(mais);
         }
 
-        // Clique numa área livre do dia abre o modo "Dia" naquela data.
         MouseAdapter irDia = new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 dataReferencia = dia; modoAtual = Modo.DIA; renderizar();
@@ -851,7 +819,7 @@ public class PainelCalendario extends JPanel {
         sc.setBorder(null);
         sc.setOpaque(false);
         sc.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(sc);
+        ScrollBar.aplicar(sc);
         return sc;
     }
 
@@ -924,14 +892,13 @@ public class PainelCalendario extends JPanel {
     }
 
     private int ordemStatus(EventoAgenda ev) {
-        if (modoCliente) return ev.tipo.ordinal(); // serviço, orçamento, etapa, revisão
+        if (modoCliente) return ev.tipo.ordinal();
         if (ev.cor == COR_ABERTA)    return 0;
         if (ev.cor == COR_ANDAMENTO) return 1;
         if (ev.cor == COR_CONCLUIDA) return 2;
         return 3;
     }
 
-    /** Etiqueta colorida clicável usada nas células de semana e mês. */
     private JComponent chip(EventoAgenda ev, boolean compacto) {
         JLabel c = new JLabel(limitar(ev.titulo, compacto ? 16 : 30));
         c.setOpaque(true);
@@ -947,10 +914,6 @@ public class PainelCalendario extends JPanel {
         return c;
     }
 
-    /**
-     * Torna o componente clicável. Na oficina abre a OS associada; no portal do
-     * cliente abre o dia do evento no modo "Dia" já com os detalhes expandidos.
-     */
     private void adicionarClique(JComponent comp, EventoAgenda ev) {
         if (modoCliente) {
             comp.setCursor(new Cursor(Cursor.HAND_CURSOR));

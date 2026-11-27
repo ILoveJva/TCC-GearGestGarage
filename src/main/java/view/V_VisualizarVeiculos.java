@@ -2,6 +2,7 @@ package view;
 
 import controller.OficinaController;
 import model.Veiculo;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -121,7 +122,7 @@ public class V_VisualizarVeiculos extends JPanel {
         scp_ScrollVeiculos.getViewport().setOpaque(true);
         scp_ScrollVeiculos.setOpaque(false);
         scp_ScrollVeiculos.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        ScrollBarPadrao.aplicar(scp_ScrollVeiculos);
+        ScrollBar.aplicar(scp_ScrollVeiculos);
 
         ImageIcon icoVeiculo = carregarIcone("/assets/icons/add_veiculo.png", 18, 18);
         btn_CadastrarVeiculo = new BotaoAcao("+ Cadastrar Veículo", icoVeiculo, COR_ACAO, COR_ACAO_CLARA, COR_ACAO_ESCURA);

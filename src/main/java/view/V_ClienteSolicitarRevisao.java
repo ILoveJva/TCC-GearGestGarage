@@ -3,6 +3,7 @@ package view;
 import controller.OficinaController;
 import model.Oficina;
 import model.Veiculo;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
@@ -152,7 +153,7 @@ public class V_ClienteSolicitarRevisao extends JPanel {
         scrollDescricao.setBorder(null);
         scrollDescricao.setOpaque(false);
         scrollDescricao.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollDescricao);
+        ScrollBar.aplicar(scrollDescricao);
 
         PainelArredondado pnlDescricao = new PainelArredondado(new BorderLayout(), txtDescricao);
         pnlDescricao.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
@@ -192,7 +193,7 @@ public class V_ClienteSolicitarRevisao extends JPanel {
         scrollForm.setBorder(null);
         scrollForm.setOpaque(false);
         scrollForm.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollForm);
+        ScrollBar.aplicar(scrollForm);
 
         card.add(headerGlass, BorderLayout.NORTH);
         card.add(scrollForm, BorderLayout.CENTER);

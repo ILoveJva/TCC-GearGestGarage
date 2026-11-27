@@ -5,6 +5,7 @@ import controller.OficinaController;
 import model.Cliente;
 import model.Modelo;
 import model.Montadora;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -938,7 +939,7 @@ public class V_CadastrarVeiculo extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

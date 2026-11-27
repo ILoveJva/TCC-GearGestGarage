@@ -2,6 +2,7 @@ package view;
 
 import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
@@ -204,7 +205,7 @@ public class V_CadastrarItemServico extends JPanel {
         scrollForm.setBorder(null);
         scrollForm.setOpaque(false);
         scrollForm.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollForm);
+        ScrollBar.aplicar(scrollForm);
 
         card.add(headerGlass, BorderLayout.NORTH);
         card.add(scrollForm, BorderLayout.CENTER);
@@ -432,7 +433,7 @@ public class V_CadastrarItemServico extends JPanel {
         scp.getViewport().setBackground(COR_TABELA_FUNDO);
         scp.getViewport().setOpaque(true);
         scp.setPreferredSize(new Dimension(0, altura));
-        ScrollBarPadrao.aplicar(scp);
+        ScrollBar.aplicar(scp);
         return scp;
     }
 

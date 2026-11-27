@@ -3,6 +3,8 @@ package view;
 import br.com.oficina.atendimento.dto.ServicoResponseDTO;
 import br.com.oficina.estoque.CatalogoPecaEntity;
 import controller.OficinaController;
+import view.design.BuscaUtil;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
@@ -215,7 +217,7 @@ public class V_EntradaEstoque extends JPanel {
 
         JScrollPane scrollItens = new JScrollPane(tbl_Itens);
         scrollItens.setPreferredSize(new Dimension(0, 140));
-        ScrollBarPadrao.aplicar(scrollItens);
+        ScrollBar.aplicar(scrollItens);
 
         JButton btn_Remover = new JButton("Remover selecionado");
         btn_Remover.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -267,7 +269,7 @@ public class V_EntradaEstoque extends JPanel {
         scrollForm.setBorder(null);
         scrollForm.setOpaque(false);
         scrollForm.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scrollForm);
+        ScrollBar.aplicar(scrollForm);
 
         btn_Registrar = new BotaoAcao("REGISTRAR COMPRA", COR_SUCESSO, COR_SUCESSO_CLARA, COR_SUCESSO_ESCURA);
         btn_Registrar.setPreferredSize(new Dimension(220, 44));
@@ -914,7 +916,7 @@ public class V_EntradaEstoque extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

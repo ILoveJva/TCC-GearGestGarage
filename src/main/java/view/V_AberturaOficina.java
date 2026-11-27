@@ -2,6 +2,7 @@ package view;
 
 import br.com.oficina.shared.viacep.ViaCepClient;
 import controller.OficinaController;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -89,7 +90,7 @@ public class V_AberturaOficina extends JFrame {
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         JButton btnVoltar = botaoLink("← Já tenho uma conta / Voltar para o login");
         btnVoltar.addActionListener(e -> voltarParaLogin());

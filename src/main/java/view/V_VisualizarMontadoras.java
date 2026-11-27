@@ -2,6 +2,8 @@ package view;
 
 import controller.OficinaController;
 import model.Montadora;
+import view.design.ScrollBar;
+import view.paginas.V_PaginaInicial;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -120,7 +122,7 @@ public class V_VisualizarMontadoras extends JPanel {
         scroll.getViewport().setOpaque(true);
         scroll.setOpaque(false);
         scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         BotaoAcao btn_Voltar = new BotaoAcao("← Voltar", COR_VOLTAR, COR_VOLTAR_CLARA, COR_VOLTAR_ESCURA);
         btn_Voltar.setPreferredSize(new Dimension(LARGURA_BOTAO, ALTURA_BOTAO));

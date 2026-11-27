@@ -2,6 +2,7 @@ package view;
 
 import br.com.oficina.atendimento.CatalogoServicoEntity;
 import controller.OficinaController;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
@@ -627,7 +628,7 @@ public class V_CadastrarPeca extends JPanel {
             scroller.setOpaque(false);
             scroller.getViewport().setOpaque(false);
             scroller.setBorder(BorderFactory.createEmptyBorder());
-            ScrollBarPadrao.aplicar(scroller);
+            ScrollBar.aplicar(scroller);
             return scroller;
         }
 

@@ -5,6 +5,7 @@ import br.com.oficina.usuario.FuncionarioEntity;
 import controller.OficinaController;
 import model.Cliente;
 import model.Orcamento;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -125,7 +126,7 @@ public class V_VisualizarOrcamento extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -213,7 +214,7 @@ public class V_VisualizarOrcamento extends JPanel {
         scroll.getViewport().setBackground(COR_TABELA_FUNDO);
         scroll.getViewport().setOpaque(true);
         scroll.setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
 
         sec.add(lbl, BorderLayout.NORTH);
@@ -272,7 +273,7 @@ public class V_VisualizarOrcamento extends JPanel {
         scroll.getViewport().setBackground(COR_TABELA_FUNDO);
         scroll.getViewport().setOpaque(true);
         scroll.setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         scroll.setBorder(BorderFactory.createLineBorder(COR_AERO_BORDA));
 
         sec.add(lbl, BorderLayout.NORTH);

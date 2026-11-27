@@ -3,6 +3,7 @@ package view;
 import controller.OficinaController;
 import model.Cliente;
 import model.Veiculo;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -88,7 +89,7 @@ public class V_PerfilCliente extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -138,7 +139,7 @@ public class V_PerfilCliente extends JPanel {
         JScrollPane scroll = new JScrollPane(tabela);
         scroll.setPreferredSize(new Dimension(0, 180));
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         JPanel corpo = (JPanel) card.getComponent(1);
         if (mdl.getRowCount() == 0) {

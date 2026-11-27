@@ -2,9 +2,9 @@ package view;
 
 import controller.OficinaController;
 import br.com.oficina.usuario.FuncionarioEntity;
+import view.design.ScrollBar;
 
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -58,7 +58,7 @@ public class V_Configuracoes extends JPanel {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -180,7 +180,7 @@ public class V_Configuracoes extends JPanel {
         JScrollPane scroll = new JScrollPane(tbl_Funcionarios);
         scroll.setPreferredSize(new Dimension(0, 160));
         scroll.setBorder(BorderFactory.createLineBorder(Color.decode("#E0E0E0")));
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
 
         JPanel pnl_Acoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
         pnl_Acoes.setOpaque(false);

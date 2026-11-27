@@ -1,4 +1,4 @@
-package view;
+package view.design;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -68,7 +68,7 @@ public class Tabela extends JPanel {
         scrollPane.getViewport().setOpaque(true);
         scrollPane.setOpaque(false);
         scrollPane.setBorder(BorderFactory.createLineBorder(COR_GRID));
-        ScrollBarPadrao.aplicar(scrollPane);
+        ScrollBar.aplicar(scrollPane);
 
         add(scrollPane, BorderLayout.CENTER);
     }

@@ -5,6 +5,8 @@ import br.com.oficina.atendimento.dto.OrcamentoResponseDTO;
 import br.com.oficina.estoque.CatalogoPecaEntity;
 import br.com.oficina.estoque.PecaEntity;
 import controller.OficinaController;
+import view.design.BuscaUtil;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -159,7 +161,7 @@ public class V_EditarOrcamento extends JPanel {
             setBorder(null);
             setOpaque(false);
             getViewport().setOpaque(false);
-            ScrollBarPadrao.aplicar(this);
+            view.design.ScrollBar.aplicar(this);
         }}, BorderLayout.CENTER);
         card.add(pnlBtn, BorderLayout.SOUTH);
 
@@ -826,7 +828,7 @@ public class V_EditarOrcamento extends JPanel {
         scp.getViewport().setBackground(COR_TABELA_FUNDO);
         scp.getViewport().setOpaque(true);
         scp.setPreferredSize(new Dimension(0, altura));
-        ScrollBarPadrao.aplicar(scp);
+        ScrollBar.aplicar(scp);
         return scp;
     }
 

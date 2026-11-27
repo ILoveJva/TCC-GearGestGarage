@@ -2,6 +2,7 @@ package view;
 
 import controller.OficinaController;
 import br.com.oficina.atendimento.TipoServicoEntity;
+import view.design.ScrollBar;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -77,7 +78,7 @@ public class V_CadastrarTipoServico extends JPanel {
         lst_Tipos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         JScrollPane scroll = new JScrollPane(lst_Tipos);
-        ScrollBarPadrao.aplicar(scroll);
+        ScrollBar.aplicar(scroll);
         scroll.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.decode("#E0E0E0")),
             "Tipos de Serviço cadastrados",
